@@ -1,0 +1,48 @@
+{
+  "name": "vr-control-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local VR headset management and independent playback control for Meta Quest 2",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/admin",
+    "apps/gateway",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build:packages && concurrently -k -n gateway,admin -c cyan,magenta \"npm:dev:gateway\" \"npm:dev:admin\"",
+    "dev:gateway": "npm run dev -w @vrcc/gateway",
+    "dev:admin": "npm run dev -w @vrcc/admin",
+    "build": "npm run build:packages && npm run build -w @vrcc/admin && npm run build -w @vrcc/gateway",
+    "build:packages": "npm run build -w @vrcc/shared-types && npm run build -w @vrcc/protocol",
+    "start": "node scripts/development/start-production.mjs",
+    "typecheck": "npm run build:packages && npm run typecheck -w @vrcc/gateway && npm run typecheck -w @vrcc/admin",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "admin:create": "npm run admin:create -w @vrcc/gateway --",
+    "quest:simulate": "npm run simulate -w @vrcc/gateway --",
+    "clean": "node scripts/development/clean.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@vitest/coverage-v8": "5.0.5",
+    "concurrently": "10.0.6",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
+  }
+}

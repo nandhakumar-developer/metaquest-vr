@@ -1,0 +1,16 @@
+# Normalize text files across Windows/macOS/Linux
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Unity assets
+apps/quest/UnityProject/Assets/**/*.unity filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.asset filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.mat filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.prefab filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.png filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.wav filter=lfs diff=lfs merge=lfs -text
+apps/quest/UnityProject/Assets/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
