@@ -16,6 +16,12 @@ export interface GroupAssignment {
 
 interface RunDevice extends GroupDevicePlaybackState {
   expectedVideoId: string;
+  /**
+   * Set when an operator takes direct control of this headset. A detached
+   * headset stays visible in the group state, but the drift corrector must not
+   * seek it back to the group position.
+   */
+  detached: boolean;
 }
 
 interface Run {
@@ -99,7 +105,9 @@ export class GroupPlaybackService {
       leadMs: run.leadMs,
       positionSeconds: this.expectedPosition(run, Date.now()),
       createdAt: run.createdAt,
-      devices: [...run.devices.values()].map(({ expectedVideoId: _expected, ...rest }) => rest),
+      devices: [...run.devices.values()].map(
+        ({ expectedVideoId: _expected, detached: _detached, ...rest }) => rest,
+      ),
       message: run.message,
     };
   }
@@ -135,6 +143,7 @@ export class GroupPlaybackService {
         videoId: video.id,
         videoName: video.name,
         expectedVideoId: video.id,
+        detached: false,
         phase: 'loading',
         positionSeconds: 0,
         driftMs: null,
@@ -289,7 +298,10 @@ export class GroupPlaybackService {
     run.status = 'stopped';
     run.message = 'Group playback stopped by administrator.';
     const ids = [...run.devices.values()]
-      .filter((device) => device.phase !== 'offline' && device.phase !== 'error')
+      .filter(
+        (device) =>
+          !device.detached && device.phase !== 'offline' && device.phase !== 'error',
+      )
       .map((device) => device.deviceId);
     await Promise.allSettled(
       ids.map((deviceId) =>
@@ -306,6 +318,26 @@ export class GroupPlaybackService {
     }
     this.broadcastNow();
     return this.getState();
+  }
+
+  /**
+   * Detach a headset from the active group run when an operator takes direct
+   * control of it. Without this, the drift corrector would immediately seek the
+   * headset back to the group position, overriding the operator.
+   */
+  detachDevice(deviceId: string, reason = 'Headset is being controlled independently'): void {
+    const run = this.run;
+    if (!run) return;
+    const entry = run.devices.get(deviceId);
+    if (!entry || entry.detached) return;
+    entry.detached = true;
+    entry.phase = 'idle';
+    entry.driftMs = null;
+    entry.syncHealth = 'unknown';
+    entry.error = reason;
+    run.lastCorrection.delete(deviceId);
+    this.state.logEvent(deviceId, 'playback.group_detached', { groupId: run.id });
+    this.scheduleBroadcast();
   }
 
   onDeviceDisconnected(deviceId: string): void {
@@ -326,11 +358,26 @@ export class GroupPlaybackService {
     if (!entry) return;
 
     entry.lastSeenAt = playback.updatedAt;
+
+    if (entry.detached) {
+      // Still surface live position, but never re-sync a headset that an
+      // operator has taken over.
+      entry.positionSeconds = playback.positionSeconds;
+      entry.videoId = playback.videoId;
+      entry.videoName = playback.videoName ?? entry.videoName;
+      this.scheduleBroadcast();
+      return;
+    }
+
     if (playback.videoId && playback.videoId !== entry.expectedVideoId) {
       // The operator changed this headset independently; it is no longer part
       // of the group run.
+      entry.detached = true;
       entry.phase = 'error';
       entry.error = 'Video changed independently during group playback';
+      entry.driftMs = null;
+      entry.syncHealth = 'unknown';
+      run.lastCorrection.delete(deviceId);
       this.scheduleBroadcast();
       return;
     }
@@ -362,7 +409,13 @@ export class GroupPlaybackService {
     else if (playback.state === 'error') entry.phase = 'error';
     entry.error = playback.error;
 
-    if (run.scheduledStartAt !== null && playback.state === 'playing') {
+    // A stopped/errored run must never seek a headset again: the operator has
+    // left group mode and later playback belongs to that headset alone.
+    if (
+      (run.status === 'scheduled' || run.status === 'playing') &&
+      run.scheduledStartAt !== null &&
+      playback.state === 'playing'
+    ) {
       const expected = this.expectedPosition(run, Date.parse(playback.updatedAt));
       const driftMs = (playback.positionSeconds - expected) * 1000;
       entry.driftMs = Math.round(driftMs);
@@ -373,6 +426,20 @@ export class GroupPlaybackService {
             ? 'fair'
             : 'poor';
       this.correctDrift(run, entry, playback.positionSeconds, expected);
+    }
+
+    const active = [...run.devices.values()].filter((device) => !device.detached);
+    if (
+      run.status === 'playing' &&
+      active.length > 0 &&
+      active.every(
+        (device) =>
+          device.phase === 'ended' || device.phase === 'offline' || device.phase === 'error',
+      )
+    ) {
+      // Close the run so it cannot linger and override future manual playback.
+      run.status = 'stopped';
+      run.message = 'All headsets have finished group playback.';
     }
     this.scheduleBroadcast();
   }
@@ -385,6 +452,7 @@ export class GroupPlaybackService {
   }
 
   private correctDrift(run: Run, entry: RunDevice, actual: number, expected: number): void {
+    if (entry.detached) return;
     const driftMs = (actual - expected) * 1000;
     if (Math.abs(driftMs) < DRIFT_CORRECTION_THRESHOLD_MS) return;
     const last = run.lastCorrection.get(entry.deviceId) ?? 0;

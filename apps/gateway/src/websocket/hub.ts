@@ -9,6 +9,8 @@ export interface AdminSocketMetadata {
   isAlive: boolean;
 }
 
+const MAX_QUEUED_PREVIEW_BYTES = 350_000;
+
 /** Fan-out to authenticated dashboard sockets. Device commands never use this hub. */
 export class AdminHub {
   private readonly clients = new Map<WebSocket, AdminSocketMetadata>();
@@ -33,6 +35,14 @@ export class AdminHub {
     const payload = JSON.stringify(event);
     for (const metadata of this.clients.values()) {
       if (metadata.socket.readyState !== 1) continue;
+      // A slow dashboard should receive the newest preview frame instead of
+      // building a queue of old JPEGs that makes the preview appear delayed.
+      if (
+        event.kind === 'preview.frame' &&
+        metadata.socket.bufferedAmount > MAX_QUEUED_PREVIEW_BYTES
+      ) {
+        continue;
+      }
       try {
         metadata.socket.send(payload);
       } catch {

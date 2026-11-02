@@ -13,11 +13,21 @@ function isSecureContextForXr() {
 }
 
 export class ImmersivePlayer {
-  constructor({ video, canvas, onHeadPose, onSessionChange, onError }) {
+  constructor({
+    video,
+    canvas,
+    overlayRoot,
+    onHeadPose,
+    onSessionChange,
+    onControllerSelect,
+    onError,
+  }) {
     this.video = video;
     this.canvas = canvas;
+    this.overlayRoot = overlayRoot;
     this.onHeadPose = onHeadPose ?? (() => {});
     this.onSessionChange = onSessionChange ?? (() => {});
+    this.onControllerSelect = onControllerSelect ?? (() => {});
     this.onError = onError ?? (() => {});
     this.three = null;
     this.renderer = null;
@@ -222,12 +232,17 @@ export class ImmersivePlayer {
     this.buildContent(media);
 
     const session = await navigator.xr.requestSession('immersive-vr', {
-      optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'],
+      optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'dom-overlay'],
+      ...(this.overlayRoot ? { domOverlay: { root: this.overlayRoot } } : {}),
     });
     this.session = session;
     this.active = true;
     this.canvas.hidden = false;
     this.video.hidden = true;
+
+    if (!session.domOverlayState) {
+      session.addEventListener('select', () => this.onControllerSelect());
+    }
 
     session.addEventListener('end', () => {
       this.active = false;
@@ -240,7 +255,7 @@ export class ImmersivePlayer {
 
     await this.renderer.xr.setSession(session);
     this.renderer.setAnimationLoop(() => this.renderFrame());
-    this.onSessionChange(true);
+    this.onSessionChange(true, Boolean(session.domOverlayState));
   }
 
   renderFrame() {

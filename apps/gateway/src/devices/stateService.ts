@@ -394,9 +394,16 @@ export class DeviceStateService {
   private syncSession(device: DeviceRecord, playback: PlaybackSnapshot): void {
     const open = this.ops.getOpenSession(device.id);
     const state = playback.state;
+    // A browser can keep a downloaded video after an administrator removes it
+    // from the gateway library. Playback status still carries that video's ID,
+    // but playback_sessions.video_id is a foreign key and is set to NULL when
+    // the library row is deleted. Keep tracking the local session without
+    // trying to insert the now-missing ID again.
+    const sessionVideoId =
+      playback.videoId && this.videos.getVideo(playback.videoId) ? playback.videoId : null;
 
     if (state === 'playing') {
-      if (!open || open.videoId !== playback.videoId) {
+      if (!open || open.videoId !== sessionVideoId) {
         if (open) {
           this.ops.closeSession(open.id, 'stopped', playback.positionSeconds);
           this.emitSession(open.id);
@@ -404,7 +411,7 @@ export class DeviceStateService {
         if (playback.videoId) {
           const session = this.ops.openSession({
             deviceId: device.id,
-            videoId: playback.videoId,
+            videoId: sessionVideoId,
             positionSeconds: playback.positionSeconds,
           });
           this.cloud.queueSession(session);
@@ -423,7 +430,7 @@ export class DeviceStateService {
     }
 
     if (!open) return;
-    if (open.videoId !== playback.videoId) {
+    if (open.videoId !== sessionVideoId) {
       this.ops.closeSession(open.id, 'stopped', playback.positionSeconds);
       this.emitSession(open.id);
       return;

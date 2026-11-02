@@ -115,7 +115,7 @@
               <span class="connection-dot" aria-hidden="true"></span>
               <span id="connection-label">Connecting</span>
             </span>
-            <button id="toggle-library" class="button button--ghost" type="button">Library</button>
+            <button id="toggle-library" class="button button--ghost" type="button">Downloads</button>
             <button id="refresh-player" class="button button--ghost" type="button" title="Refresh library">Refresh</button>
             <button id="reset-pairing" class="button button--ghost button--danger" type="button">Unpair</button>
           </div>
@@ -130,8 +130,8 @@
               <div class="empty-kicker">Ready</div>
               <h2>Choose a video from the library</h2>
               <p>
-                Videos stream directly from the gateway over your LAN. If an administrator
-                loads a video, it will appear here automatically.
+                Send a video from the dashboard to save it on this headset. Downloaded videos
+                appear in Downloads and play offline without streaming.
               </p>
               <button id="empty-open-library" class="button button--primary" type="button">
                 Open video library
@@ -163,14 +163,39 @@
           <aside id="library-panel" class="library-panel" aria-label="Video library" hidden>
             <div class="library-header">
               <div>
-                <div class="library-title">Video library</div>
-                <div id="library-count" class="library-subtitle">0 videos</div>
+                <div class="library-title">Downloads &amp; video library</div>
+                <div class="library-subtitle">Offline copies + gateway videos</div>
               </div>
               <button id="close-library" class="icon-button" type="button" aria-label="Close library">×</button>
             </div>
-            <div id="library-list" class="library-list"></div>
-            <div id="library-empty" class="library-empty" hidden>
-              Upload a video in the dashboard. It will appear here automatically.
+            <div class="library-body">
+              <section class="downloads-section" aria-labelledby="downloads-title">
+                <div class="library-section-heading">
+                  <div>
+                    <div id="downloads-title" class="library-section-title">On this headset</div>
+                    <div id="downloads-summary" class="library-section-subtitle">
+                      No offline copies
+                    </div>
+                  </div>
+                  <span class="library-section-badge">Offline</span>
+                </div>
+                <div id="downloads-list" class="downloads-list"></div>
+                <div id="downloads-empty" class="downloads-empty">
+                  No offline copies yet. Send a video from the dashboard to download it to
+                  this headset and play it without streaming.
+                </div>
+              </section>
+
+              <div class="library-section-heading library-section-heading--gateway">
+                <div>
+                  <div class="library-section-title">Gateway library</div>
+                  <div id="library-count" class="library-section-subtitle">0 videos</div>
+                </div>
+              </div>
+              <div id="library-list" class="library-list"></div>
+              <div id="library-empty" class="library-empty" hidden>
+                Upload a video in the dashboard. It will appear here automatically.
+              </div>
             </div>
           </aside>
 

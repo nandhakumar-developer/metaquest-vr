@@ -3,7 +3,8 @@
  *
  * Quest Browser only exposes WebCrypto's subtle API in secure contexts, while
  * the flat player must also work over plain HTTP on a LAN. Pairing hashes the
- * device secret with this function so pairing is not tied to HTTPS.
+ * device secret with this function, and offline downloads hash chunks as they
+ * arrive so large videos never have to be held in memory all at once.
  */
 
 const K = new Uint32Array([
@@ -21,18 +22,7 @@ function rotr(value, bits) {
   return (value >>> bits) | (value << (32 - bits));
 }
 
-export function sha256Hex(text) {
-  const bytes = new TextEncoder().encode(String(text));
-  const bitLength = bytes.length * 8;
-  const paddedLength = (((bytes.length + 9 + 63) >> 6) << 6);
-  const data = new Uint8Array(paddedLength);
-  data.set(bytes);
-  data[bytes.length] = 0x80;
-
-  const view = new DataView(data.buffer);
-  view.setUint32(paddedLength - 8, Math.floor(bitLength / 0x100000000), false);
-  view.setUint32(paddedLength - 4, bitLength >>> 0, false);
-
+export function createSha256() {
   let h0 = 0x6a09e667;
   let h1 = 0xbb67ae85;
   let h2 = 0x3c6ef372;
@@ -42,8 +32,13 @@ export function sha256Hex(text) {
   let h6 = 0x1f83d9ab;
   let h7 = 0x5be0cd19;
 
+  const block = new Uint8Array(64);
+  const blockView = new DataView(block.buffer);
   const w = new Uint32Array(64);
-  for (let offset = 0; offset < paddedLength; offset += 64) {
+  let blockLength = 0;
+  let bytesHashed = 0;
+
+  const processBlock = (view, offset) => {
     for (let i = 0; i < 16; i += 1) {
       w[i] = view.getUint32(offset + i * 4, false);
     }
@@ -87,9 +82,58 @@ export function sha256Hex(text) {
     h5 = (h5 + f) >>> 0;
     h6 = (h6 + g) >>> 0;
     h7 = (h7 + h) >>> 0;
-  }
+  };
 
-  return [h0, h1, h2, h3, h4, h5, h6, h7]
-    .map((value) => value.toString(16).padStart(8, '0'))
-    .join('');
+  return {
+    update(data) {
+      const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+      bytesHashed += bytes.length;
+      let offset = 0;
+
+      if (blockLength > 0) {
+        const needed = Math.min(64 - blockLength, bytes.length);
+        block.set(bytes.subarray(0, needed), blockLength);
+        blockLength += needed;
+        offset = needed;
+        if (blockLength === 64) {
+          processBlock(blockView, 0);
+          blockLength = 0;
+        }
+      }
+
+      while (offset + 64 <= bytes.length) {
+        processBlock(new DataView(bytes.buffer, bytes.byteOffset + offset, 64), 0);
+        offset += 64;
+      }
+
+      if (offset < bytes.length) {
+        block.set(bytes.subarray(offset), 0);
+        blockLength = bytes.length - offset;
+      }
+    },
+
+    digestHex() {
+      const bitLength = bytesHashed * 8;
+      block[blockLength] = 0x80;
+      blockLength += 1;
+      if (blockLength > 56) {
+        block.fill(0, blockLength, 64);
+        processBlock(blockView, 0);
+        blockLength = 0;
+      }
+      block.fill(0, blockLength, 56);
+      blockView.setUint32(56, Math.floor(bitLength / 0x100000000), false);
+      blockView.setUint32(60, bitLength >>> 0, false);
+      processBlock(blockView, 0);
+
+      return [h0, h1, h2, h3, h4, h5, h6, h7]
+        .map((value) => value.toString(16).padStart(8, '0'))
+        .join('');
+    },
+  };
+}
+
+export function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(String(text));
+  return createSha256().update(bytes).digestHex();
 }

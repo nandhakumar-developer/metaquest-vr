@@ -10,19 +10,26 @@ import type {
   GatewayConfigResponse,
   GroupPlaybackState,
   PairingRequestDto,
-  Quaternion,
   VideoDto,
 } from '@vrcc/shared-types';
 import type { AdminServerEvent } from '@vrcc/protocol';
 import { apiRequest, setCsrfToken, setUnauthorizedHandler } from '../api/client.js';
 import { GatewayWebSocketClient } from '../api/ws.js';
+import {
+  getActivePreview,
+  setActivePreview,
+  updateActivePreview,
+} from './previewStore.js';
 
-export interface ActivePreviewState {
+export interface GroupCommandResult {
   deviceId: string;
-  dataBase64: string;
-  capturedAt: string;
-  rotation?: Quaternion;
-  includesUserInterface?: boolean;
+  command?: CommandDto;
+  error?: string;
+}
+
+export interface DeployVideoResult {
+  deployments: DeploymentDto[];
+  errors: Array<{ deviceId: string; message: string }>;
 }
 
 interface AppContextValue {
@@ -39,7 +46,6 @@ interface AppContextValue {
   commands: CommandDto[];
   settings: AppSettings | null;
   cloud: CloudStatus | null;
-  activePreview: ActivePreviewState | null;
   group: GroupPlaybackState | null;
 
   login: (email: string, password: string) => Promise<void>;
@@ -49,7 +55,11 @@ interface AppContextValue {
   refreshVideos: () => Promise<void>;
 
   sendCommand: (deviceId: string, type: CommandType, payload?: Record<string, unknown>) => Promise<void>;
-  sendGroupCommand: (deviceIds: string[], type: CommandType, payload?: Record<string, unknown>) => Promise<void>;
+  sendGroupCommand: (
+    deviceIds: string[],
+    type: CommandType,
+    payload?: Record<string, unknown>,
+  ) => Promise<GroupCommandResult[]>;
   startGroupPlayback: (input: {
     assignments: Array<{ deviceId: string; videoId: string }>;
     leadMs?: number;
@@ -65,7 +75,7 @@ interface AppContextValue {
   unpairDevice: (deviceId: string) => Promise<void>;
   deleteDevice: (deviceId: string) => Promise<void>;
   deleteVideo: (videoId: string) => Promise<void>;
-  deployVideo: (videoId: string, deviceIds: string[]) => Promise<void>;
+  deployVideo: (videoId: string, deviceIds: string[]) => Promise<DeployVideoResult>;
   cancelDeployment: (deploymentId: string) => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
   closeActivePreview: () => void;
@@ -87,7 +97,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [commands, setCommands] = useState<CommandDto[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [cloud, setCloud] = useState<CloudStatus | null>(null);
-  const [activePreview, setActivePreview] = useState<ActivePreviewState | null>(null);
   const [group, setGroup] = useState<GroupPlaybackState | null>(null);
 
   const wsClientRef = useRef<GatewayWebSocketClient | null>(null);
@@ -225,7 +234,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         break;
 
       case 'preview.frame':
-        setActivePreview((prev) => {
+        updateActivePreview((prev) => {
           if (prev && prev.deviceId === event.deviceId) {
             return {
               deviceId: event.deviceId,
@@ -245,7 +254,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         break;
 
       case 'preview.headPose':
-        setActivePreview((prev) => {
+        updateActivePreview((prev) => {
           if (prev && prev.deviceId === event.deviceId) {
             return { ...prev, rotation: event.rotation };
           }
@@ -254,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         break;
 
       case 'preview.stopped':
-        setActivePreview((prev) => (prev?.deviceId === event.deviceId ? null : prev));
+        updateActivePreview((prev) => (prev?.deviceId === event.deviceId ? null : prev));
         break;
 
       case 'cloud.status':
@@ -360,11 +369,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deviceIds: string[],
     type: CommandType,
     payload: Record<string, unknown> = {},
-  ) => {
-    await apiRequest('/api/commands/group', {
+  ): Promise<GroupCommandResult[]> => {
+    const res = await apiRequest<{ results: GroupCommandResult[] }>('/api/commands/group', {
       method: 'POST',
       body: JSON.stringify({ deviceIds, type, payload }),
     });
+    return res.results;
   };
 
   const startGroupPlayback = async (input: {
@@ -423,6 +433,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const closeActivePreview = () => {
+    const activePreview = getActivePreview();
     if (activePreview) {
       void stopPreview(activePreview.deviceId);
     }
@@ -453,8 +464,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const deployVideo = async (videoId: string, deviceIds: string[]) => {
-    await apiRequest(`/api/videos/${videoId}/deployments`, {
+  const deployVideo = async (
+    videoId: string,
+    deviceIds: string[],
+  ): Promise<DeployVideoResult> => {
+    return apiRequest<DeployVideoResult>(`/api/videos/${videoId}/deployments`, {
       method: 'POST',
       body: JSON.stringify({ deviceIds }),
     });
@@ -490,7 +504,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         commands,
         settings,
         cloud,
-        activePreview,
         group,
         login,
         bootstrap,

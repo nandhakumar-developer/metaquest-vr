@@ -55,69 +55,102 @@ export async function registerVideoRoutes(
 
   app.post('/api/videos', async (request, reply) => {
     const authenticated = requireSession(ctx, request, { operator: true });
-    const file = await request.file();
-    if (!file) throw badRequest('No video file was uploaded');
-    const fields = file.fields as unknown as Record<string, unknown>;
 
-    const extension = path.extname(file.filename ?? '').toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(extension)) {
-      throw new AppError(
-        415,
-        'UNSUPPORTED_MEDIA_TYPE',
-        `Unsupported container "${extension || 'unknown'}". Allowed: ${[...ALLOWED_EXTENSIONS].join(
-          ', ',
-        )}. Use FFmpeg to remux/transcode.`,
-      );
-    }
-    if (!file.filename || file.filename.length > MAX_FILENAME_LENGTH) {
-      throw badRequest('Invalid filename');
-    }
-
-    const meta = parseBody(
-      z
-        .object({
-          name: z.string().trim().max(200).optional(),
-          projectionType: z.enum(PROJECTION_TYPES).default('flat'),
-          stereoLayout: z.enum(STEREO_LAYOUTS).default('mono'),
-        })
-        .strict(),
-      {
-        name: readField(fields, 'name') || undefined,
-        projectionType: readField(fields, 'projectionType') || undefined,
-        stereoLayout: readField(fields, 'stereoLayout') || undefined,
-      },
-    );
-
+    // Fields can arrive before or after the file part. Iterate every part so
+    // metadata is available regardless of the order the browser sends it in.
+    const fields: Record<string, unknown> = {};
     const tempPath = resolveInside(ctx.config.tempDir, `upload-${newId()}.part`);
     const hash = createHash('sha256');
     let size = 0;
-    let consumed = false;
+    let uploadedFilename: string | null = null;
+    let rejectedExtension: string | null = null;
+    let invalidFilename = false;
+    let sawFile = false;
+    let ingested = false;
+
     try {
-      const hasher = new Transform({
-        transform(chunk: Buffer, _encoding, callback) {
-          hash.update(chunk);
-          size += chunk.length;
-          callback(null, chunk);
-        },
-      });
-      await pipeline(file.file, hasher, createWriteStream(tempPath, { mode: 0o600 }));
-      if (file.file.truncated) {
-        throw payloadTooLarge(
-          `Upload exceeds the ${ctx.config.maxVideoUploadBytes} byte limit`,
+      for await (const part of request.parts()) {
+        if (part.type === 'field') {
+          if (!(part.fieldname in fields)) {
+            fields[part.fieldname] = { value: part.value };
+          }
+          continue;
+        }
+
+        // Only the first file is stored; drain any additional file streams.
+        if (sawFile) {
+          part.file.resume();
+          continue;
+        }
+        sawFile = true;
+        uploadedFilename = part.filename ?? null;
+
+        const extension = path.extname(part.filename ?? '').toLowerCase();
+        if (!ALLOWED_EXTENSIONS.has(extension)) {
+          rejectedExtension = extension;
+          part.file.resume();
+          continue;
+        }
+        if (!part.filename || part.filename.length > MAX_FILENAME_LENGTH) {
+          invalidFilename = true;
+          part.file.resume();
+          continue;
+        }
+
+        const hasher = new Transform({
+          transform(chunk: Buffer, _encoding, callback) {
+            hash.update(chunk);
+            size += chunk.length;
+            callback(null, chunk);
+          },
+        });
+        await pipeline(part.file, hasher, createWriteStream(tempPath, { mode: 0o600 }));
+        if (part.file.truncated) {
+          throw payloadTooLarge(
+            `Upload exceeds the ${ctx.config.maxVideoUploadBytes} byte limit`,
+          );
+        }
+      }
+
+      if (rejectedExtension !== null) {
+        throw new AppError(
+          415,
+          'UNSUPPORTED_MEDIA_TYPE',
+          `Unsupported container "${rejectedExtension || 'unknown'}". Allowed: ${[
+            ...ALLOWED_EXTENSIONS,
+          ].join(', ')}. Use FFmpeg to remux/transcode.`,
         );
       }
+      if (invalidFilename) throw badRequest('Invalid filename');
+      if (!uploadedFilename) throw badRequest('No video file was uploaded');
       if (size === 0) throw badRequest('Uploaded file is empty');
+
+      const meta = parseBody(
+        z
+          .object({
+            name: z.string().trim().max(200).optional(),
+            projectionType: z.enum(PROJECTION_TYPES).default('flat'),
+            stereoLayout: z.enum(STEREO_LAYOUTS).default('mono'),
+          })
+          .strict(),
+        {
+          name: readField(fields, 'name') || undefined,
+          projectionType: readField(fields, 'projectionType') || undefined,
+          stereoLayout: readField(fields, 'stereoLayout') || undefined,
+        },
+      );
+
       const checksum = hash.digest('hex');
       const video = await ctx.videos.ingest({
         tempPath,
-        originalFilename: file.filename,
+        originalFilename: uploadedFilename,
         sizeBytes: size,
         checksum,
-        name: meta.name ?? path.parse(file.filename).name,
+        name: meta.name ?? path.parse(uploadedFilename).name,
         projectionType: meta.projectionType,
         stereoLayout: meta.stereoLayout,
       });
-      consumed = true;
+      ingested = true;
       ctx.store.ops.addAudit({
         actor: authenticated.admin.email,
         action: 'video.uploaded',
@@ -127,7 +160,7 @@ export async function registerVideoRoutes(
       });
       return reply.code(201).send(video);
     } finally {
-      if (!consumed) await fs.unlink(tempPath).catch(() => undefined);
+      if (!ingested) await fs.unlink(tempPath).catch(() => undefined);
     }
   });
 

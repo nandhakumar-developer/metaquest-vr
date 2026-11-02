@@ -144,15 +144,14 @@ A self-signed certificate without a trusted CA still fails. See
 
 ## Storage shows `--` for a headset
 
-Expected. The browser player cannot read the headset's free disk. `navigator.storage` reports
-the browser origin quota, which is not the device's free space, so the player reports
-`null` rather than a misleading number. Native clients can report real storage.
+The browser player reports available quota for this site's local storage, not total headset
+disk space. The browser may omit the estimate; in that case the dashboard shows `--`.
 
 ## Deployments stay pending
 
-Only a native Quest client can consume `DOWNLOAD_VIDEO`. Browser players stream directly and
-the gateway rejects browser-player deployments with an explicit error. Use **Video Library →
-Group Play** or a headset card's video dropdown instead.
+Browser-player downloads require the Quest player tab to be open and connected. Open **Downloads**
+on the headset to watch progress. If the transfer reports a storage or checksum error, free space
+by deleting an offline copy and send the video again.
 
 ## FFmpeg metadata is missing
 

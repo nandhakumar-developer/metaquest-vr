@@ -49,10 +49,10 @@ describe('Dashboard video upload -> shared Quest library', () => {
   it('stores a multipart upload and exposes it to the player library', async () => {
     const body = Buffer.from('tiny-uploaded-video-placeholder');
     const form = new FormData();
+    form.append('file', new Blob([body], { type: 'video/mp4' }), 'dashboard-upload.mp4');
     form.append('name', 'Uploaded From Dashboard');
     form.append('projectionType', 'flat');
     form.append('stereoLayout', 'mono');
-    form.append('file', new Blob([body], { type: 'video/mp4' }), 'dashboard-upload.mp4');
     const encoded = new Response(form);
     const contentType = encoded.headers.get('content-type');
     expect(contentType).toContain('multipart/form-data');

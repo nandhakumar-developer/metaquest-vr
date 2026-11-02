@@ -56,7 +56,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
             Video Media Library ({videos.length})
           </h2>
           <p className="text-xs text-slate-400">
-            Stored on this gateway and streamed on demand to Quest headsets running the browser player
+            Stored on this gateway and available to connected Quest headsets
           </p>
         </div>
 
@@ -72,11 +72,11 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
       <div className="flex items-start gap-2 p-3 rounded-xl bg-cyan-950/30 border border-cyan-900/60 text-[11px] leading-relaxed text-cyan-100/90">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-cyan-400" />
         <span>
-          Browser players stream directly from this gateway over the LAN using HTTP range requests, so no
-          download step is required. Use <strong className="text-cyan-200">Group Play</strong> to load a video on one
-          or more headsets on a shared start timestamp, or pick a video from a headset card on the Headsets page for
-          independent playback. <strong className="text-cyan-200">Native Deploy</strong> only applies to an optional
-          native Quest client; browser players ignore download commands.
+          Use <strong className="text-cyan-200">Send to Headsets</strong> to download a verified offline copy
+          onto connected browser players or native Quest clients. Browser player downloads appear under
+          <strong className="text-cyan-200"> Downloads</strong> on the headset and can be played there without
+          streaming. Keep the player open until the transfer finishes. Use <strong className="text-cyan-200">Group
+          Play</strong> for synchronized playback across several headsets.
         </span>
       </div>
 
@@ -170,11 +170,11 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   </button>
                   <button
                     onClick={() => setDeployTarget(video)}
-                    title="Download to the optional native Quest client. Browser players stream directly."
+                    title="Download an offline copy to selected Quest headsets"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 hover:bg-cyan-900 border border-cyan-800 font-semibold text-xs transition"
                   >
                     <DownloadCloud className="w-3.5 h-3.5" />
-                    <span>Native Deploy</span>
+                    <span>Send to Headsets</span>
                   </button>
                 </div>
 

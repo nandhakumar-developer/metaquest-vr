@@ -379,7 +379,7 @@ export const authOkPayloadSchema = z
     config: z
       .object({
         heartbeatIntervalMs: z.number().int().min(1000).max(60_000),
-        previewMaxFps: z.number().int().min(1).max(10),
+        previewMaxFps: z.number().int().min(5).max(15),
         timeoutsMs: z.number().int().min(1000).max(120_000),
       })
       .strict(),

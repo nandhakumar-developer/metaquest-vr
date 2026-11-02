@@ -217,12 +217,12 @@ export const SettingsView: React.FC = () => {
 
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                Preview Snapshot Max FPS (1-5)
+                Preview Snapshot Max FPS (5-15)
               </label>
               <input
                 type="number"
-                min={1}
-                max={5}
+                min={5}
+                max={15}
                 value={formSettings.previewMaxFps}
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, previewMaxFps: Number(e.target.value) })
@@ -230,7 +230,8 @@ export const SettingsView: React.FC = () => {
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
               />
               <span className="text-[11px] text-slate-500">
-                Low frame rate protects headset decoding performance.
+                The preview defaults to 12 FPS. Higher values look smoother but use more headset and
+                network capacity; snapshots may slow down on a busy device or Wi-Fi connection.
               </span>
             </div>
 

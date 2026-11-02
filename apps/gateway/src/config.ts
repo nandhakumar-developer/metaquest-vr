@@ -3,6 +3,7 @@ import { homedir, networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+import { DEFAULT_PREVIEW_MAX_FPS } from '@vrcc/protocol';
 
 export interface SupabaseConfig {
   url: string | null;
@@ -59,6 +60,19 @@ const numberFromEnv = (fallback: number, min: number, max: number) =>
     )
     .default(fallback);
 
+const previewFpsFromEnv = () =>
+  z
+    .preprocess(
+      (value) => {
+        if (value === undefined || value === '') return undefined;
+        const parsed = Number(value);
+        // PREVIEW_MAX_FPS=1 was the old sample default, not a useful target.
+        return parsed === 1 ? DEFAULT_PREVIEW_MAX_FPS : parsed;
+      },
+      z.number().int().min(5).max(15),
+    )
+    .default(DEFAULT_PREVIEW_MAX_FPS);
+
 const boolFromEnv = (fallback: boolean) =>
   z
     .preprocess((value) => {
@@ -91,7 +105,7 @@ const envSchema = z.object({
   PAIRING_MAX_ATTEMPTS: numberFromEnv(5, 1, 50),
   ADMIN_SESSION_TTL_HOURS: numberFromEnv(12, 1, 24 * 30),
   RETENTION_DAYS: numberFromEnv(30, 1, 3_650),
-  PREVIEW_MAX_FPS: numberFromEnv(1, 1, 10),
+  PREVIEW_MAX_FPS: previewFpsFromEnv(),
   PREVIEW_MAX_JPEG_BYTES: numberFromEnv(250_000, 10_000, 2_000_000),
   MAX_VIDEO_UPLOAD_BYTES: numberFromEnv(21_474_836_480, 1_048_576, 200_000_000_000),
   MAX_CONCURRENT_DOWNLOADS_PER_DEVICE: numberFromEnv(1, 1, 4),

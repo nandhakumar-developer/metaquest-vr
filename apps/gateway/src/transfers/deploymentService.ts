@@ -122,14 +122,6 @@ export class DeploymentService {
         errors.push({ deviceId, message: 'Device is unpaired and cannot receive videos' });
         continue;
       }
-      if (device.appVersion?.includes('browser')) {
-        errors.push({
-          deviceId,
-          message:
-            'Browser players stream from the gateway library directly and do not accept download deployments',
-        });
-        continue;
-      }
       const free = device.storage.freeBytes;
       if (free !== null && video.sizeBytes > free) {
         errors.push({

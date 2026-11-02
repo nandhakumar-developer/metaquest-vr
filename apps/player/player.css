@@ -776,13 +776,162 @@ summary:focus-visible {
   color: white;
 }
 
-.library-list {
-  display: flex;
+.library-body {
   flex: 1;
-  flex-direction: column;
-  gap: 9px;
   overflow-y: auto;
   padding: 14px;
+}
+
+.library-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 2px 9px;
+}
+
+.library-section-heading--gateway {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(51, 65, 85, 0.55);
+}
+
+.library-section-title {
+  color: #dbeafe;
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.library-section-subtitle {
+  margin-top: 3px;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.library-section-badge {
+  padding: 3px 7px;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  border-radius: 999px;
+  background: rgba(6, 78, 59, 0.26);
+  color: #a7f3d0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.downloads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.download-item {
+  padding: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.74);
+  border-radius: 12px;
+  background: rgba(13, 20, 34, 0.76);
+}
+
+.download-item--active {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(8, 47, 73, 0.36);
+}
+
+.download-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.download-item-copy {
+  min-width: 0;
+}
+
+.download-item-title {
+  overflow: hidden;
+  color: #eef6ff;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.download-progress {
+  height: 6px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(51, 65, 85, 0.70);
+}
+
+.download-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0891b2, #22d3ee);
+  transition: width 160ms linear;
+}
+
+.download-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.download-button {
+  padding: 5px 9px;
+  border: 1px solid rgba(34, 211, 238, 0.30);
+  border-radius: 7px;
+  background: rgba(8, 47, 73, 0.55);
+  color: #a5f3fc;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.download-button:hover {
+  background: rgba(14, 116, 144, 0.45);
+}
+
+.download-button--danger {
+  border-color: rgba(251, 113, 133, 0.28);
+  background: rgba(76, 5, 25, 0.34);
+  color: #fecdd3;
+}
+
+.download-button--danger:hover {
+  background: rgba(127, 29, 29, 0.45);
+}
+
+.downloads-empty {
+  padding: 14px;
+  border: 1px dashed rgba(51, 65, 85, 0.76);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
 .library-item {
@@ -804,6 +953,16 @@ summary:focus-visible {
 .library-item:hover {
   border-color: rgba(34, 211, 238, 0.34);
   background: rgba(18, 29, 47, 0.92);
+}
+
+.library-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.library-item:disabled:hover {
+  border-color: rgba(51, 65, 85, 0.74);
+  background: rgba(13, 20, 34, 0.76);
 }
 
 .library-item:active {
@@ -871,6 +1030,12 @@ summary:focus-visible {
 .library-pill--warn {
   border-color: rgba(251, 191, 36, 0.25);
   color: #fde68a;
+}
+
+.library-pill--offline {
+  border-color: rgba(52, 211, 153, 0.30);
+  background: rgba(6, 78, 59, 0.22);
+  color: #a7f3d0;
 }
 
 .library-empty {

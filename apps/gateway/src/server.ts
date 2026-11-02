@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { createReadStream, existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { ServerOptions as HttpsServerOptions } from 'node:https';
@@ -229,19 +229,27 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
   const playerDir = path.join(config.repoRoot, 'apps', 'player');
   if (existsSync(path.join(playerDir, 'index.html'))) {
     const require = createRequire(import.meta.url);
-    let threeModulePath: string | null = null;
+    let threeBuildDir: string | null = null;
     try {
-      const threeRoot = path.dirname(require.resolve('three/package.json'));
-      const candidate = path.join(threeRoot, 'build', 'three.module.js');
-      if (existsSync(candidate)) threeModulePath = candidate;
+      // `three/package.json` is not exposed through the package `exports` map,
+      // so resolve the main entry instead and use its containing build folder.
+      const threeEntry = require.resolve('three');
+      const candidate = path.dirname(threeEntry);
+      if (existsSync(path.join(candidate, 'three.module.js'))) threeBuildDir = candidate;
     } catch {
       // three is optional; the player falls back to non-WebXR playback.
     }
-    if (threeModulePath) {
-      app.get('/player/vendor/three.module.js', async (_request, reply) => {
-        reply.header('Content-Type', 'text/javascript; charset=utf-8');
-        reply.header('Cache-Control', 'public, max-age=604800, immutable');
-        return reply.send(createReadStream(threeModulePath!));
+    if (threeBuildDir) {
+      // three.module.js imports ./three.core.js, so serve the whole build
+      // directory rather than a single file.
+      await app.register(fastifyStatic, {
+        root: threeBuildDir,
+        prefix: '/player/vendor/',
+        decorateReply: false,
+        setHeaders: (reply: any) => {
+          const val = 'public, max-age=604800, immutable';
+          if (typeof reply.header === 'function') reply.header('Cache-Control', val);
+        },
       });
     }
     await app.register(fastifyStatic, {

@@ -416,7 +416,7 @@ class SimulatedQuest {
 
   private startPreview(): void {
     if (this.previewInterval) clearInterval(this.previewInterval);
-    process.stdout.write(`Starting 1 FPS snapshot preview generator...\n`);
+    process.stdout.write(`Starting 12 FPS snapshot preview generator...\n`);
     this.previewInterval = setInterval(() => {
       this.send('PREVIEW_SIGNAL', {
         mode: 'snapshot',
@@ -435,7 +435,7 @@ class SimulatedQuest {
         sampleTimestamp: new Date().toISOString(),
         sessionActive: true,
       });
-    }, 1000);
+    }, Math.round(1000 / 12));
   }
 
   private stopPreview(): void {

@@ -10,7 +10,7 @@ const settingsPatchSchema = z
   .object({
     staleAfterSeconds: z.number().int().min(5).max(120).optional(),
     seekStepSeconds: z.number().int().min(1).max(30).optional(),
-    previewMaxFps: z.number().int().min(1).max(5).optional(),
+    previewMaxFps: z.number().int().min(5).max(15).optional(),
     defaultVolume: z.number().min(0).max(1).optional(),
     confirmDestructiveActions: z.boolean().optional(),
   })

@@ -20,7 +20,7 @@ export const DeploymentsView: React.FC = () => {
             Active Transfers & Deployments ({deployments.length})
           </h2>
           <p className="text-xs text-slate-400">
-            Real-time status of high-speed HTTP range video transfers to Quest headsets
+            Local headset download progress and checksum verification. Shared library playback remains separate.
           </p>
         </div>
       </div>

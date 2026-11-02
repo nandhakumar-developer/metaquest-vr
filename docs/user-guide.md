@@ -40,12 +40,14 @@ confirmation. Instant "Play All" is intentionally absent; use Group Playback ins
 
 ## Video Library
 
-Upload MP4, M4V, MOV, MKV, or WebM files. Files stay in `storage/videos` on the PC.
+Upload MP4, M4V, MOV, MKV, or WebM files. The source stays in `storage/videos` on the PC;
+headset downloads are stored in the Quest browser's local site storage.
 
-- Browser players stream directly from the gateway. No download is required.
+- **Send to Headsets** downloads a verified offline copy to the connected Quest browser player.
+  The headset opens **Downloads** and shows progress; use **Play offline** when the transfer
+  finishes. Keep the player tab open during the transfer.
 - **Group Play** opens Group Playback with that video preselected.
-- **Native Deploy** is only for the optional future native client. Browser players reject
-  deployments, and the modal explains this.
+- Native Quest clients can also receive downloads and verify their checksums.
 - **Preview** plays the file in the admin browser.
 - H.264 video + AAC audio in MP4 is the safest combination for Meta Quest Browser.
 - If FFmpeg is missing, duration/codec metadata and thumbnails may be unavailable and the

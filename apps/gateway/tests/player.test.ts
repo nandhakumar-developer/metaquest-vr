@@ -192,6 +192,24 @@ describe('Browser player pairing, library and streaming', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('serves the vendored Three.js modules used by WebXR playback', async () => {
+    const moduleRes = await server.app.inject({
+      method: 'GET',
+      url: '/player/vendor/three.module.js',
+    });
+    expect(moduleRes.statusCode).toBe(200);
+    expect(String(moduleRes.headers['content-type'])).toContain('javascript');
+    expect(moduleRes.body).toContain("from './three.core.js'");
+
+    // three.module.js imports ./three.core.js at runtime, so it must resolve too.
+    const coreRes = await server.app.inject({
+      method: 'GET',
+      url: '/player/vendor/three.core.js',
+    });
+    expect(coreRes.statusCode).toBe(200);
+    expect(String(coreRes.headers['content-type'])).toContain('javascript');
+  });
+
   it('exposes the player URL and QR for the pairing modal', async () => {
     const res = await server.app.inject({
       method: 'GET',

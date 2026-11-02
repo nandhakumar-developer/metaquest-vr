@@ -6,7 +6,7 @@ import {
   setConnection,
   showToast,
 } from './components/ui.js';
-import { sha256Hex } from './components/sha256.js';
+import { createSha256, sha256Hex } from './components/sha256.js';
 import { createImmersivePlayer } from './webxr/immersive.js';
 
 const PLAYER_VERSION = '1.0.0-browser';
@@ -16,7 +16,12 @@ const STORAGE = {
   pending: 'vrcc.player.pending.v1',
   volume: 'vrcc.player.volume.v1',
   muted: 'vrcc.player.muted.v1',
+  downloads: 'vrcc.player.downloads.v1',
+  libraryCache: 'vrcc.player.library.v1',
 };
+const OFFLINE_DB_NAME = 'vrcc-offline-media';
+const OFFLINE_DB_VERSION = 1;
+const PROGRESS_REPORT_INTERVAL_MS = 250;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SECRET_RE = /^[0-9a-f]{64}$/i;
 
@@ -65,6 +70,9 @@ const el = {
   libraryList: $('#library-list'),
   libraryCount: $('#library-count'),
   libraryEmpty: $('#library-empty'),
+  downloadsList: $('#downloads-list'),
+  downloadsEmpty: $('#downloads-empty'),
+  downloadsSummary: $('#downloads-summary'),
 
   seek: $('#seek'),
   timeCurrent: $('#time-current'),
@@ -97,6 +105,7 @@ const state = {
   wsExpectedClose: false,
   wsRetry: 0,
   wsRetryTimer: null,
+  hasConnected: false,
   heartbeatTimer: null,
   libraryRefreshTimer: null,
   sessionRefresh: null,
@@ -114,12 +123,22 @@ const state = {
   scheduleBaseSeconds: 0,
   previewTimer: null,
   previewActive: false,
+  previewCanvas: null,
+  previewCapturePending: false,
   lastPoseSentAt: 0,
   immersive: null,
   isImmersive: false,
   intent: 'idle',
   controlsTimer: null,
   battery: null,
+  downloads: {},
+  downloadJobs: new Map(),
+  offlineDb: null,
+  localMediaUrls: new Map(),
+  previewMaxFps: 12,
+  libraryFromCache: false,
+  storageEstimate: null,
+  storageEstimateAt: 0,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -162,6 +181,655 @@ function removeStorage(key) {
   } catch {
     // Ignore.
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Offline media storage                                                       */
+/* -------------------------------------------------------------------------- */
+
+function loadDownloadIndex() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE.downloads) || '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      state.downloads = parsed;
+    }
+  } catch {
+    state.downloads = {};
+  }
+}
+
+function saveDownloadIndex() {
+  writeStorage(STORAGE.downloads, JSON.stringify(state.downloads));
+}
+
+function openOfflineDb() {
+  if (state.offlineDb) return state.offlineDb;
+  if (!globalThis.indexedDB) {
+    return Promise.reject(
+      new Error('Offline storage is not available in this browser. Use Meta Quest Browser.'),
+    );
+  }
+  state.offlineDb = new Promise((resolve, reject) => {
+    const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('meta')) {
+        db.createObjectStore('meta', { keyPath: 'videoId' });
+      }
+      if (!db.objectStoreNames.contains('chunks')) {
+        const chunks = db.createObjectStore('chunks', { keyPath: 'key' });
+        chunks.createIndex('videoId', 'videoId', { unique: false });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => {
+      state.offlineDb = null;
+      reject(request.error ?? new Error('Could not open offline storage.'));
+    };
+    request.onblocked = () => {
+      state.offlineDb = null;
+      reject(new Error('Offline storage is blocked by another player tab.'));
+    };
+  });
+  return state.offlineDb;
+}
+
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('Offline storage request failed.'));
+  });
+}
+
+function idbTransactionDone(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error('Offline storage transaction failed.'));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error('Offline storage transaction was aborted.'));
+  });
+}
+
+async function getAllDownloadMeta() {
+  const db = await openOfflineDb();
+  const transaction = db.transaction('meta', 'readonly');
+  return idbRequest(transaction.objectStore('meta').getAll());
+}
+
+async function putDownloadMeta(meta) {
+  const db = await openOfflineDb();
+  const transaction = db.transaction('meta', 'readwrite');
+  transaction.objectStore('meta').put(meta);
+  await idbTransactionDone(transaction);
+}
+
+async function putDownloadChunk(videoId, index, data) {
+  const db = await openOfflineDb();
+  const transaction = db.transaction('chunks', 'readwrite');
+  transaction.objectStore('chunks').put({
+    key: `${videoId}:${String(index).padStart(8, '0')}`,
+    videoId,
+    index,
+    data,
+  });
+  await idbTransactionDone(transaction);
+}
+
+async function deleteDownloadedMedia(videoId) {
+  const db = await openOfflineDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(['meta', 'chunks'], 'readwrite');
+    transaction.objectStore('meta').delete(videoId);
+    const chunks = transaction.objectStore('chunks');
+    const cursorRequest = chunks.index('videoId').openKeyCursor(IDBKeyRange.only(videoId));
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+      if (!cursor) return;
+      chunks.delete(cursor.primaryKey);
+      cursor.continue();
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error('Could not delete offline media.'));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error('Offline media deletion was aborted.'));
+  });
+  revokeLocalMediaUrl(videoId);
+}
+
+async function buildDownloadedBlob(videoId) {
+  const db = await openOfflineDb();
+  const metaTransaction = db.transaction('meta', 'readonly');
+  const meta = await idbRequest(metaTransaction.objectStore('meta').get(videoId));
+  if (!meta) return null;
+  const chunksTransaction = db.transaction('chunks', 'readonly');
+  const chunks = await idbRequest(
+    chunksTransaction
+      .objectStore('chunks')
+      .index('videoId')
+      .getAll(IDBKeyRange.only(videoId)),
+  );
+  if (!Array.isArray(chunks) || chunks.length === 0) return null;
+  chunks.sort((left, right) => left.index - right.index);
+  return {
+    meta,
+    blob: new Blob(
+      chunks.map((chunk) => chunk.data),
+      { type: meta.mimeType || 'video/mp4' },
+    ),
+  };
+}
+
+function revokeLocalMediaUrl(videoId) {
+  const url = state.localMediaUrls.get(videoId);
+  if (url) {
+    URL.revokeObjectURL(url);
+    state.localMediaUrls.delete(videoId);
+  }
+}
+
+async function getLocalVideoUrl(videoId) {
+  if (state.localMediaUrls.has(videoId)) return state.localMediaUrls.get(videoId);
+  const record = state.downloads[videoId];
+  if (!record || record.status !== 'downloaded') return null;
+  try {
+    const downloaded = await buildDownloadedBlob(videoId);
+    if (!downloaded) {
+      delete state.downloads[videoId];
+      saveDownloadIndex();
+      renderDownloads();
+      renderLibrary();
+      return null;
+    }
+    const url = URL.createObjectURL(downloaded.blob);
+    state.localMediaUrls.set(videoId, url);
+    return url;
+  } catch (error) {
+    showToast(`Offline copy could not be opened: ${errorMessage(error)}`, 'error', 6000);
+    return null;
+  }
+}
+
+async function refreshDownloadsFromDb() {
+  try {
+    const metas = await getAllDownloadMeta();
+    const persisted = {};
+    for (const meta of metas) {
+      if (meta && typeof meta.videoId === 'string') {
+        persisted[meta.videoId] = { ...meta, status: 'downloaded', progress: 1 };
+      }
+    }
+    const interrupted = Object.entries(state.downloads)
+      .filter(([videoId, record]) => record?.status === 'downloading' && !persisted[videoId])
+      .map(([videoId]) => videoId);
+    state.downloads = persisted;
+    saveDownloadIndex();
+    renderDownloads();
+    renderLibrary();
+    for (const videoId of interrupted) {
+      void deleteDownloadedMedia(videoId).catch(() => undefined);
+    }
+  } catch {
+    // Offline storage may be unavailable; keep the localStorage index.
+    renderDownloads();
+  }
+}
+
+function downloadRecordToMedia(record) {
+  return {
+    id: record.videoId,
+    name: record.name || 'Downloaded video',
+    durationSeconds: record.durationSeconds ?? null,
+    sizeBytes: record.sizeBytes ?? 0,
+    width: null,
+    height: null,
+    videoCodec: null,
+    audioCodec: null,
+    projectionType: record.projectionType || 'flat',
+    stereoLayout: record.stereoLayout || 'mono',
+    compatibility: 'verified',
+    compatibilityNotes: null,
+    streamUrl: null,
+    thumbnailUrl: null,
+    offline: true,
+  };
+}
+
+function findVideo(videoId) {
+  const libraryVideo = state.library.find((video) => video.id === videoId);
+  if (libraryVideo) return libraryVideo;
+  const record = state.downloads[videoId];
+  return record ? downloadRecordToMedia(record) : null;
+}
+
+function cacheLibrary() {
+  writeStorage(
+    STORAGE.libraryCache,
+    JSON.stringify({
+      videos: state.library,
+      device: state.credentials
+        ? {
+            deviceId: state.credentials.deviceId,
+            name: state.credentials.name,
+            model: state.credentials.model,
+          }
+        : null,
+      savedAt: new Date().toISOString(),
+    }),
+  );
+}
+
+function restoreCachedLibrary() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE.libraryCache) || 'null');
+    if (parsed && Array.isArray(parsed.videos)) {
+      state.library = parsed.videos;
+      state.libraryFromCache = true;
+      renderLibrary();
+    }
+  } catch {
+    // Ignore a corrupt cache.
+  }
+}
+
+function requestPersistentStorage() {
+  try {
+    const request = navigator.storage?.persist?.();
+    if (request && typeof request.catch === 'function') request.catch(() => undefined);
+  } catch {
+    // Persistence is best effort; IndexedDB still works without it.
+  }
+}
+
+async function readStorageEstimate() {
+  if (
+    state.storageEstimate &&
+    Date.now() - state.storageEstimateAt < 15_000
+  ) {
+    return state.storageEstimate;
+  }
+  let estimate = { freeBytes: null, totalBytes: null };
+  try {
+    if (navigator.storage?.estimate) {
+      const result = await navigator.storage.estimate();
+      const quota = Number(result.quota);
+      const usage = Number(result.usage) || 0;
+      if (Number.isFinite(quota) && quota > 0) {
+        estimate = {
+          freeBytes: Math.max(0, Math.round(quota - usage)),
+          totalBytes: Math.round(quota),
+        };
+      }
+    }
+  } catch {
+    // Keep null storage values; the browser does not expose an estimate.
+  }
+  state.storageEstimate = estimate;
+  state.storageEstimateAt = Date.now();
+  return estimate;
+}
+
+function downloadStatusText(record) {
+  if (record.status === 'downloading') {
+    return `Downloading ${Math.round((record.progress || 0) * 100)}%`;
+  }
+  return 'Downloaded';
+}
+
+function renderDownloads() {
+  if (!el.downloadsList) return;
+  const records = Object.values(state.downloads).sort((left, right) => {
+    const leftActive = left.status === 'downloading' ? 0 : 1;
+    const rightActive = right.status === 'downloading' ? 0 : 1;
+    if (leftActive !== rightActive) return leftActive - rightActive;
+    return String(right.downloadedAt || '').localeCompare(String(left.downloadedAt || ''));
+  });
+  const downloading = records.filter((record) => record.status === 'downloading').length;
+  const storedBytes = records.reduce(
+    (total, record) =>
+      total + (record.status === 'downloaded' ? Number(record.sizeBytes) || 0 : 0),
+    0,
+  );
+
+  if (el.downloadsEmpty) el.downloadsEmpty.hidden = records.length > 0;
+  if (el.downloadsSummary) {
+    el.downloadsSummary.textContent =
+      records.length === 0
+        ? 'No offline copies'
+        : `${formatBytes(storedBytes)} stored${downloading > 0 ? ` · ${downloading} downloading` : ''}`;
+  }
+
+  el.downloadsList.replaceChildren();
+  for (const record of records) {
+    const item = document.createElement('div');
+    item.className = `download-item${record.status === 'downloading' ? ' download-item--active' : ''}`;
+
+    const head = document.createElement('div');
+    head.className = 'download-item-head';
+    const copy = document.createElement('div');
+    copy.className = 'download-item-copy';
+    const title = document.createElement('div');
+    title.className = 'download-item-title';
+    title.textContent = record.name || record.filename || 'Downloaded video';
+    title.title = title.textContent;
+    const meta = document.createElement('div');
+    meta.className = 'download-item-meta';
+    const size = document.createElement('span');
+    size.textContent = formatBytes(Number(record.sizeBytes) || 0);
+    const status = document.createElement('span');
+    status.textContent = downloadStatusText(record);
+    meta.append(size, status);
+    if (record.projectionType && record.projectionType !== 'flat') {
+      const projection = document.createElement('span');
+      projection.textContent = `${record.projectionType}°`;
+      meta.appendChild(projection);
+    }
+    copy.append(title, meta);
+    head.appendChild(copy);
+    item.appendChild(head);
+
+    if (record.status === 'downloading') {
+      const progress = document.createElement('div');
+      progress.className = 'download-progress';
+      const bar = document.createElement('div');
+      bar.className = 'download-progress-bar';
+      bar.style.width = `${Math.max(0, Math.min(100, (record.progress || 0) * 100))}%`;
+      progress.appendChild(bar);
+      item.appendChild(progress);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'download-actions';
+    if (record.status === 'downloading') {
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'download-button download-button--danger';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => cancelActiveDownload(record.videoId));
+      actions.appendChild(cancel);
+    } else {
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.className = 'download-button';
+      play.textContent = 'Play offline';
+      play.addEventListener('click', () => {
+        state.userInteracted = true;
+        void loadVideo(record.videoId)
+          .then(() => {
+            closeLibrary();
+            armControlsHide();
+          })
+          .catch((error) => showToast(errorMessage(error), 'error', 6000));
+      });
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'download-button download-button--danger';
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => {
+        if (!window.confirm(`Delete the offline copy of "${record.name || 'this video'}"?`)) {
+          return;
+        }
+        void removeDownload(record.videoId);
+      });
+      actions.append(play, remove);
+    }
+    item.appendChild(actions);
+    el.downloadsList.appendChild(item);
+  }
+}
+
+async function removeDownload(videoId) {
+  try {
+    await deleteDownloadedMedia(videoId);
+    delete state.downloads[videoId];
+    saveDownloadIndex();
+    renderDownloads();
+    renderLibrary();
+    if (state.current?.id === videoId && !state.wsAuthenticated) {
+      resetPlaybackUi();
+    }
+    showToast('Offline copy deleted.', 'success');
+    void sendDeviceStatus();
+  } catch (error) {
+    showToast(`Could not delete the offline copy: ${errorMessage(error)}`, 'error', 6000);
+  }
+}
+
+function cancelActiveDownload(videoId) {
+  for (const job of state.downloadJobs.values()) {
+    if (job.record.videoId === videoId) {
+      job.cancelled = true;
+      job.controller.abort();
+      return;
+    }
+  }
+}
+
+function reportDownloadProgress(job, force = false) {
+  const now = Date.now();
+  if (!force && now - job.lastReportAt < PROGRESS_REPORT_INTERVAL_MS) return;
+  job.lastReportAt = now;
+  const total = Math.max(0, Math.round(job.totalBytes));
+  const received = Math.max(0, Math.round(job.receivedBytes));
+  const progress = total > 0 ? Math.min(1, received / total) : 0;
+  job.record.progress = progress;
+  job.record.bytesReceived = received;
+  job.record.totalBytes = total;
+  renderDownloads();
+  const elapsedSeconds = Math.max(0.001, (now - job.startedAt) / 1000);
+  send('VIDEO_DOWNLOAD_PROGRESS', {
+    deploymentId: job.payload.deploymentId,
+    videoId: job.payload.videoId,
+    bytesReceived: received,
+    totalBytes: total,
+    progress,
+    throughputBytesPerSecond: Math.round(received / elapsedSeconds),
+  });
+}
+
+function reportDownloadFailure(payload, error) {
+  const message = errorMessage(error);
+  showToast(`Download failed: ${message}`, 'error', 7000);
+  send('VIDEO_READY', {
+    deploymentId: payload.deploymentId,
+    videoId: payload.videoId,
+    checksum: payload.checksum,
+    sizeBytes: 0,
+    checksumVerified: false,
+    localFilename: payload.filename || `${payload.videoId}.mp4`,
+  });
+}
+
+async function runDownload(job) {
+  const { payload, controller, record } = job;
+  let dbReady = false;
+  try {
+    await openOfflineDb();
+    dbReady = true;
+    await deleteDownloadedMedia(payload.videoId);
+    const response = await fetch(payload.url, {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'omit',
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Gateway returned HTTP ${response.status}`);
+    }
+    const headerTotal = Number(response.headers.get('content-length'));
+    job.totalBytes =
+      Number.isFinite(headerTotal) && headerTotal > 0
+        ? headerTotal
+        : Number(payload.sizeBytes) || 0;
+    record.sizeBytes = job.totalBytes || record.sizeBytes;
+    const hasher = createSha256();
+    let chunkIndex = 0;
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      const buffer = new Uint8Array(await response.arrayBuffer());
+      hasher.update(buffer);
+      job.receivedBytes = buffer.byteLength;
+      await putDownloadChunk(payload.videoId, chunkIndex, new Blob([buffer], {
+        type: 'application/octet-stream',
+      }));
+      chunkIndex += 1;
+      reportDownloadProgress(job, true);
+    } else {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (controller.signal.aborted) throw new Error('Download cancelled.');
+        if (!value || value.byteLength === 0) continue;
+        hasher.update(value);
+        job.receivedBytes += value.byteLength;
+        await putDownloadChunk(
+          payload.videoId,
+          chunkIndex,
+          new Blob([value], { type: 'application/octet-stream' }),
+        );
+        chunkIndex += 1;
+        reportDownloadProgress(job);
+      }
+    }
+
+    if (controller.signal.aborted) throw new Error('Download cancelled.');
+    if (job.totalBytes > 0 && job.receivedBytes !== job.totalBytes) {
+      throw new Error(
+        `Incomplete download: received ${formatBytes(job.receivedBytes)} of ${formatBytes(
+          job.totalBytes,
+        )}`,
+      );
+    }
+    const checksum = hasher.digestHex();
+    const expectedChecksum = String(payload.checksum || '').toLowerCase();
+    const checksumVerified = !expectedChecksum || checksum === expectedChecksum;
+    if (!checksumVerified) {
+      throw new Error('Checksum verification failed. The downloaded file is corrupt.');
+    }
+
+    const meta = {
+      videoId: payload.videoId,
+      deploymentId: payload.deploymentId,
+      name: payload.name,
+      filename: payload.filename,
+      checksum,
+      sizeBytes: job.receivedBytes,
+      mimeType: response.headers.get('content-type') || 'video/mp4',
+      durationSeconds: payload.durationSeconds ?? null,
+      projectionType: payload.projectionType,
+      stereoLayout: payload.stereoLayout,
+      chunkCount: chunkIndex,
+      checksumVerified,
+      downloadedAt: new Date().toISOString(),
+    };
+    await putDownloadMeta(meta);
+    state.downloads[payload.videoId] = {
+      ...meta,
+      status: 'downloaded',
+      progress: 1,
+      bytesReceived: job.receivedBytes,
+      totalBytes: job.receivedBytes,
+    };
+    saveDownloadIndex();
+    renderDownloads();
+    renderLibrary();
+    reportDownloadProgress(job, true);
+    send('VIDEO_READY', {
+      deploymentId: payload.deploymentId,
+      videoId: payload.videoId,
+      checksum,
+      sizeBytes: job.receivedBytes,
+      checksumVerified: true,
+      localFilename: payload.filename || `${payload.videoId}.mp4`,
+    });
+    showToast(`${payload.name || 'Video'} is ready to play offline.`, 'success', 4500);
+    void sendDeviceStatus();
+  } catch (error) {
+    state.downloadJobs.delete(payload.deploymentId);
+    if (dbReady) {
+      try {
+        await deleteDownloadedMedia(payload.videoId);
+      } catch {
+        // Best effort cleanup.
+      }
+    }
+    delete state.downloads[payload.videoId];
+    saveDownloadIndex();
+    renderDownloads();
+    renderLibrary();
+    if (!job.cancelled && !controller.signal.aborted) {
+      reportDownloadFailure(payload, error);
+    } else {
+      showToast('Download cancelled.', 'warn');
+    }
+  } finally {
+    state.downloadJobs.delete(payload.deploymentId);
+  }
+}
+
+function startDownload(payload) {
+  if (!payload || typeof payload !== 'object') return;
+  const { deploymentId, videoId } = payload;
+  if (typeof deploymentId !== 'string' || typeof videoId !== 'string') return;
+  if (state.downloadJobs.has(deploymentId)) return;
+
+  // Surface the on-headset download section even when this video is already
+  // stored locally and the gateway can complete the request immediately.
+  el.libraryPanel.hidden = false;
+
+  const existing = state.downloads[videoId];
+  if (existing?.status === 'downloaded' && existing.checksum === payload.checksum) {
+    send('VIDEO_DOWNLOAD_PROGRESS', {
+      deploymentId,
+      videoId,
+      bytesReceived: Number(existing.sizeBytes) || 0,
+      totalBytes: Number(existing.sizeBytes) || 0,
+      progress: 1,
+    });
+    send('VIDEO_READY', {
+      deploymentId,
+      videoId,
+      checksum: existing.checksum,
+      sizeBytes: Number(existing.sizeBytes) || 0,
+      checksumVerified: true,
+      localFilename: existing.filename || `${videoId}.mp4`,
+    });
+    return;
+  }
+
+  const record = {
+    videoId,
+    deploymentId,
+    name: payload.name,
+    filename: payload.filename,
+    sizeBytes: payload.sizeBytes,
+    totalBytes: payload.sizeBytes,
+    durationSeconds: payload.durationSeconds ?? null,
+    projectionType: payload.projectionType,
+    stereoLayout: payload.stereoLayout,
+    status: 'downloading',
+    progress: 0,
+    bytesReceived: 0,
+    downloadedAt: null,
+  };
+  state.downloads[videoId] = record;
+  saveDownloadIndex();
+  renderDownloads();
+  const controller = new AbortController();
+  const job = {
+    payload,
+    controller,
+    record,
+    receivedBytes: 0,
+    totalBytes: Number(payload.sizeBytes) || 0,
+    startedAt: Date.now(),
+    lastReportAt: 0,
+    cancelled: false,
+  };
+  state.downloadJobs.set(deploymentId, job);
+  void runDownload(job);
 }
 
 function randomHex(bytes = 32) {
@@ -549,8 +1217,9 @@ async function resumeWithCredentials(credentials) {
       showPairing(errorMessage(error), 'resume');
       return;
     }
-    showToast('Gateway is unreachable. Will keep retrying the live connection.', 'warn');
-    setConnection('offline', 'Gateway offline');
+    // Keep local downloads available without showing a fatal-looking error.
+    // The WebSocket status pill continues to report automatic retry attempts.
+    setConnection('offline', 'Offline playback');
   }
   connectWebSocket();
 }
@@ -592,13 +1261,21 @@ async function loadSession(credentials) {
     secret: credentials.secret,
   };
   saveCredentials(state.credentials);
+  state.libraryFromCache = false;
+  cacheLibrary();
   updatePlayerIdentity();
   renderLibrary();
+  renderDownloads();
   if (state.current) {
     const refreshed = state.library.find((video) => video.id === state.current.id);
     if (!refreshed) {
-      resetPlaybackUi();
-      showToast('The video that was playing was removed from the library.', 'warn');
+      if (state.downloads[state.current.id]?.status === 'downloaded') {
+        state.current = downloadRecordToMedia(state.downloads[state.current.id]);
+        updateNowPlaying();
+      } else {
+        resetPlaybackUi();
+        showToast('The video that was playing was removed from the library.', 'warn');
+      }
     } else {
       state.current = refreshed;
       updateNowPlaying();
@@ -656,6 +1333,7 @@ function envelope(type, payload, messageId = uuid()) {
 
 function send(type, payload) {
   if (!state.ws || state.ws.readyState !== WebSocket.OPEN || !state.credentials) return false;
+  if (type === 'PREVIEW_SIGNAL' && state.ws.bufferedAmount > 300_000) return false;
   try {
     state.ws.send(JSON.stringify(envelope(type, payload)));
     return true;
@@ -728,6 +1406,7 @@ function connectWebSocket() {
     state.ws = null;
     state.wsAuthenticated = false;
     stopHeartbeat();
+    renderLibrary();
     setConnection('offline', 'Disconnected');
     if (event.code === 4001) {
       clearPlayerCredential(false);
@@ -770,16 +1449,34 @@ function disconnectSocket() {
     }
     state.ws = null;
   }
+  renderLibrary();
   setConnection('offline', 'Disconnected');
+}
+
+function applyRuntimeConfig(config) {
+  if (!config) return;
+  if (config.heartbeatIntervalMs) {
+    state.heartbeatIntervalMs = clamp(Number(config.heartbeatIntervalMs), 1000, 60000);
+  }
+  const nextFps = Number(config.previewMaxFps);
+  if (Number.isFinite(nextFps) && nextFps > 0) {
+    const clamped = clamp(nextFps, 5, 15);
+    if (clamped !== state.previewMaxFps) {
+      state.previewMaxFps = clamped;
+      if (state.previewActive) {
+        void startPreview().catch((error) =>
+          showToast(`Could not restart preview: ${errorMessage(error)}`, 'error'),
+        );
+      }
+    }
+  }
 }
 
 function handleAuthOk(message) {
   state.wsAuthenticated = true;
   state.wsRetry = 0;
-  const config = message.payload?.config;
-  if (config?.heartbeatIntervalMs) {
-    state.heartbeatIntervalMs = clamp(Number(config.heartbeatIntervalMs), 1000, 60000);
-  }
+  renderLibrary();
+  applyRuntimeConfig(message.payload?.config);
   if (message.payload?.serverTime) {
     const serverTime = Date.parse(message.payload.serverTime);
     if (Number.isFinite(serverTime)) state.serverOffsetMs = serverTime - Date.now();
@@ -790,7 +1487,10 @@ function handleAuthOk(message) {
     updatePlayerIdentity();
   }
   setConnection('online', 'Live');
-  showToast('Connected to the gateway.', 'success');
+  if (!state.hasConnected) {
+    state.hasConnected = true;
+    showToast('Connected to the gateway.', 'success');
+  }
   startHeartbeat();
   void sendDeviceStatus();
   void sampleClock();
@@ -913,10 +1613,27 @@ async function handleGatewayMessage(message) {
       showToast(message.payload?.message || 'Gateway reported a protocol error.', 'error');
       break;
     }
-    case 'CONFIG_UPDATE':
-    case 'DOWNLOAD_VIDEO':
-    case 'CANCEL_DOWNLOAD':
+    case 'CONFIG_UPDATE': {
+      applyRuntimeConfig(message.payload);
+      ack(message.messageId, true);
       break;
+    }
+    case 'DOWNLOAD_VIDEO': {
+      try {
+        startDownload(message.payload);
+        ack(message.messageId, true);
+      } catch (error) {
+        ack(message.messageId, false, errorMessage(error));
+      }
+      break;
+    }
+    case 'CANCEL_DOWNLOAD': {
+      if (message.payload?.videoId) {
+        cancelActiveDownload(message.payload.videoId);
+      }
+      ack(message.messageId, true);
+      break;
+    }
     default:
       break;
   }
@@ -982,19 +1699,19 @@ function sendPlaybackEvent(event = playbackEventName()) {
 
 async function sendDeviceStatus() {
   if (!state.wsAuthenticated) return;
-  const battery = await readBattery();
+  const [battery, storage] = await Promise.all([readBattery(), readStorageEstimate()]);
   send('DEVICE_STATUS', {
     appVersion: PLAYER_VERSION,
     model: state.model,
     batteryLevel: battery.level,
     charging: battery.charging,
     playback: playbackSnapshot(),
-    // The browser player streams from the gateway, so its "inventory" is the
-    // shared library exposed by /api/player/session.
-    inventoryCount: state.library.length,
-    // navigator.storage.estimate() reports this origin's browser quota, not
-    // the headset's free disk. Report null instead of a misleading value.
-    storage: { freeBytes: null, totalBytes: null },
+    // The browser player exposes the shared gateway library plus its own
+    // offline-download index, so report the gateway library count.
+    inventoryCount: state.library.length || Object.keys(state.downloads).length,
+    // navigator.storage.estimate() reports this origin's browser quota. It is
+    // the space available for offline copies on this headset.
+    storage,
     uptimeSeconds: Math.max(0, Math.floor(performance.now() / 1000)),
     capabilities: capabilities(),
   });
@@ -1035,7 +1752,6 @@ function startHeartbeat() {
       void refreshSession(false);
     }
   }, 30000);
-  document.addEventListener('visibilitychange', onVisibilityChange);
 }
 
 function stopHeartbeat() {
@@ -1047,13 +1763,21 @@ function stopHeartbeat() {
     clearInterval(state.libraryRefreshTimer);
     state.libraryRefreshTimer = null;
   }
-  document.removeEventListener('visibilitychange', onVisibilityChange);
 }
 
 function onVisibilityChange() {
-  if (document.visibilityState === 'visible') {
-    void sendDeviceStatus();
-    if (state.wsAuthenticated) void refreshSession(false);
+  if (document.visibilityState !== 'visible') return;
+  if (!state.wsAuthenticated) {
+    if (state.credentials) connectWebSocket();
+    return;
+  }
+  void sendDeviceStatus();
+  void refreshSession(false);
+}
+
+function onBrowserOnline() {
+  if (state.credentials && !state.authPermanentFailure && !state.wsAuthenticated) {
+    connectWebSocket();
   }
 }
 
@@ -1068,7 +1792,7 @@ function setPlaybackState(next, options = {}) {
   if (next !== 'error') state.playbackError = options.clearError === false ? state.playbackError : null;
   updateTransportUi();
   if (changed || options.force) sendPlaybackEvent(playbackEventName(next));
-  if (next === 'playing') armControlsHide();
+  if (next === 'playing' && !state.isImmersive) armControlsHide();
   else showControls();
 }
 
@@ -1080,29 +1804,42 @@ function playbackError(message) {
 }
 
 async function loadVideo(videoId) {
-  let video = state.library.find((item) => item.id === videoId);
+  let video = findVideo(videoId);
   if (!video) {
     // An upload can complete between the last library refresh and the admin
     // pressing Play/Load. Fetch once more before rejecting the command.
-    await refreshSession(false);
-    video = state.library.find((item) => item.id === videoId);
+    if (state.wsAuthenticated) {
+      await refreshSession(false);
+      video = findVideo(videoId);
+    }
+  }
+  if (!video && state.downloads[videoId]) {
+    video = downloadRecordToMedia(state.downloads[videoId]);
   }
   if (!video) throw new Error('That video is not available in this headset library.');
   clearSchedule();
+
+  const localCopyExpected = state.downloads[video.id]?.status === 'downloaded';
+  let localUrl = null;
   if (state.current?.id === video.id && el.video.src && el.video.readyState >= 1) {
-    clearSchedule();
-    state.intent = 'load';
-    el.video.pause();
-    state.intent = 'idle';
-    showVideoSurface();
-    updateNowPlaying();
-    hideLoading();
-    hideVideoError();
-    // Emit a confirmed ready event even when the file is already buffered so a
-    // scheduled group LOAD_VIDEO command can complete without waiting for the
-    // 15-second ready timeout.
-    setPlaybackState('ready', { force: true, clearError: true });
-    return;
+    localUrl = await getLocalVideoUrl(video.id);
+    if (!state.current || state.current.id !== video.id) return;
+    const currentUrl = el.video.currentSrc || el.video.src;
+    if ((!localCopyExpected && !localUrl) || currentUrl === localUrl) {
+      clearSchedule();
+      state.intent = 'load';
+      el.video.pause();
+      state.intent = 'idle';
+      showVideoSurface();
+      updateNowPlaying();
+      hideLoading();
+      hideVideoError();
+      // Emit a confirmed ready event even when the file is already buffered so a
+      // scheduled group LOAD_VIDEO command can complete without waiting for the
+      // 15-second ready timeout.
+      setPlaybackState('ready', { force: true, clearError: true });
+      return;
+    }
   }
 
   state.intent = 'load';
@@ -1118,7 +1855,17 @@ async function loadVideo(videoId) {
     el.video.pause();
     el.video.muted = state.muted;
     el.video.volume = clamp(state.volume, 0, 1);
-    el.video.src = video.streamUrl;
+    localUrl = localUrl || (await getLocalVideoUrl(video.id));
+    if (!state.current || state.current.id !== video.id) return;
+    const sourceUrl = localUrl || (localCopyExpected ? null : video.streamUrl);
+    if (!sourceUrl) {
+      throw new Error(
+        localCopyExpected
+          ? 'The saved offline copy is unavailable. Delete it and download the video again.'
+          : 'This video is not downloaded and the headset is offline.',
+      );
+    }
+    el.video.src = sourceUrl;
     el.video.load();
     await waitForMedia(el.video, 'loadedmetadata', 25000);
     if (!state.current || state.current.id !== video.id) return;
@@ -1129,7 +1876,11 @@ async function loadVideo(videoId) {
     if (state.immersive) state.immersive.setMedia(video);
     updateTransportUi();
     updateNowPlaying();
-    showToast(`Loaded ${video.name}`, 'success', 2400);
+    showToast(
+      `Loaded ${video.name}${localUrl ? ' (offline copy)' : ''}`,
+      'success',
+      2400,
+    );
   } catch (error) {
     hideLoading();
     if (!state.current || state.current.id !== video.id) return;
@@ -1315,6 +2066,7 @@ async function ensureImmersive() {
   state.immersive = await createImmersivePlayer({
     video: el.video,
     canvas: el.xrCanvas,
+    overlayRoot: el.controls,
     onHeadPose: (pose) => {
       if (!state.previewActive) return;
       const now = Date.now();
@@ -1326,14 +2078,28 @@ async function ensureImmersive() {
         sessionActive: true,
       });
     },
-    onSessionChange: (active) => {
+    onSessionChange: (active, hasDomOverlay = false) => {
       state.isImmersive = active;
       el.btnEnterVr.hidden = active;
       el.btnExitVr.hidden = !active;
       el.titleOverlay.hidden = active || !state.current;
       showControls();
       if (active) {
-        showToast('Immersive mode active. Exit from the Quest browser menu.', 'success', 5000);
+        showToast(
+          hasDomOverlay
+            ? 'Playback controls stay visible at the bottom of the view.'
+            : 'Use the Quest controller trigger to pause or resume. Exit VR to seek or change volume.',
+          'success',
+          5000,
+        );
+      }
+    },
+    onControllerSelect: () => {
+      state.userInteracted = true;
+      if (['playing', 'buffering'].includes(state.playbackState)) {
+        pauseVideo();
+      } else {
+        void playVideo().catch((error) => showToast(errorMessage(error), 'error'));
       }
     },
     onError: (message) => {
@@ -1363,12 +2129,21 @@ async function startPreview() {
   if (!state.current) throw new Error('Load a video before requesting a preview.');
   stopPreview();
   state.previewActive = true;
-  const first = captureFrame();
-  if (first) sendPreviewFrame(first);
-  state.previewTimer = setInterval(() => {
-    const frame = captureFrame();
-    if (frame) sendPreviewFrame(frame);
-  }, 1000);
+  void captureAndSendPreview();
+  const fps = clamp(Number(state.previewMaxFps) || 12, 5, 15);
+  const intervalMs = Math.max(66, Math.round(1000 / fps));
+  state.previewTimer = setInterval(() => void captureAndSendPreview(), intervalMs);
+}
+
+async function captureAndSendPreview() {
+  if (!state.previewActive || state.previewCapturePending) return;
+  state.previewCapturePending = true;
+  try {
+    const frame = await captureFrame();
+    if (frame && state.previewActive) sendPreviewFrame(frame);
+  } finally {
+    state.previewCapturePending = false;
+  }
 }
 
 function stopPreview() {
@@ -1379,38 +2154,53 @@ function stopPreview() {
   }
 }
 
-function captureFrame() {
-  if (state.isImmersive && state.immersive) {
-    const dataUrl = state.immersive.capture();
-    if (!dataUrl) return null;
-    return {
-      dataUrl,
-      width: el.xrCanvas.width,
-      height: el.xrCanvas.height,
-    };
+async function captureFrame() {
+  const source = state.isImmersive ? el.xrCanvas : el.video;
+  const width = state.isImmersive ? el.xrCanvas.width : el.video.videoWidth;
+  const height = state.isImmersive ? el.xrCanvas.height : el.video.videoHeight;
+  if (!width || !height || (!state.isImmersive && el.video.readyState < 2)) return null;
+  const canvas = state.previewCanvas || document.createElement('canvas');
+  state.previewCanvas = canvas;
+  const scale = Math.min(1, 540 / width);
+  const targetWidth = Math.max(2, Math.round(width * scale));
+  const targetHeight = Math.max(2, Math.round(height * scale));
+  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
   }
-  const width = el.video.videoWidth;
-  const height = el.video.videoHeight;
-  if (!width || !height || el.video.readyState < 2) return null;
-
-  const canvas = document.createElement('canvas');
-  const scale = Math.min(1, 960 / width);
-  canvas.width = Math.max(2, Math.round(width * scale));
-  canvas.height = Math.max(2, Math.round(height * scale));
   const context = canvas.getContext('2d');
   if (!context) return null;
   try {
-    context.drawImage(el.video, 0, 0, canvas.width, canvas.height);
-    let quality = 0.72;
-    let dataUrl = canvas.toDataURL('image/jpeg', quality);
-    while (dataUrl.length > 1_700_000 && quality > 0.32) {
-      quality -= 0.15;
-      dataUrl = canvas.toDataURL('image/jpeg', quality);
-    }
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const dataUrl = await canvasToDataUrl(canvas, 0.5);
+    if (!dataUrl) return null;
     return { dataUrl, width: canvas.width, height: canvas.height };
   } catch {
     return null;
   }
+}
+
+async function canvasToDataUrl(canvas, initialQuality) {
+  if (typeof canvas.toBlob !== 'function') {
+    return canvas.toDataURL('image/jpeg', initialQuality);
+  }
+  let quality = initialQuality;
+  let blob = await new Promise((resolve) => {
+    canvas.toBlob(resolve, 'image/jpeg', quality);
+  });
+  while (blob && blob.size > 220_000 && quality > 0.26) {
+    quality -= 0.06;
+    blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    });
+  }
+  if (!blob) return null;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(blob);
+  });
 }
 
 function sendPreviewFrame(frame) {
@@ -1453,6 +2243,11 @@ function renderLibrary() {
     button.type = 'button';
     button.className = 'library-item';
     button.setAttribute('aria-current', state.current?.id === video.id ? 'true' : 'false');
+    const offlineCopy = state.downloads[video.id];
+    const hasOfflineCopy = offlineCopy?.status === 'downloaded';
+    const canStream = state.wsAuthenticated && !state.libraryFromCache;
+    button.disabled = !canStream && !hasOfflineCopy;
+    if (button.disabled) button.title = 'Reconnect to the gateway to stream this video.';
 
     const thumb = document.createElement('div');
     thumb.className = 'library-thumb';
@@ -1496,6 +2291,22 @@ function renderLibrary() {
       warning.className = 'library-pill library-pill--warn';
       warning.textContent = 'Unverified';
       meta.appendChild(warning);
+    }
+    if (offlineCopy?.status === 'downloaded') {
+      const downloaded = document.createElement('span');
+      downloaded.className = 'library-pill library-pill--offline';
+      downloaded.textContent = 'Downloaded';
+      meta.appendChild(downloaded);
+    } else if (offlineCopy?.status === 'downloading') {
+      const downloading = document.createElement('span');
+      downloading.className = 'library-pill library-pill--offline';
+      downloading.textContent = `Downloading ${Math.round((offlineCopy.progress || 0) * 100)}%`;
+      meta.appendChild(downloading);
+    } else if (button.disabled) {
+      const unavailable = document.createElement('span');
+      unavailable.className = 'library-pill library-pill--warn';
+      unavailable.textContent = 'Reconnect to play';
+      meta.appendChild(unavailable);
     }
 
     copy.append(title, meta);
@@ -1660,7 +2471,12 @@ function armControlsHide() {
     clearTimeout(state.controlsTimer);
     state.controlsTimer = null;
   }
-  if (!state.current || !el.libraryPanel.hidden || state.playbackState !== 'playing') return;
+  if (
+    !state.current ||
+    !el.libraryPanel.hidden ||
+    state.playbackState !== 'playing' ||
+    state.isImmersive
+  ) return;
   state.controlsTimer = setTimeout(() => {
     if (state.playbackState === 'playing' && el.libraryPanel.hidden) {
       el.stage.classList.add('controls-hidden');
@@ -1673,6 +2489,8 @@ function armControlsHide() {
 /* -------------------------------------------------------------------------- */
 
 function bindUi() {
+  window.addEventListener('online', onBrowserOnline);
+  document.addEventListener('visibilitychange', onVisibilityChange);
   el.startPairing.addEventListener('click', () => void startPairing());
   el.cancelPairing.addEventListener('click', () => cancelPairing());
   el.repairHeadset.addEventListener('click', () => {
@@ -1858,6 +2676,10 @@ async function init() {
   void sampleClock();
 
   const credentials = loadCredentials();
+  loadDownloadIndex();
+  restoreCachedLibrary();
+  requestPersistentStorage();
+  void refreshDownloadsFromDb();
   if (credentials) {
     state.credentials = credentials;
     showPlayer();

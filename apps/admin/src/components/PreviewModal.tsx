@@ -1,9 +1,36 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.js';
+import { useActivePreview } from '../context/previewStore.js';
 import { X, Eye, Compass, Activity, Radio } from 'lucide-react';
 
 export const PreviewModal: React.FC = () => {
-  const { activePreview, devices, closeActivePreview } = useApp();
+  const activePreview = useActivePreview();
+  const { devices, settings, closeActivePreview } = useApp();
+  const [previewFps, setPreviewFps] = useState(0);
+  const frameTimes = useRef<{ deviceId: string; timestamps: number[] }>({
+    deviceId: '',
+    timestamps: [],
+  });
+
+  useEffect(() => {
+    if (!activePreview?.dataBase64) {
+      frameTimes.current = { deviceId: '', timestamps: [] };
+      setPreviewFps(0);
+      return;
+    }
+
+    const timestamp = Date.parse(activePreview.capturedAt);
+    if (!Number.isFinite(timestamp)) return;
+    if (frameTimes.current.deviceId !== activePreview.deviceId) {
+      frameTimes.current = { deviceId: activePreview.deviceId, timestamps: [] };
+    }
+    const timestamps = frameTimes.current.timestamps;
+    if (timestamps[timestamps.length - 1] === timestamp) return;
+    timestamps.push(timestamp);
+    while (timestamps.length > 1 && timestamp - timestamps[0] > 2000) timestamps.shift();
+    const elapsed = timestamp - timestamps[0];
+    setPreviewFps(elapsed > 0 ? Math.round(((timestamps.length - 1) * 1000) / elapsed) : 0);
+  }, [activePreview?.deviceId, activePreview?.capturedAt]);
 
   if (!activePreview) return null;
 
@@ -43,10 +70,12 @@ export const PreviewModal: React.FC = () => {
                 </h3>
                 <span className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
                   <Radio className="w-3 h-3 animate-pulse" />
-                  1 FPS Snapshot Stream
+                  Live Preview · Snapshots
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Real-time viewpoint monitoring for Meta Quest 2</p>
+              <p className="text-xs text-slate-400">
+                Target: {settings?.previewMaxFps ?? 12} FPS · Actual headset preview: {previewFps || 'waiting'} FPS
+              </p>
             </div>
           </div>
           <button
@@ -69,7 +98,7 @@ export const PreviewModal: React.FC = () => {
             ) : (
               <div className="text-center p-6 text-slate-500">
                 <Activity className="w-8 h-8 animate-spin mx-auto mb-2 text-cyan-500" />
-                <p className="text-sm">Connecting live stream from headset...</p>
+                <p className="text-sm">Waiting for the first headset snapshot...</p>
               </div>
             )}
 
@@ -103,7 +132,7 @@ export const PreviewModal: React.FC = () => {
         </div>
 
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Headset snapshots update every second while preview is open.</span>
+          <span>Snapshot preview updates while this view is open. Playback itself remains on the headset.</span>
           <button
             onClick={closeActivePreview}
             className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition"

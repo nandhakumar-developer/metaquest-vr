@@ -336,10 +336,13 @@ export class OpsRepository {
       return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : (DEFAULT_SETTINGS[key] as number);
     };
     const confirm = stored.get('confirmDestructiveActions');
+    const savedPreviewFps = Number(stored.get('previewMaxFps'));
+    const previewMaxFps =
+      savedPreviewFps === 1 ? DEFAULT_SETTINGS.previewMaxFps : num('previewMaxFps', 5, 15);
     return {
       staleAfterSeconds: num('staleAfterSeconds', 5, 120),
       seekStepSeconds: num('seekStepSeconds', 1, 30),
-      previewMaxFps: num('previewMaxFps', 1, 5),
+      previewMaxFps,
       defaultVolume: num('defaultVolume', 0, 1),
       confirmDestructiveActions:
         typeof confirm === 'boolean' ? confirm : DEFAULT_SETTINGS.confirmDestructiveActions,

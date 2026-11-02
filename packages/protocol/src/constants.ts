@@ -16,8 +16,8 @@ export const DEFAULT_PAIRING_TTL_SECONDS = 180;
 /** Maximum failed code attempts per pairing challenge. */
 export const DEFAULT_PAIRING_MAX_ATTEMPTS = 5;
 
-/** Preview snapshots are deliberately low-rate to avoid hurting playback. */
-export const DEFAULT_PREVIEW_MAX_FPS = 1;
+/** Preview snapshots default to a responsive LAN cadence without using WebRTC. */
+export const DEFAULT_PREVIEW_MAX_FPS = 12;
 
 export const MAX_PREVIEW_JPEG_BYTES = 250_000;
 

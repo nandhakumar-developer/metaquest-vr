@@ -20,6 +20,19 @@ const commandGroupBody = z
   })
   .strict();
 const renameBody = z.object({ name: z.string().trim().min(2).max(64) }).strict();
+
+/**
+ * Commands that change what a headset is playing. When an operator sends one of
+ * these directly, the headset leaves any active group run so the drift
+ * corrector cannot override the manual control.
+ */
+const INDEPENDENT_PLAYBACK_COMMANDS = new Set<string>([
+  'PLAY',
+  'PAUSE',
+  'STOP',
+  'SEEK',
+  'LOAD_VIDEO',
+]);
 const paginationQuery = z.object({
   page: z.coerce.number().int().min(1).max(100_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
@@ -76,6 +89,12 @@ export async function registerDeviceRoutes(
     const authenticated = requireSession(ctx, request, { operator: true });
     const { deviceId } = parseBody(deviceParams, request.params);
     const body = parseBody(commandBody, request.body);
+    if (INDEPENDENT_PLAYBACK_COMMANDS.has(body.type)) {
+      ctx.groupPlayback.detachDevice(
+        deviceId,
+        `Controlled independently by ${authenticated.admin.email}`,
+      );
+    }
     const command = await ctx.commands.execute({
       deviceId,
       type: body.type,
@@ -88,6 +107,14 @@ export async function registerDeviceRoutes(
   app.post('/api/commands/group', async (request) => {
     const authenticated = requireSession(ctx, request, { operator: true });
     const body = parseBody(commandGroupBody, request.body);
+    if (INDEPENDENT_PLAYBACK_COMMANDS.has(body.type)) {
+      for (const deviceId of body.deviceIds) {
+        ctx.groupPlayback.detachDevice(
+          deviceId,
+          `Controlled independently by ${authenticated.admin.email}`,
+        );
+      }
+    }
     const results = await ctx.commands.executeForDevices({
       deviceIds: body.deviceIds,
       type: body.type,
