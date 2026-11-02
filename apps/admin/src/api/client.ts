@@ -11,6 +11,7 @@ export class ApiError extends Error {
 }
 
 let csrfToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
 
 export function setCsrfToken(token: string | null): void {
   csrfToken = token;
@@ -18,6 +19,11 @@ export function setCsrfToken(token: string | null): void {
 
 export function getCsrfToken(): string | null {
   return csrfToken;
+}
+
+/** Clears local dashboard state when the gateway reports an expired session. */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
 }
 
 export interface RequestOptions extends RequestInit {
@@ -67,6 +73,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
   const isJson = contentType && contentType.includes('application/json');
 
   if (!response.ok) {
+    if (response.status === 401) unauthorizedHandler?.();
     if (isJson) {
       const errorJson = await response.json();
       const err = errorJson.error || errorJson;

@@ -41,6 +41,20 @@ describe('Gateway HTTP & API Integration', () => {
     expect(json.database).toBe('ok');
   });
 
+  it('redirects Meta Quest Browser from the dashboard root to the player', async () => {
+    const res = await server.app.inject({
+      method: 'GET',
+      url: '/',
+      headers: {
+        'user-agent':
+          'Mozilla/5.0 (Linux; Android 12; Quest 2) AppleWebKit/537.36 OculusBrowser/35.0',
+      },
+    });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/player/');
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
   it('GET /api/config indicates bootstrap is needed initially', async () => {
     const res = await server.app.inject({
       method: 'GET',

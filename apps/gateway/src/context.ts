@@ -120,6 +120,7 @@ export async function createContext(
     hub,
     cloud,
     media,
+    registry,
   );
   const playerMedia = new PlayerMediaService(
     store.devices,

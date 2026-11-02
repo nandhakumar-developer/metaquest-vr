@@ -100,10 +100,21 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
     throwFileSizeLimit: true,
   });
 
-  app.addHook('onRequest', async (request) => {
+  app.addHook('onRequest', async (request, reply) => {
+    const pathname = request.url.split('?')[0];
+    if (
+      request.method === 'GET' &&
+      (pathname === '/' || pathname === '/index.html') &&
+      isQuestBrowser(request.headers['user-agent'])
+    ) {
+      reply.header('Cache-Control', 'no-store');
+      reply.header('Vary', 'User-Agent');
+      return reply.redirect('/player/');
+    }
     if (request.url.startsWith('/api/')) {
       assertAllowedOrigin(request, config);
     }
+    return undefined;
   });
 
   app.addHook('onSend', async (request, reply, payload) => {
@@ -290,4 +301,13 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
 
 export async function listen(app: FastifyInstance, host: string, port: number): Promise<string> {
   return app.listen({ host, port });
+}
+
+/**
+ * Headsets should land on the player, never the administrator dashboard.
+ * Meta Quest Browser identifies itself through the OculusBrowser token.
+ */
+export function isQuestBrowser(userAgent: string | string[] | undefined): boolean {
+  const value = Array.isArray(userAgent) ? userAgent.join(' ') : (userAgent ?? '');
+  return /OculusBrowser|Meta Quest|Quest [23]|Quest Pro/i.test(value);
 }

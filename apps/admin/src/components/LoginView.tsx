@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { useApp } from '../context/AppContext.js';
 import {
   ArrowRight,
-  Cloud,
   Glasses,
   KeyRound,
   LockKeyhole,
@@ -14,46 +12,19 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-type AuthMode = 'local' | 'supabase';
-
 export const LoginView: React.FC = () => {
-  const { login, loginWithSupabase, gatewayConfig } = useApp();
+  const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const supabaseConfig = gatewayConfig?.auth.supabase;
-  const supabaseEnabled = Boolean(supabaseConfig?.roleVerification);
-  const [authMode, setAuthMode] = useState<AuthMode>('local');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       setLoading(true);
-      if (authMode === 'supabase') {
-        if (!supabaseConfig?.roleVerification) {
-          throw new Error('Supabase sign-in is not available on this gateway.');
-        }
-        const client = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false,
-          },
-        });
-        const { data, error: signInError } = await client.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (signInError || !data.session?.access_token) {
-          throw new Error(signInError?.message || 'Supabase sign-in failed.');
-        }
-        await loginWithSupabase(data.session.access_token);
-      } else {
-        await login(email.trim(), password);
-      }
+      await login(email.trim(), password);
     } catch (err: any) {
       setError(err?.message || 'Invalid email or password.');
     } finally {
@@ -113,53 +84,8 @@ export const LoginView: React.FC = () => {
             <div className="auth-form-kicker"><Sparkles size={14} /> Administrator access</div>
             <h2 className="auth-form-title">Welcome back</h2>
             <p className="auth-form-subtitle">
-              Sign in to continue to your headset control center.
+              Sign in with the local administrator account for this gateway.
             </p>
-
-            {supabaseEnabled && (
-              <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-slate-700/80 bg-slate-950/60 p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('local');
-                    setError(null);
-                  }}
-                  aria-pressed={authMode === 'local'}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                    authMode === 'local'
-                      ? 'bg-slate-700 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <KeyRound size={14} />
-                  Local admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('supabase');
-                    setError(null);
-                  }}
-                  aria-pressed={authMode === 'supabase'}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                    authMode === 'supabase'
-                      ? 'bg-slate-700 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Cloud size={14} />
-                  Supabase
-                </button>
-              </div>
-            )}
-
-            {supabaseEnabled && (
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-                {authMode === 'supabase'
-                  ? 'The gateway verifies your Supabase session and requires an admin, operator, or viewer role in the profiles table.'
-                  : 'Uses the administrator account stored locally on this gateway.'}
-              </p>
-            )}
 
             {error && (
               <div className="auth-error" role="alert">
@@ -204,22 +130,14 @@ export const LoginView: React.FC = () => {
               </div>
 
               <button type="submit" disabled={loading} className="auth-submit">
-                <span>
-                  {loading
-                    ? 'Authenticating...'
-                    : authMode === 'supabase'
-                      ? 'Sign in with Supabase'
-                      : 'Sign in to dashboard'}
-                </span>
+                <span>{loading ? 'Authenticating...' : 'Sign in to dashboard'}</span>
                 {!loading && <ArrowRight size={17} />}
               </button>
             </form>
 
             <div className="auth-form-footer">
               <ShieldCheck size={14} />
-              {authMode === 'supabase'
-                ? 'Supabase credentials are verified by your project; the service-role key stays on the gateway.'
-                : 'Your credentials stay on this local gateway.'}
+              Your credentials stay on this local gateway.
             </div>
           </div>
         </section>

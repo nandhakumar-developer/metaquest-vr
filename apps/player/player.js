@@ -98,6 +98,8 @@ const state = {
   wsRetry: 0,
   wsRetryTimer: null,
   heartbeatTimer: null,
+  libraryRefreshTimer: null,
+  sessionRefresh: null,
   authPermanentFailure: false,
   pairingPollTimer: null,
   pairingCountdownTimer: null,
@@ -555,17 +557,23 @@ async function resumeWithCredentials(credentials) {
 
 async function refreshSession(showMessage = false) {
   if (!state.credentials) return;
-  try {
-    await loadSession(state.credentials);
-    if (showMessage) showToast('Video library refreshed.', 'success');
-  } catch (error) {
-    if (error.statusCode === 401 || error.statusCode === 403) {
-      clearPlayerCredential(false);
-      showPairing(errorMessage(error), 'resume');
-      return;
+  if (state.sessionRefresh) return state.sessionRefresh;
+  state.sessionRefresh = (async () => {
+    try {
+      await loadSession(state.credentials);
+      if (showMessage) showToast('Video library refreshed.', 'success');
+    } catch (error) {
+      if (error.statusCode === 401 || error.statusCode === 403) {
+        clearPlayerCredential(false);
+        showPairing(errorMessage(error), 'resume');
+        return;
+      }
+      if (showMessage) showToast(errorMessage(error), 'error');
+    } finally {
+      state.sessionRefresh = null;
     }
-    if (showMessage) showToast(errorMessage(error), 'error');
-  }
+  })();
+  return state.sessionRefresh;
 }
 
 async function loadSession(credentials) {
@@ -897,6 +905,10 @@ async function handleGatewayMessage(message) {
       }
       break;
     }
+    case 'LIBRARY_UPDATED': {
+      void refreshSession(false);
+      break;
+    }
     case 'PROTOCOL_ERROR': {
       showToast(message.payload?.message || 'Gateway reported a protocol error.', 'error');
       break;
@@ -1016,6 +1028,13 @@ function startHeartbeat() {
   stopHeartbeat();
   const interval = clamp(state.heartbeatIntervalMs, 2000, 60000);
   state.heartbeatTimer = setInterval(() => void sendDeviceStatus(), interval);
+  // WebSocket invalidation is immediate; this is a safety net for missed
+  // messages (sleep/resume, proxy hiccups, gateway restarts).
+  state.libraryRefreshTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && state.wsAuthenticated) {
+      void refreshSession(false);
+    }
+  }, 30000);
   document.addEventListener('visibilitychange', onVisibilityChange);
 }
 
@@ -1024,11 +1043,18 @@ function stopHeartbeat() {
     clearInterval(state.heartbeatTimer);
     state.heartbeatTimer = null;
   }
+  if (state.libraryRefreshTimer) {
+    clearInterval(state.libraryRefreshTimer);
+    state.libraryRefreshTimer = null;
+  }
   document.removeEventListener('visibilitychange', onVisibilityChange);
 }
 
 function onVisibilityChange() {
-  if (document.visibilityState === 'visible') void sendDeviceStatus();
+  if (document.visibilityState === 'visible') {
+    void sendDeviceStatus();
+    if (state.wsAuthenticated) void refreshSession(false);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1054,7 +1080,13 @@ function playbackError(message) {
 }
 
 async function loadVideo(videoId) {
-  const video = state.library.find((item) => item.id === videoId);
+  let video = state.library.find((item) => item.id === videoId);
+  if (!video) {
+    // An upload can complete between the last library refresh and the admin
+    // pressing Play/Load. Fetch once more before rejecting the command.
+    await refreshSession(false);
+    video = state.library.find((item) => item.id === videoId);
+  }
   if (!video) throw new Error('That video is not available in this headset library.');
   clearSchedule();
   if (state.current?.id === video.id && el.video.src && el.video.readyState >= 1) {

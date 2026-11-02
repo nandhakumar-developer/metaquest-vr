@@ -1,7 +1,9 @@
 import { createReadStream, existsSync, mkdirSync, promises as fs } from 'node:fs';
 import path from 'node:path';
+import { makeMessage } from '@vrcc/protocol';
 import type { ProjectionType, StereoLayout, VideoDto } from '@vrcc/shared-types';
 import type { GatewayConfig } from '../config.js';
+import type { DeviceRegistry } from '../devices/registry.js';
 import type { VideoRepository } from '../database/videoRepo.js';
 import type { DeploymentRepository } from '../database/deploymentRepo.js';
 import type { OpsRepository } from '../database/opsRepo.js';
@@ -32,7 +34,18 @@ export class VideoService {
     private readonly hub: AdminHub,
     private readonly cloud: CloudSyncService,
     private readonly media: MediaService,
+    private readonly registry: DeviceRegistry,
   ) {}
+
+  /** Push a lightweight invalidation so connected players fetch the new library. */
+  private notifyPlayers(): void {
+    for (const connection of this.registry.list()) {
+      this.registry.send(
+        connection.deviceId,
+        JSON.stringify(makeMessage('LIBRARY_UPDATED', connection.deviceUuid, {})),
+      );
+    }
+  }
 
   private toDto(video: VideoRecord): VideoDto {
     return {
@@ -138,6 +151,7 @@ export class VideoService {
       this.cloud.queueVideo(video);
       const dto = this.toDto(video);
       this.hub.broadcast({ kind: 'video.updated', video: dto });
+      this.notifyPlayers();
       return dto;
     } catch (error) {
       await fs.rm(directory, { recursive: true, force: true }).catch(() => undefined);
@@ -172,6 +186,7 @@ export class VideoService {
     this.cloud.queueVideo(updated);
     const dto = this.toDto(updated);
     this.hub.broadcast({ kind: 'video.updated', video: dto });
+    this.notifyPlayers();
     return dto;
   }
 
@@ -194,6 +209,7 @@ export class VideoService {
     });
     this.cloud.queueVideoDelete(id);
     this.hub.broadcast({ kind: 'video.removed', videoId: id });
+    this.notifyPlayers();
   }
 
   absolutePath(video: VideoRecord): string {

@@ -14,7 +14,7 @@ import type {
   VideoDto,
 } from '@vrcc/shared-types';
 import type { AdminServerEvent } from '@vrcc/protocol';
-import { apiRequest, setCsrfToken } from '../api/client.js';
+import { apiRequest, setCsrfToken, setUnauthorizedHandler } from '../api/client.js';
 import { GatewayWebSocketClient } from '../api/ws.js';
 
 export interface ActivePreviewState {
@@ -43,10 +43,10 @@ interface AppContextValue {
   group: GroupPlaybackState | null;
 
   login: (email: string, password: string) => Promise<void>;
-  loginWithSupabase: (accessToken: string) => Promise<void>;
   bootstrap: (email: string, password: string, displayName: string, token: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshConfig: () => Promise<void>;
+  refreshVideos: () => Promise<void>;
 
   sendCommand: (deviceId: string, type: CommandType, payload?: Record<string, unknown>) => Promise<void>;
   sendGroupCommand: (deviceIds: string[], type: CommandType, payload?: Record<string, unknown>) => Promise<void>;
@@ -103,6 +103,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  const clearSessionState = useCallback(() => {
+    setIdentity(null);
+    setCsrfToken(null);
+    setWsConnected(false);
+    setDevices([]);
+    setVideos([]);
+    setDeployments([]);
+    setPairingRequests([]);
+    setCommands([]);
+    setActivePreview(null);
+    setGroup(null);
+  }, []);
+
   const checkSession = useCallback(async () => {
     try {
       const res = await apiRequest<{
@@ -112,12 +125,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIdentity(res.identity);
       setCsrfToken(res.csrfToken);
     } catch {
-      setIdentity(null);
-      setCsrfToken(null);
+      clearSessionState();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clearSessionState]);
 
   useEffect(() => {
     void (async () => {
@@ -125,6 +137,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await checkSession();
     })();
   }, [refreshConfig, checkSession]);
+
+  useEffect(() => {
+    setUnauthorizedHandler(clearSessionState);
+    return () => setUnauthorizedHandler(null);
+  }, [clearSessionState]);
 
   // Handle WebSocket events
   const handleWsEvent = useCallback((event: AdminServerEvent) => {
@@ -295,18 +312,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshConfig();
   };
 
-  const loginWithSupabase = async (accessToken: string) => {
-    const res = await apiRequest<{
-      identity: AdminIdentity;
-      csrfToken: string;
-    }>('/api/auth/supabase', {
-      method: 'POST',
-      body: JSON.stringify({ accessToken }),
-    });
-    setIdentity(res.identity);
-    setCsrfToken(res.csrfToken);
-    await refreshConfig();
-  };
+  const refreshVideos = useCallback(async () => {
+    if (!identity) return;
+    const list = await apiRequest<VideoDto[]>('/api/videos');
+    setVideos(list);
+  }, [identity]);
 
   const bootstrap = async (
     email: string,
@@ -331,14 +341,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } finally {
-      setIdentity(null);
-      setCsrfToken(null);
-      setDevices([]);
-      setVideos([]);
-      setDeployments([]);
-      setPairingRequests([]);
-      setActivePreview(null);
-      setGroup(null);
+      clearSessionState();
     }
   };
 
@@ -490,10 +493,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activePreview,
         group,
         login,
-        loginWithSupabase,
         bootstrap,
         logout,
         refreshConfig,
+        refreshVideos,
         sendCommand,
         sendGroupCommand,
         startGroupPlayback,

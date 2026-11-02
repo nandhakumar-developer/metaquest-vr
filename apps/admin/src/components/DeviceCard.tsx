@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { DeviceSnapshot } from '@vrcc/shared-types';
+import type { CommandType, DeviceSnapshot } from '@vrcc/shared-types';
 import { useApp } from '../context/AppContext.js';
 import {
   Play,
@@ -51,6 +51,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
   const [newName, setNewName] = useState(device.name);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekValue, setSeekValue] = useState(device.playback.positionSeconds);
+  const [controlError, setControlError] = useState<string | null>(null);
 
   const isOnline = device.online;
   const isPlaying = device.playback.state === 'playing';
@@ -59,40 +60,44 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
   const duration = device.playback.durationSeconds || 100;
   const currentPos = isSeeking ? seekValue : device.playback.positionSeconds;
 
+  const runCommand = (type: CommandType, payload?: Record<string, unknown>) => {
+    setControlError(null);
+    void sendCommand(device.id, type, payload).catch((error: unknown) => {
+      setControlError(error instanceof Error ? error.message : 'The headset did not accept the command.');
+    });
+  };
+
   const handlePlayPause = () => {
     if (!isOnline) return;
-    if (isPlaying || isBuffering) {
-      void sendCommand(device.id, 'PAUSE');
-    } else {
-      void sendCommand(device.id, 'PLAY');
-    }
+    if (isPlaying || isBuffering) runCommand('PAUSE');
+    else runCommand('PLAY');
   };
 
   const handleStop = () => {
     if (!isOnline) return;
-    void sendCommand(device.id, 'STOP');
+    runCommand('STOP');
   };
 
   const handleSeekDelta = (deltaSeconds: number) => {
     if (!isOnline) return;
     const target = Math.max(0, Math.min(duration, device.playback.positionSeconds + deltaSeconds));
-    void sendCommand(device.id, 'SEEK', { positionSeconds: target });
+    runCommand('SEEK', { positionSeconds: target });
   };
 
   const handleSeekCommit = () => {
     if (!isOnline) return;
     setIsSeeking(false);
-    void sendCommand(device.id, 'SEEK', { positionSeconds: seekValue });
+    runCommand('SEEK', { positionSeconds: seekValue });
   };
 
   const handleVolumeChange = (vol: number) => {
     if (!isOnline) return;
-    void sendCommand(device.id, 'SET_VOLUME', { volume: vol });
+    runCommand('SET_VOLUME', { volume: vol });
   };
 
   const handleLoadVideo = (videoId: string) => {
     if (!isOnline || !videoId) return;
-    void sendCommand(device.id, 'LOAD_VIDEO', { videoId, autoplay: false });
+    runCommand('LOAD_VIDEO', { videoId, autoplay: false });
   };
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
@@ -348,6 +353,11 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
               </option>
             ))}
           </select>
+          {controlError && (
+            <p role="alert" className="mt-1.5 text-[11px] leading-snug text-rose-300">
+              {controlError}
+            </p>
+          )}
         </div>
       </div>
 

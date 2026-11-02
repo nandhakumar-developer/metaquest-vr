@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from 'ws';
@@ -25,6 +25,8 @@ describe('Quest WebSocket Protocol & Device Lifecycle', () => {
         thumbnailDir: path.join(testDir, 'thumbs'),
         tempDir: path.join(testDir, 'temp'),
         logDir: path.join(testDir, 'logs'),
+        tlsCertPath: null,
+        tlsKeyPath: null,
         quietLogs: true,
       },
       disableRateLimit: true,
@@ -121,7 +123,29 @@ describe('Quest WebSocket Protocol & Device Lifecycle', () => {
     const devDto = server.ctx.state.getDeviceDto(deviceId);
     expect(devDto.online).toBe(true);
 
-    // 4. Send a PLAY command via REST
+    // 4. Uploading media in the dashboard pushes a library invalidation to the headset.
+    const libraryUpdated = new Promise<void>((resolve) => {
+      ws.on('message', (raw) => {
+        const parsed = parseDeviceCommandMessage(raw.toString());
+        if (parsed.ok && parsed.data.type === 'LIBRARY_UPDATED') resolve();
+      });
+    });
+    const mediaBody = Buffer.from('not-a-real-video-but-valid-upload-bytes');
+    const mediaPath = path.join(testDir, 'temp', 'library-notify.mp4');
+    writeFileSync(mediaPath, mediaBody);
+    await server.ctx.videos.ingest({
+      tempPath: mediaPath,
+      originalFilename: 'library-notify.mp4',
+      sizeBytes: mediaBody.length,
+      checksum: createHash('sha256').update(mediaBody).digest('hex'),
+      name: 'Library Notify Clip',
+      projectionType: 'flat',
+      stereoLayout: 'mono',
+    });
+    await libraryUpdated;
+    expect(server.ctx.store.videos.listVideos()).toHaveLength(1);
+
+    // 5. Send a PLAY command via REST
     const playPromise = server.ctx.commands.execute({
       deviceId,
       type: 'PLAY',

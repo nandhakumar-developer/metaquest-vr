@@ -35,7 +35,7 @@ function formatBytes(bytes: number): string {
 }
 
 export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
-  const { videos, deleteVideo } = useApp();
+  const { videos, deleteVideo, refreshVideos } = useApp();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deployTarget, setDeployTarget] = useState<VideoDto | null>(null);
   const [previewVideo, setPreviewVideo] = useState<VideoDto | null>(null);
@@ -215,7 +215,11 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
       )}
 
       {/* Upload Modal */}
-      <VideoUploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <VideoUploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={refreshVideos}
+      />
 
       {/* Deploy Modal */}
       <DeployModal

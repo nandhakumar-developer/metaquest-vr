@@ -53,11 +53,14 @@ export async function registerSystemRoutes(
         local: true,
         needsBootstrap,
         supabase:
-          ctx.config.supabase.configured && ctx.config.supabase.url && ctx.config.supabase.anonKey
+          ctx.config.supabase.configured &&
+          ctx.config.supabase.url &&
+          ctx.config.supabase.anonKey &&
+          ctx.auth.supabase.roleVerificationAvailable
             ? {
                 url: ctx.config.supabase.url,
                 anonKey: ctx.config.supabase.anonKey,
-                roleVerification: ctx.auth.supabase.roleVerificationAvailable,
+                roleVerification: true,
               }
             : null,
       },

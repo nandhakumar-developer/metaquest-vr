@@ -11,9 +11,11 @@ The repository is currently documented and set up for operating two Quest 2 head
 - Independent per-headset load, play, pause, stop, seek, volume, status, and preview controls.
 - Scheduled group playback with per-headset readiness checks and best-effort LAN synchronization.
 - Video upload and direct browser streaming with HTTP byte-range requests.
+- Connected headset libraries refresh after videos are added, changed, or removed; the player also refreshes on reconnect, resume, and a periodic safety check.
 - Flat, 180-degree, and 360-degree video, including side-by-side and over-under stereo layouts.
 - WebXR immersive playback when the player is opened in a secure context (HTTPS or localhost).
 - Playback sessions, device state, settings, and administrative audit history.
+- Dashboard session state is cleared when the gateway rejects an expired session, and headset command failures are shown on the affected device card.
 - Optional Supabase integration for deployments configured with the required project credentials and server-side role verification.
 
 ## How the system works
@@ -29,7 +31,7 @@ flowchart LR
   Gateway -->|Production serves built dashboard and /player/| Browsers[Admin and Quest browsers]
 ```
 
-The Quest player is served by the gateway at `/player/`. It connects to the same gateway over HTTP(S) and WebSocket. After pairing, its device UUID and secret are kept in browser `localStorage`. For video, the gateway issues a time-limited signed URL; the headset streams the file from the PC rather than copying it to headset storage.
+The Quest player is served by the gateway at `/player/`. When Meta Quest Browser opens the gateway root (`/` or `/index.html`), the gateway redirects it to `/player/`; other browsers continue to reach the admin dashboard. The player connects to the same gateway over HTTP(S) and WebSocket. After pairing, its device UUID and secret are kept in browser `localStorage`. For video, the gateway issues a time-limited signed URL; the headset streams the file from the PC rather than copying it to headset storage.
 
 In development, Vite serves the admin dashboard on port `3000` and proxies API, WebSocket, and player requests to the gateway on port `4000`. In production, the gateway serves the built admin dashboard and Quest player from port `4000`.
 
@@ -43,18 +45,18 @@ In development, Vite serves the admin dashboard on port `3000` and proxies API, 
 
 ## Technology stack
 
-| Area | Technology and role |
-| --- | --- |
-| Runtime and workspace | Node.js 24+, npm 10+, npm workspaces |
-| Language | TypeScript 5.9 for the gateway, dashboard, shared types, and protocol packages |
-| Admin dashboard | React 19, Vite 6, Tailwind CSS 4, Lucide icons |
-| Gateway | Fastify 5, REST routes, `ws` WebSocket server, multipart upload, rate limiting |
-| Quest player | Browser-native HTML, CSS, and JavaScript; Three.js for immersive projection; WebXR APIs |
-| Data validation | Zod schemas in the shared protocol package |
-| Persistence | Node `node:sqlite` database plus local media, thumbnail, temporary, and log directories |
-| Optional cloud | Supabase JavaScript client for configured authentication, sync, or storage integrations |
-| Media inspection | FFmpeg and FFprobe when installed; optional for upload and playback |
-| Developer tooling | TypeScript, ESLint, Prettier, Vitest, Playwright dependency |
+| Area                  | Technology and role                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| Runtime and workspace | Node.js 24+, npm 10+, npm workspaces                                                    |
+| Language              | TypeScript 5.9 for the gateway, dashboard, shared types, and protocol packages          |
+| Admin dashboard       | React 19, Vite 6, Tailwind CSS 4, Lucide icons                                          |
+| Gateway               | Fastify 5, REST routes, `ws` WebSocket server, multipart upload, rate limiting          |
+| Quest player          | Browser-native HTML, CSS, and JavaScript; Three.js for immersive projection; WebXR APIs |
+| Data validation       | Zod schemas in the shared protocol package                                              |
+| Persistence           | Node `node:sqlite` database plus local media, thumbnail, temporary, and log directories |
+| Optional cloud        | Supabase JavaScript client for configured authentication, sync, or storage integrations |
+| Media inspection      | FFmpeg and FFprobe when installed; optional for upload and playback                     |
+| Developer tooling     | TypeScript, ESLint, Prettier, Vitest, Playwright dependency                             |
 
 ## Repository layout
 
@@ -129,16 +131,16 @@ Leaving `PUBLIC_GATEWAY_URL` blank allows startup auto-detection; setting it exp
 
 The full configuration template is in [.env.example](.env.example). Common settings include:
 
-| Variable | Purpose |
-| --- | --- |
-| `GATEWAY_HOST`, `GATEWAY_PORT` | Gateway bind address and port (defaults: `0.0.0.0`, `4000`) |
-| `PUBLIC_GATEWAY_URL` | Base URL the headset uses to reach the gateway |
-| `ADMIN_ORIGIN` | Admin Vite origin, normally `http://localhost:3000` for development |
-| `EXTRA_ALLOWED_ORIGINS` | Comma-separated additional browser origins allowed by the gateway |
-| `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories |
-| `TLS_CERT_PATH`, `TLS_KEY_PATH` | Set both to enable HTTPS/WSS directly on the gateway |
-| `FFPROBE_PATH`, `FFMPEG_PATH` | Optional media inspection and thumbnail tools |
-| `SUPABASE_*`, `VITE_SUPABASE_*` | Optional cloud integration values; never expose a service-role key in browser code |
+| Variable                                                        | Purpose                                                                            |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `GATEWAY_HOST`, `GATEWAY_PORT`                                  | Gateway bind address and port (defaults: `0.0.0.0`, `4000`)                        |
+| `PUBLIC_GATEWAY_URL`                                            | Base URL the headset uses to reach the gateway                                     |
+| `ADMIN_ORIGIN`                                                  | Admin Vite origin, normally `http://localhost:3000` for development                |
+| `EXTRA_ALLOWED_ORIGINS`                                         | Comma-separated additional browser origins allowed by the gateway                  |
+| `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories                                          |
+| `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Set both to enable HTTPS/WSS directly on the gateway                               |
+| `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                      |
+| `SUPABASE_*`, `VITE_SUPABASE_*`                                 | Optional cloud integration values; never expose a service-role key in browser code |
 
 Keep `.env` and administrator credentials local; do not commit secrets. The example file lists operational timeouts, upload limits, preview settings, and optional integration variables as well.
 
@@ -202,6 +204,8 @@ Paired devices reconnect after a page or gateway restart. If browser storage is 
 2. Optionally set projection and stereo layout metadata. FFmpeg/FFprobe add duration, codec, and thumbnail details when available.
 3. Select a video on an individual headset card and use the playback controls, or open **Group Playback**.
 
+The dashboard refreshes its video list after a successful upload. The gateway also notifies connected paired players when a video is added, updated, or deleted; players refresh on that notification and when they return to the foreground. A periodic refresh provides a fallback if a notification is missed.
+
 Files remain on the gateway PC under `VIDEO_DIR` (default `storage/videos`). Browser playback streams from the gateway. H.264 video with AAC audio in an MP4 container is the most reliable format for Quest Browser. Missing FFmpeg does not prevent upload, though metadata and thumbnails may be unavailable.
 
 ### Control one headset or a group
@@ -225,22 +229,22 @@ When changing the project, keep the shared contracts and runtime layers aligned:
 
 Useful commands from the root:
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Build shared packages and start gateway + Vite dashboard in watch mode |
-| `npm run build` | Build shared packages, admin SPA, then gateway |
-| `npm start` | Build if the gateway output is missing and start production gateway |
-| `npm run typecheck` | Build shared packages and type-check gateway and admin |
-| `npm run lint` | Run ESLint across the repository |
-| `npm run format:check` | Check formatting with Prettier |
-| `npm run format` | Format repository files with Prettier |
-| `npm test` | Run Vitest projects in `packages/*` and `apps/*` |
-| `npm run test:watch` | Run Vitest in watch mode |
-| `npm run test:coverage` | Run Vitest with V8 coverage |
-| `npm run test:e2e` | Playwright runner entry point; add Playwright config and specs before relying on it |
-| `npm run admin:create` | Create or reset a local administrator |
-| `npm run quest:simulate` | Run the gateway's simulated Quest protocol client |
-| `npm run clean` | Remove generated build and coverage output; local `storage/` is retained |
+| Command                  | What it does                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| `npm run dev`            | Build shared packages and start gateway + Vite dashboard in watch mode              |
+| `npm run build`          | Build shared packages, admin SPA, then gateway                                      |
+| `npm start`              | Build if the gateway output is missing and start production gateway                 |
+| `npm run typecheck`      | Build shared packages and type-check gateway and admin                              |
+| `npm run lint`           | Run ESLint across the repository                                                    |
+| `npm run format:check`   | Check formatting with Prettier                                                      |
+| `npm run format`         | Format repository files with Prettier                                               |
+| `npm test`               | Run Vitest projects in `packages/*` and `apps/*`                                    |
+| `npm run test:watch`     | Run Vitest in watch mode                                                            |
+| `npm run test:coverage`  | Run Vitest with V8 coverage                                                         |
+| `npm run test:e2e`       | Playwright runner entry point; add Playwright config and specs before relying on it |
+| `npm run admin:create`   | Create or reset a local administrator                                               |
+| `npm run quest:simulate` | Run the gateway's simulated Quest protocol client                                   |
+| `npm run clean`          | Remove generated build and coverage output; local `storage/` is retained            |
 
 For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the physical-device verification checklist. Automated checks and the protocol simulator cannot replace testing on the target Quest browser, Wi-Fi network, codecs, and certificate.
 
@@ -250,7 +254,7 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - Admin sessions use an HttpOnly cookie and CSRF token. Local passwords are stored as password hashes, not plaintext.
 - The headset's device secret is used to authenticate player requests. Media URLs are signed and expire; range streaming does not expose the device secret.
 - HTTPS is optional for LAN control and flat video playback, but required by the browser for WebXR on a remote headset. Configure a certificate trusted by the headset.
-- Supabase is optional. Local sign-in and SQLite-backed operation do not require Supabase. Supabase role-based admin sign-in requires server-side credentials and the configured profile-role data; see [docs/supabase.md](docs/supabase.md).
+- Supabase is optional. The dashboard sign-in form uses the local administrator account, and local SQLite-backed operation does not require Supabase. The gateway's Supabase sign-in API requires server-side credentials and configured profile-role data; see [docs/supabase.md](docs/supabase.md).
 
 ## Known limitations
 

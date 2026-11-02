@@ -165,6 +165,8 @@ export interface ConfigOverrides {
   logDir?: string;
   adminOrigin?: string;
   publicGatewayUrl?: string | null;
+  tlsCertPath?: string | null;
+  tlsKeyPath?: string | null;
   adminDistDir?: string | null;
   quietLogs?: boolean;
   commandTimeoutMs?: number;
@@ -209,8 +211,18 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
       .filter(Boolean),
     publicGatewayUrl: (overrides.publicGatewayUrl ?? parsed.PUBLIC_GATEWAY_URL) || null,
     playerUrl: '',
-    tlsCertPath: parsed.TLS_CERT_PATH ? resolvePath(repoRoot, parsed.TLS_CERT_PATH) : null,
-    tlsKeyPath: parsed.TLS_KEY_PATH ? resolvePath(repoRoot, parsed.TLS_KEY_PATH) : null,
+    tlsCertPath:
+      overrides.tlsCertPath !== undefined
+        ? overrides.tlsCertPath
+        : parsed.TLS_CERT_PATH
+          ? resolvePath(repoRoot, parsed.TLS_CERT_PATH)
+          : null,
+    tlsKeyPath:
+      overrides.tlsKeyPath !== undefined
+        ? overrides.tlsKeyPath
+        : parsed.TLS_KEY_PATH
+          ? resolvePath(repoRoot, parsed.TLS_KEY_PATH)
+          : null,
     trustProxy: parsed.TRUST_PROXY,
     repoRoot,
     dataDir: resolvePath(repoRoot, overrides.dataDir ?? parsed.DATA_DIR),

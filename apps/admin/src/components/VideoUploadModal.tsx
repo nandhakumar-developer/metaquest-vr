@@ -6,9 +6,14 @@ import { X, Upload, Film, AlertCircle, CheckCircle2 } from 'lucide-react';
 interface VideoUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onUploaded?: () => void | Promise<void>;
 }
 
-export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose }) => {
+export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
+  isOpen,
+  onClose,
+  onUploaded,
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoName, setVideoName] = useState('');
@@ -97,6 +102,11 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onCl
 
       setSelectedFile(null);
       setVideoName('');
+      try {
+        await onUploaded?.();
+      } catch {
+        // The upload succeeded; the live WebSocket event will add it to the list.
+      }
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to upload video');
