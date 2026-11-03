@@ -235,24 +235,24 @@
 }
 
 .tabbar {
-  padding: 14px 28px 0;
+  position: sticky;
+  z-index: 35;
+  top: 74px;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(78, 112, 150, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
 }
 
 .tabbar-inner {
   display: flex;
-  width: fit-content;
-  max-width: 100%;
-  gap: 4px;
+  width: 100%;
+  max-width: 1480px;
+  gap: 8px;
   margin: 0 auto;
-  padding: 5px;
+  padding: 8px 0;
   overflow-x: auto;
-  border: 1px solid rgba(224, 233, 244, 0.9);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow:
-    0 0 0 1px rgba(80, 112, 150, 0.04),
-    0 16px 34px -30px rgba(48, 81, 119, 0.3);
-  backdrop-filter: blur(14px);
   scrollbar-width: none;
 }
 
@@ -1844,6 +1844,10 @@ input[type="checkbox"] {
   .topbar-inner {
     gap: 12px;
     height: 68px;
+  }
+
+  .tabbar {
+    top: 68px;
   }
 
   .brand {
