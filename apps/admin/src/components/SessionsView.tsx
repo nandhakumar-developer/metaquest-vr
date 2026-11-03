@@ -44,7 +44,7 @@ export const SessionsView: React.FC = () => {
         <div>
           <span className="eyebrow">Analytics</span>
           <h1 className="page-title">
-            Playback <span className="serif-accent text-[#6d3a52]">history</span>
+            Playback <span className="serif-accent text-[#5B94D7]">history</span>
           </h1>
           <p className="page-desc">
             A log of viewing sessions, durations watched, and completion statuses across every paired
@@ -74,7 +74,7 @@ export const SessionsView: React.FC = () => {
               <tbody>
                 {sessions.map((s) => (
                   <tr key={s.id}>
-                    <td className="font-semibold !text-[#2a2320]">{s.deviceName}</td>
+                    <td className="font-semibold !text-[#203248]">{s.deviceName}</td>
                     <td>{s.videoName || 'Direct stream / flat'}</td>
                     <td className="font-mono text-[11px]">{new Date(s.startedAt).toLocaleString()}</td>
                     <td className="font-mono text-[11px] text-[#c34c37]">

@@ -22,8 +22,6 @@ interface DevicesViewProps {
   onOpenGroup: () => void;
 }
 
-const ORB_BARS = [34, 58, 44, 76, 52, 90, 62, 70, 48, 82];
-
 export const DevicesView: React.FC<DevicesViewProps> = ({
   onOpenPairing,
   onOpenPreview,
@@ -89,10 +87,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
               <Plus className="h-4 w-4" />
               Pair a headset
             </button>
-            <button
-              onClick={onOpenGroup}
-              className="btn btn-secondary"
-            >
+            <button onClick={onOpenGroup} className="btn btn-secondary">
               <Users className="h-4 w-4" />
               Group playback
               <ArrowRight className="h-3.5 w-3.5 opacity-60" />
@@ -100,84 +95,58 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
           </div>
         </div>
 
-        <div className="hero-visual" aria-hidden="true">
-          <div className="hero-orb">
-            <div className="hero-card">
-              <div className="hero-card-label">
-                <span className={`status-dot ${onlineDevices.length > 0 ? 'is-live' : 'is-off'}`} />
-                Headsets online
-              </div>
-              <div className="hero-card-value">
-                {onlineDevices.length}
-                <small>/ {devices.length}</small>
-              </div>
-              <div className="hero-bars">
-                {ORB_BARS.map((height, index) => (
-                  <span key={index} style={{ height: `${height}%` }} />
-                ))}
-              </div>
-              <div className="hero-card-meta">
-                {playingDevices.length > 0
-                  ? `${playingDevices.length} actively playing`
-                  : 'All quiet on the network'}
-              </div>
+        <div className="stat-grid">
+          <div className="stat-card">
+            <div className="stat-top">
+              <span className="stat-label">Total fleet</span>
+              <span className="stat-icon tint-neutral">
+                <Glasses className="h-4 w-4" />
+              </span>
             </div>
+            <div className="stat-value">{devices.length}</div>
+            <div className="stat-hint">Paired Meta Quest 2</div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span className="stat-label">Online</span>
+              <span className="stat-icon tint-mint">
+                <CheckCircle2 className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="stat-value" style={{ color: '#438a70' }}>
+              {onlineDevices.length}
+            </div>
+            <div className="stat-hint">Ready for commands</div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span className="stat-label">Actively playing</span>
+              <span className="stat-icon tint-blue">
+                <Play className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="stat-value" style={{ color: '#5B94D7' }}>
+              {playingDevices.length}
+            </div>
+            <div className="stat-hint">Inside a VR experience</div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span className="stat-label">Offline</span>
+              <span className="stat-icon tint-neutral">
+                <WifiOff className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="stat-value" style={{ color: '#71849a' }}>
+              {devices.length - onlineDevices.length}
+            </div>
+            <div className="stat-hint">Standby or powered off</div>
           </div>
         </div>
       </section>
-
-      {/* Stats */}
-      <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-top">
-            <span className="stat-label">Total fleet</span>
-            <span className="stat-icon tint-neutral">
-              <Glasses className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="stat-value">{devices.length}</div>
-          <div className="stat-hint">Paired Meta Quest 2</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <span className="stat-label">Online</span>
-            <span className="stat-icon tint-mint">
-              <CheckCircle2 className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="stat-value" style={{ color: '#347f63' }}>
-            {onlineDevices.length}
-          </div>
-          <div className="stat-hint">Ready for commands</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <span className="stat-label">Actively playing</span>
-            <span className="stat-icon tint-coral">
-              <Play className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="stat-value" style={{ color: '#d9533b' }}>
-            {playingDevices.length}
-          </div>
-          <div className="stat-hint">Inside a VR experience</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <span className="stat-label">Offline</span>
-            <span className="stat-icon tint-neutral">
-              <WifiOff className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="stat-value" style={{ color: '#8b7d72' }}>
-            {devices.length - onlineDevices.length}
-          </div>
-          <div className="stat-hint">Standby or powered off</div>
-        </div>
-      </div>
 
       {/* Pending pairing */}
       {pairingRequests.length > 0 && (

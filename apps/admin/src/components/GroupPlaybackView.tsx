@@ -66,7 +66,7 @@ function healthStyle(health: 'good' | 'fair' | 'poor' | 'unknown'): string {
     case 'poor':
       return 'text-[#a23f36]';
     default:
-      return 'text-[#8b7d72]';
+      return 'text-[#8091a5]';
   }
 }
 
@@ -213,7 +213,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
         <div>
           <span className="eyebrow">Synchronized playback</span>
           <h1 className="page-title">
-            Group <span className="serif-accent text-[#6d3a52]">playback</span>
+            Group <span className="serif-accent text-[#5B94D7]">playback</span>
           </h1>
           <p className="page-desc">
             Load each selected headset, wait for a confirmed ready report, then start every player on
@@ -250,19 +250,19 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
         <section className="panel panel-pad space-y-4 xl:col-span-2">
           <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
               <span className="grid h-7 w-7 place-items-center rounded-lg tint-mint">
                 <Glasses className="h-3.5 w-3.5" />
               </span>
               Headsets
             </h3>
-            <span className="font-mono text-[10px] text-[#8b7d72]">
+            <span className="font-mono text-[10px] text-[#8091a5]">
               {selectedDevices.length}/{devices.length} selected
             </span>
           </div>
 
           <div className="flex items-center justify-between text-[11px]">
-            <span className="text-[#8b7d72]">{onlineDevices.length} online now</span>
+            <span className="text-[#8091a5]">{onlineDevices.length} online now</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -275,7 +275,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               <button
                 type="button"
                 onClick={clearSelection}
-                className="font-semibold text-[#8b7d72] transition hover:text-[#2a2320]"
+                className="font-semibold text-[#8091a5] transition hover:text-[#203248]"
               >
                 Clear
               </button>
@@ -283,7 +283,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
           </div>
 
           {devices.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#4a3e35]/15 px-4 py-6 text-center text-[11px] text-[#8b7d72]">
+            <div className="rounded-xl border border-dashed border-[#7189a4]/15 px-4 py-6 text-center text-[11px] text-[#8091a5]">
               Pair a headset first from the Headsets page.
             </div>
           ) : (
@@ -296,9 +296,9 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                     className={`rounded-xl border px-3 py-2.5 transition ${
                       device.online
                         ? checked
-                          ? 'border-[#ee6a52]/30 bg-[#ee6a52]/[0.06]'
-                          : 'border-[#4a3e35]/[0.09] bg-white/35 hover:border-[#4a3e35]/20'
-                        : 'border-[#4a3e35]/[0.06] bg-white/20 opacity-60'
+                          ? 'border-[#5B94D7]/30 bg-[#5B94D7]/[0.06]'
+                          : 'border-[#7189a4]/[0.09] bg-white/35 hover:border-[#7189a4]/20'
+                        : 'border-[#7189a4]/[0.06] bg-white/20 opacity-60'
                     }`}
                   >
                     <label className="flex cursor-pointer items-start gap-2.5">
@@ -311,7 +311,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[12px] font-semibold text-[#2a2320]">
+                          <span className="truncate text-[12px] font-semibold text-[#203248]">
                             {device.name}
                           </span>
                           {device.online ? (
@@ -320,12 +320,12 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                               Online
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wide text-[#a99a90]">
+                            <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wide text-[#90a0b2]">
                               <WifiOff className="h-3 w-3" /> Offline
                             </span>
                           )}
                         </div>
-                        <div className="mt-0.5 truncate text-[10.5px] text-[#8b7d72]">
+                        <div className="mt-0.5 truncate text-[10.5px] text-[#8091a5]">
                           {device.model} · {device.ipAddress || 'No LAN IP'}
                         </div>
 
@@ -351,7 +351,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
             </div>
           )}
 
-          <div className="space-y-3 border-t border-[#4a3e35]/[0.075] pt-4">
+          <div className="space-y-3 border-t border-[#7189a4]/[0.075] pt-4">
             <div>
               <div className="field-label">Content mode</div>
               <div className="pill-group w-full">
@@ -433,14 +433,14 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
 
         <section className="panel panel-pad space-y-4 xl:col-span-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
               <span className="grid h-7 w-7 place-items-center tint-lilac">
                 <Gauge className="h-3.5 w-3.5" />
               </span>
               Run feedback
             </h3>
             {group?.scheduledStartAt && (
-              <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#8b7d72]">
+              <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#8091a5]">
                 <Clock3 className="h-3.5 w-3.5" />
                 {scheduledInSeconds !== null
                   ? `Start in ${scheduledInSeconds.toFixed(1)}s`
@@ -450,7 +450,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
           </div>
 
           {!group || group.status === 'idle' ? (
-            <div className="rounded-2xl border border-dashed border-[#4a3e35]/15 bg-white/25 px-6 py-12 text-center">
+            <div className="rounded-2xl border border-dashed border-[#7189a4]/15 bg-white/25 px-6 py-12 text-center">
               <div className="empty-icon">
                 <Users className="h-6 w-6" />
               </div>
@@ -464,34 +464,34 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
             <>
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <div className="panel-inset px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Mode</div>
-                  <div className="mt-1 text-[12px] font-semibold capitalize text-[#2a2320]">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8091a5]">Mode</div>
+                  <div className="mt-1 text-[12px] font-semibold capitalize text-[#203248]">
                     {group.mode === 'same' ? 'Same video' : 'Per headset'}
                   </div>
                 </div>
                 <div className="panel-inset px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Position</div>
-                  <div className="mt-1 font-mono text-[12px] font-semibold text-[#2a2320]">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8091a5]">Position</div>
+                  <div className="mt-1 font-mono text-[12px] font-semibold text-[#203248]">
                     {formatTime(group.positionSeconds)}
                   </div>
                 </div>
                 <div className="panel-inset px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Headsets</div>
-                  <div className="mt-1 text-[12px] font-semibold text-[#2a2320]">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8091a5]">Headsets</div>
+                  <div className="mt-1 text-[12px] font-semibold text-[#203248]">
                     {group.devices.filter((device) => device.phase !== 'offline').length}/
                     {group.devices.length}
                   </div>
                 </div>
                 <div className="panel-inset px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Lead time</div>
-                  <div className="mt-1 text-[12px] font-semibold text-[#2a2320]">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8091a5]">Lead time</div>
+                  <div className="mt-1 text-[12px] font-semibold text-[#203248]">
                     {(group.leadMs / 1000).toFixed(1)}s
                   </div>
                 </div>
               </div>
 
               {group.message && (
-                <div className="panel-inset px-3.5 py-2.5 text-[11.5px] text-[#5c4f46]">
+                <div className="panel-inset px-3.5 py-2.5 text-[11.5px] text-[#52677f]">
                   {group.message}
                 </div>
               )}
@@ -512,7 +512,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                     <tbody>
                       {group.devices.map((device) => (
                         <tr key={device.deviceId}>
-                          <td className="font-semibold !text-[#2a2320]">
+                          <td className="font-semibold !text-[#203248]">
                             {device.deviceName}
                             {device.error && (
                               <div className="mt-0.5 text-[9.5px] font-normal text-[#a23f36]">
@@ -542,8 +542,8 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 rounded-xl bg-white/30 px-3.5 py-2.5 text-[10.5px] leading-relaxed text-[#8b7d72]">
-                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#6c56a8]" />
+              <div className="flex items-start gap-2 rounded-xl bg-white/30 px-3.5 py-2.5 text-[10.5px] leading-relaxed text-[#8091a5]">
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#5B94D7]" />
                 <span>
                   Drift is measured from confirmed player reports, so values update at the heartbeat
                   interval. Sync is coordinated over the local network and is not frame-perfect; use

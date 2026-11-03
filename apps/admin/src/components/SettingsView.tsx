@@ -13,6 +13,8 @@ import {
   Save,
   Globe2,
   Radio,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -25,6 +27,7 @@ export const SettingsView: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
@@ -80,7 +83,7 @@ export const SettingsView: React.FC = () => {
         <div>
           <span className="eyebrow">Configuration</span>
           <h1 className="page-title">
-            System <span className="serif-accent text-[#6d3a52]">settings</span>
+            System <span className="serif-accent text-[#5B94D7]">settings</span>
           </h1>
           <p className="page-desc">
             Network endpoints, hardware acceleration status, and the operational thresholds that keep
@@ -91,7 +94,7 @@ export const SettingsView: React.FC = () => {
 
       {/* Network */}
       <section className="panel panel-pad space-y-4">
-        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
           <span className="grid h-7 w-7 place-items-center tint-lilac">
             <Network className="h-3.5 w-3.5" />
           </span>
@@ -100,7 +103,7 @@ export const SettingsView: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="panel-inset px-4 py-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8b7d72]">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8091a5]">
               <Globe2 className="h-3 w-3" /> Public gateway URL
             </span>
             <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
@@ -109,7 +112,7 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <div className="panel-inset px-4 py-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8b7d72]">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8091a5]">
               <Radio className="h-3 w-3" /> WebSocket URL for headsets
             </span>
             <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
@@ -118,8 +121,8 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <div className="panel-inset px-4 py-3 md:col-span-2">
-            <span className="text-[10.5px] font-medium text-[#8b7d72]">LAN interface IP addresses</span>
-            <div className="mt-1 font-mono text-[12.5px] text-[#2a2320]">
+            <span className="text-[10.5px] font-medium text-[#8091a5]">LAN interface IP addresses</span>
+            <div className="mt-1 font-mono text-[12.5px] text-[#203248]">
               {gw?.lanAddresses?.length ? gw.lanAddresses.join(', ') : '127.0.0.1 (Localhost only)'}
             </div>
             <p className="field-hint">
@@ -131,7 +134,7 @@ export const SettingsView: React.FC = () => {
 
       {/* Components */}
       <section className="panel panel-pad space-y-4">
-        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
           <span className="grid h-7 w-7 place-items-center tint-mint">
             <Cpu className="h-3.5 w-3.5" />
           </span>
@@ -141,16 +144,16 @@ export const SettingsView: React.FC = () => {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8b7d72]">SQLite database</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">Active (WAL)</div>
+              <div className="text-[10.5px] text-[#8091a5]">SQLite database</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">Active (WAL)</div>
             </div>
             <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
           </div>
 
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8b7d72]">FFmpeg inspection</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">
+              <div className="text-[10.5px] text-[#8091a5]">FFmpeg inspection</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">
                 {gatewayConfig?.features.ffmpeg ? 'Installed' : 'Optional (not found)'}
               </div>
             </div>
@@ -163,15 +166,15 @@ export const SettingsView: React.FC = () => {
 
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8b7d72]">Cloud sync</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">
+              <div className="text-[10.5px] text-[#8091a5]">Cloud sync</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">
                 {cloud?.configured ? (cloud.online ? 'Synchronized' : 'Offline') : 'Disabled (local)'}
               </div>
             </div>
             {cloud?.online ? (
               <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
             ) : (
-              <Shield className="h-5 w-5 shrink-0 text-[#a99a90]" />
+              <Shield className="h-5 w-5 shrink-0 text-[#90a0b2]" />
             )}
           </div>
         </div>
@@ -181,7 +184,7 @@ export const SettingsView: React.FC = () => {
       {formSettings && (
         <form onSubmit={handleSettingsSubmit} className="panel panel-pad space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
               <span className="grid h-7 w-7 place-items-center tint-gold">
                 <Settings className="h-3.5 w-3.5" />
               </span>
@@ -267,7 +270,7 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-[#4a3e35]/[0.075] pt-4">
+          <div className="flex justify-end border-t border-[#7189a4]/[0.075] pt-4">
             <button type="submit" className="btn btn-primary btn-sm">
               <Save className="h-3.5 w-3.5" />
               Save configuration
@@ -278,12 +281,23 @@ export const SettingsView: React.FC = () => {
 
       {/* Password */}
       <form onSubmit={handlePasswordSubmit} className="panel panel-pad space-y-4">
-        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
-          <span className="grid h-7 w-7 place-items-center tint-coral">
-            <KeyRound className="h-3.5 w-3.5" />
-          </span>
-          Change administrator password
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
+            <span className="grid h-7 w-7 place-items-center tint-coral">
+              <KeyRound className="h-3.5 w-3.5" />
+            </span>
+            Change administrator password
+          </h3>
+          <button
+            type="button"
+            onClick={() => setPasswordVisible((visible) => !visible)}
+            className="btn btn-ghost btn-sm"
+            aria-pressed={passwordVisible}
+          >
+            {passwordVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            {passwordVisible ? 'Hide password' : 'Show password'}
+          </button>
+        </div>
 
         {pwSuccess && (
           <div className="alert alert-success">
@@ -300,7 +314,7 @@ export const SettingsView: React.FC = () => {
           <div>
             <label className="field-label">Current password</label>
             <input
-              type="password"
+              type={passwordVisible ? 'text' : 'password'}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
@@ -311,7 +325,7 @@ export const SettingsView: React.FC = () => {
           <div>
             <label className="field-label">New password (min 12 chars)</label>
             <input
-              type="password"
+              type={passwordVisible ? 'text' : 'password'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -322,7 +336,7 @@ export const SettingsView: React.FC = () => {
           <div>
             <label className="field-label">Confirm new password</label>
             <input
-              type="password"
+              type={passwordVisible ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -331,7 +345,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-[#4a3e35]/[0.075] pt-4">
+        <div className="flex justify-end border-t border-[#7189a4]/[0.075] pt-4">
           <button type="submit" className="btn btn-secondary btn-sm">
             Update password
           </button>

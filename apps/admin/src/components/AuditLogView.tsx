@@ -31,7 +31,7 @@ export const AuditLogView: React.FC = () => {
         <div>
           <span className="eyebrow">Security</span>
           <h1 className="page-title">
-            Audit <span className="serif-accent text-[#6d3a52]">trail</span>
+            Audit <span className="serif-accent text-[#5B94D7]">trail</span>
           </h1>
           <p className="page-desc">
             An immutable record of administrative commands, pairing events, and configuration updates
@@ -64,9 +64,9 @@ export const AuditLogView: React.FC = () => {
                     <td className="whitespace-nowrap text-[10.5px]">
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
-                    <td className="font-semibold text-[#6c56a8]">
+                    <td className="font-semibold text-[#5B94D7]">
                       <div className="flex items-center gap-1.5">
-                        <Shield className="h-3.5 w-3.5 text-[#a99a90]" />
+                        <Shield className="h-3.5 w-3.5 text-[#90a0b2]" />
                         <span>{log.actor}</span>
                       </div>
                     </td>

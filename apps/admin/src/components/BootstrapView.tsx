@@ -145,7 +145,7 @@ export const BootstrapView: React.FC = () => {
               </div>
 
               <div>
-                <label className="auth-field-label" htmlFor="setup-name">Display name <span className="font-normal text-[#a99a90]">(optional)</span></label>
+                <label className="auth-field-label" htmlFor="setup-name">Display name <span className="font-normal text-[#90a0b2]">(optional)</span></label>
                 <div className="auth-input-wrap">
                   <UserRound className="auth-input-icon" size={17} />
                   <input
@@ -161,7 +161,7 @@ export const BootstrapView: React.FC = () => {
               </div>
 
               <div>
-                <label className="auth-field-label" htmlFor="setup-password">Password <span className="font-normal text-[#a99a90]">(at least 12 characters)</span></label>
+                <label className="auth-field-label" htmlFor="setup-password">Password <span className="font-normal text-[#90a0b2]">(at least 12 characters)</span></label>
                 <div className="auth-input-wrap">
                   <LockKeyhole className="auth-input-icon" size={17} />
                   <input

@@ -150,7 +150,7 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className="group cursor-pointer rounded-2xl border-[1.5px] border-dashed border-[#4a3e35]/18 bg-white/30 px-6 py-7 text-center transition hover:border-[#ee6a52]/50 hover:bg-[#ee6a52]/[0.03]"
+              className="group cursor-pointer rounded-2xl border-[1.5px] border-dashed border-[#8fa7c1]/45 bg-white/70 px-6 py-7 text-center transition hover:border-[#5B94D7]/55 hover:bg-[#5B94D7]/[0.04]"
             >
               <input
                 type="file"
@@ -162,10 +162,10 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
               {selectedFile ? (
                 <div className="flex flex-col items-center">
                   <CheckCircle2 className="mb-2 h-8 w-8 text-[#4e9e7e]" />
-                  <div className="max-w-xs truncate text-[12.5px] font-semibold text-[#2a2320]">
+                  <div className="max-w-xs truncate text-[12.5px] font-semibold text-[#203248]">
                     {selectedFile.name}
                   </div>
-                  <div className="mt-1 text-[10.5px] text-[#8b7d72]">
+                  <div className="mt-1 text-[10.5px] text-[#8091a5]">
                     {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
                   </div>
                 </div>
@@ -174,11 +174,11 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
                   <span className="mb-2 grid h-10 w-10 place-items-center rounded-xl tint-coral transition group-hover:scale-105">
                     <Upload className="h-4.5 w-4.5" />
                   </span>
-                  <div className="text-[12px] font-medium text-[#5c4f46]">
+                  <div className="text-[12px] font-medium text-[#52677f]">
                     Drag and drop a video, or{' '}
                     <span className="font-semibold text-[#d9533b]">browse</span>
                   </div>
-                  <div className="mt-1 text-[10.5px] text-[#a99a90]">
+                  <div className="mt-1 text-[10.5px] text-[#90a0b2]">
                     Direct upload to local gateway storage
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
 
             {isUploading && (
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between font-mono text-[10.5px] text-[#8b7d72]">
+                <div className="flex justify-between font-mono text-[10.5px] text-[#8091a5]">
                   <span>Uploading to gateway…</span>
                   <span>{uploadProgress}%</span>
                 </div>

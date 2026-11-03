@@ -34,20 +34,20 @@ export const Header: React.FC = () => {
 
           <div className="chip hidden lg:inline-flex">
             {cloud?.online ? (
-              <Cloud className="h-3.5 w-3.5 text-[#6c56a8]" />
+              <Cloud className="h-3.5 w-3.5 text-[#5B94D7]" />
             ) : (
-              <CloudOff className="h-3.5 w-3.5 text-[#8b7d72]" />
+              <CloudOff className="h-3.5 w-3.5 text-[#8091a5]" />
             )}
             <span>{cloud?.online ? 'Cloud synced' : 'Local LAN mode'}</span>
           </div>
 
           {identity && (
-            <div className="ml-1 flex items-center gap-2.5 border-l border-[#4a3e35]/10 pl-3.5">
+            <div className="ml-1 flex items-center gap-2.5 border-l border-[#7189a4]/10 pl-3.5">
               <div className="hidden text-right md:block">
-                <div className="max-w-[150px] truncate text-[11.5px] font-semibold text-[#2a2320]">
+                <div className="max-w-[150px] truncate text-[11.5px] font-semibold text-[#203248]">
                   {identity.displayName || identity.email}
                 </div>
-                <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium capitalize text-[#8b7d72]">
+                <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium capitalize text-[#8091a5]">
                   <Shield className="h-2.5 w-2.5" />
                   {identity.role}
                 </div>
@@ -59,7 +59,7 @@ export const Header: React.FC = () => {
                 onClick={() => void logout()}
                 title="Sign out"
                 aria-label="Sign out"
-                className="btn btn-ghost btn-icon btn-icon-round text-[#8b7d72] hover:text-[#c5544a]"
+                className="btn btn-ghost btn-icon btn-icon-round text-[#8091a5] hover:text-[#c5544a]"
               >
                 <LogOut className="h-4 w-4" />
               </button>

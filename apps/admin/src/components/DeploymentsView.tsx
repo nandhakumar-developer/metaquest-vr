@@ -24,7 +24,7 @@ export const DeploymentsView: React.FC = () => {
         <div>
           <span className="eyebrow">Transfers</span>
           <h1 className="page-title">
-            Deployments <span className="serif-accent text-[#6d3a52]">&amp; transfers</span>
+            Deployments <span className="serif-accent text-[#5B94D7]">&amp; transfers</span>
           </h1>
           <p className="page-desc">
             Local headset download progress and checksum verification. Shared library playback remains
@@ -57,7 +57,7 @@ export const DeploymentsView: React.FC = () => {
 
                   return (
                     <tr key={d.id}>
-                      <td className="max-w-xs truncate font-semibold !text-[#2a2320]">{d.videoName}</td>
+                      <td className="max-w-xs truncate font-semibold !text-[#203248]">{d.videoName}</td>
                       <td>{d.deviceName}</td>
                       <td>
                         <span className={`badge ${statusTone(d.status)} capitalize`}>
@@ -71,7 +71,7 @@ export const DeploymentsView: React.FC = () => {
                       </td>
                       <td>
                         <div className="space-y-1.5">
-                          <div className="flex justify-between font-mono text-[10px] text-[#8b7d72]">
+                          <div className="flex justify-between font-mono text-[10px] text-[#8091a5]">
                             <span>{percent}%</span>
                           </div>
                           <div className="progress">
@@ -90,7 +90,7 @@ export const DeploymentsView: React.FC = () => {
                           <button
                             onClick={() => void cancelDeployment(d.id)}
                             title="Cancel deployment"
-                            className="btn btn-ghost btn-icon-sm text-[#8b7d72] hover:text-[#a23f36]"
+                            className="btn btn-ghost btn-icon-sm text-[#8091a5] hover:text-[#a23f36]"
                           >
                             <X className="h-4 w-4" />
                           </button>

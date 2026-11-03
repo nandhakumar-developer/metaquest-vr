@@ -179,7 +179,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                 return (
                   <div key={deployment.id} className="panel-inset px-3.5 py-3">
                     <div className="flex items-center justify-between gap-3 text-[11.5px]">
-                      <span className="font-semibold text-[#2a2320]">{deployment.deviceName}</span>
+                      <span className="font-semibold text-[#203248]">{deployment.deviceName}</span>
                       <span
                         className={
                           deployment.status === 'ready'
@@ -231,7 +231,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
               <button
                 type="button"
                 onClick={selectAll}
-                className="font-semibold text-[#8b7d72] hover:text-[#2a2320]"
+                className="font-semibold text-[#8091a5] hover:text-[#203248]"
               >
                 All ({selectableDevices.length})
               </button>
@@ -260,10 +260,10 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                   aria-disabled={!selectable}
                   className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition ${
                     !selectable
-                      ? 'cursor-not-allowed border-[#4a3e35]/[0.06] bg-white/20 text-[#a99a90]'
+                      ? 'cursor-not-allowed border-[#7189a4]/[0.06] bg-white/20 text-[#90a0b2]'
                       : checked
-                        ? 'cursor-pointer border-[#ee6a52]/30 bg-[#ee6a52]/[0.06]'
-                        : 'cursor-pointer border-[#4a3e35]/[0.09] bg-white/35 hover:border-[#4a3e35]/20'
+                        ? 'cursor-pointer border-[#5B94D7]/30 bg-[#5B94D7]/[0.06]'
+                        : 'cursor-pointer border-[#7189a4]/[0.09] bg-white/35 hover:border-[#7189a4]/20'
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -274,13 +274,13 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       onChange={() => {}}
                     />
                     <div className="min-w-0">
-                      <div className="truncate text-[12px] font-semibold text-[#2a2320]">
+                      <div className="truncate text-[12px] font-semibold text-[#203248]">
                         {device.name}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8b7d72]">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8091a5]">
                         <span>{device.model}</span>
                         <span className="text-[#c3b6ab]">·</span>
-                        <span className={device.online ? 'text-[#347f63]' : 'text-[#a99a90]'}>
+                        <span className={device.online ? 'text-[#347f63]' : 'text-[#90a0b2]'}>
                           {device.online ? 'Online' : 'Offline'}
                         </span>
                         <span className="text-[#c3b6ab]">·</span>
@@ -300,7 +300,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
             })}
           </div>
 
-          <p className="text-[10px] leading-relaxed text-[#8b7d72]">
+          <p className="text-[10px] leading-relaxed text-[#8091a5]">
             Browser players download the video to local Quest Browser storage and show it under “On
             this headset”. Playback from the shared library remains a separate streaming option.
             Available browser storage is checked when reported; if space is unavailable, the transfer
@@ -309,7 +309,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
         </div>
 
         <div className="modal-foot">
-          <span className="flex items-center gap-1.5 text-[10px] text-[#8b7d72]">
+          <span className="flex items-center gap-1.5 text-[10px] text-[#8091a5]">
             <Clock className="h-3 w-3" />
             Keep the headset player open until its download finishes.
           </span>
