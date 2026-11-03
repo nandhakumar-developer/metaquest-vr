@@ -1,90 +1,72 @@
 import React from 'react';
 import { useApp } from '../context/AppContext.js';
-import {
-  Glasses,
-  Radio,
-  Cloud,
-  CloudOff,
-  User,
-  LogOut,
-  Shield,
-} from 'lucide-react';
+import { Glasses, Radio, Cloud, CloudOff, LogOut, Shield } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { identity, wsConnected, cloud, logout } = useApp();
 
+  const initials = (identity?.displayName || identity?.email || 'VR')
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+
   return (
-    <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-40">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-900/30">
-          <Glasses className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-bold text-lg tracking-tight text-white">VR Control Center</h1>
-            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800">
-              Quest 2
-            </span>
+    <header className="topbar">
+      <div className="topbar-inner">
+        <div className="brand">
+          <div className="brand-mark">
+            <Glasses className="h-5 w-5" strokeWidth={1.8} />
           </div>
-          <p className="text-xs text-slate-400">Headset Fleet & Playback Management</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4">
-        {/* Gateway WebSocket Status */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs">
-          <Radio
-            className={`w-4 h-4 ${
-              wsConnected ? 'text-emerald-400 animate-pulse' : 'text-rose-400'
-            }`}
-          />
-          <span className="text-slate-300">
-            {wsConnected ? 'Gateway Live' : 'Reconnecting...'}
-          </span>
+          <div className="min-w-0">
+            <div className="brand-name">VR Control Center</div>
+            <div className="brand-caption">Quest fleet &amp; playback management</div>
+          </div>
         </div>
 
-        {/* Cloud Sync Status */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs">
-          {cloud?.online ? (
-            <>
-              <Cloud className="w-4 h-4 text-cyan-400" />
-              <span className="text-slate-300">Cloud Synced</span>
-            </>
-          ) : (
-            <>
-              <CloudOff className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-400">Local LAN Mode</span>
-            </>
-          )}
-        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="chip hidden sm:inline-flex">
+            <span className={`status-dot ${wsConnected ? 'is-live' : 'is-off'}`} />
+            <Radio className={`h-3.5 w-3.5 ${wsConnected ? 'text-[#3f9a77]' : 'text-[#c5544a]'}`} />
+            <span>{wsConnected ? 'Gateway live' : 'Reconnecting'}</span>
+          </div>
 
-        {/* Identity & Logout */}
-        {identity && (
-          <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
-            <div className="flex items-center gap-2 text-xs">
-              <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 text-slate-300">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="hidden md:block">
-                <div className="font-medium text-slate-200">{identity.displayName || identity.email}</div>
-                <div className="text-[10px] text-cyan-400 flex items-center gap-1">
-                  <Shield className="w-3 h-3" />
-                  <span className="capitalize">{identity.role}</span>
+          <div className="chip hidden lg:inline-flex">
+            {cloud?.online ? (
+              <Cloud className="h-3.5 w-3.5 text-[#6c56a8]" />
+            ) : (
+              <CloudOff className="h-3.5 w-3.5 text-[#8b7d72]" />
+            )}
+            <span>{cloud?.online ? 'Cloud synced' : 'Local LAN mode'}</span>
+          </div>
+
+          {identity && (
+            <div className="ml-1 flex items-center gap-2.5 border-l border-[#4a3e35]/10 pl-3.5">
+              <div className="hidden text-right md:block">
+                <div className="max-w-[150px] truncate text-[11.5px] font-semibold text-[#2a2320]">
+                  {identity.displayName || identity.email}
+                </div>
+                <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium capitalize text-[#8b7d72]">
+                  <Shield className="h-2.5 w-2.5" />
+                  {identity.role}
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => void logout()}
-              title="Sign Out"
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+              <div className="avatar">{initials || 'VR'}</div>
+
+              <button
+                onClick={() => void logout()}
+                title="Sign out"
+                aria-label="Sign out"
+                className="btn btn-ghost btn-icon btn-icon-round text-[#8b7d72] hover:text-[#c5544a]"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
 };
-

@@ -11,6 +11,9 @@ import {
   Search,
   CheckCircle2,
   Users,
+  ArrowRight,
+  WifiOff,
+  Sparkles,
 } from 'lucide-react';
 
 interface DevicesViewProps {
@@ -18,6 +21,8 @@ interface DevicesViewProps {
   onOpenPreview: (deviceId: string) => void;
   onOpenGroup: () => void;
 }
+
+const ORB_BARS = [34, 58, 44, 76, 52, 90, 62, 70, 48, 82];
 
 export const DevicesView: React.FC<DevicesViewProps> = ({
   onOpenPairing,
@@ -62,172 +67,232 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Pending Pairing Alert Banner */}
-      {pairingRequests.length > 0 && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/80 to-slate-900 border border-amber-500/50 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
-              <AlertCircle className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-amber-300 text-sm">
-                Headset Pairing Requested ({pairingRequests.length})
-              </h4>
-              <p className="text-xs text-slate-300">
-                A Meta Quest headset is requesting to join the gateway control center.
-              </p>
+    <div className="page-stack">
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-content">
+          <span className="hero-eyebrow">
+            <Sparkles className="h-3 w-3" />
+            Live fleet operations
+          </span>
+          <h1 className="hero-title">
+            Your fleet,
+            <br />
+            <span className="serif-accent">in focus.</span>
+          </h1>
+          <p className="hero-desc">
+            Every Meta Quest 2 headset on one calm control surface. Pair, preview and cue
+            synchronized playback without leaving your local network.
+          </p>
+          <div className="hero-actions">
+            <button onClick={onOpenPairing} className="btn btn-primary">
+              <Plus className="h-4 w-4" />
+              Pair a headset
+            </button>
+            <button
+              onClick={onOpenGroup}
+              className="btn btn-secondary"
+            >
+              <Users className="h-4 w-4" />
+              Group playback
+              <ArrowRight className="h-3.5 w-3.5 opacity-60" />
+            </button>
+          </div>
+        </div>
+
+        <div className="hero-visual" aria-hidden="true">
+          <div className="hero-orb">
+            <div className="hero-card">
+              <div className="hero-card-label">
+                <span className={`status-dot ${onlineDevices.length > 0 ? 'is-live' : 'is-off'}`} />
+                Headsets online
+              </div>
+              <div className="hero-card-value">
+                {onlineDevices.length}
+                <small>/ {devices.length}</small>
+              </div>
+              <div className="hero-bars">
+                {ORB_BARS.map((height, index) => (
+                  <span key={index} style={{ height: `${height}%` }} />
+                ))}
+              </div>
+              <div className="hero-card-meta">
+                {playingDevices.length > 0
+                  ? `${playingDevices.length} actively playing`
+                  : 'All quiet on the network'}
+              </div>
             </div>
           </div>
-          <button
-            onClick={onOpenPairing}
-            className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
-          >
-            Review & Pair
+        </div>
+      </section>
+
+      {/* Stats */}
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-top">
+            <span className="stat-label">Total fleet</span>
+            <span className="stat-icon tint-neutral">
+              <Glasses className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="stat-value">{devices.length}</div>
+          <div className="stat-hint">Paired Meta Quest 2</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-top">
+            <span className="stat-label">Online</span>
+            <span className="stat-icon tint-mint">
+              <CheckCircle2 className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="stat-value" style={{ color: '#347f63' }}>
+            {onlineDevices.length}
+          </div>
+          <div className="stat-hint">Ready for commands</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-top">
+            <span className="stat-label">Actively playing</span>
+            <span className="stat-icon tint-coral">
+              <Play className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="stat-value" style={{ color: '#d9533b' }}>
+            {playingDevices.length}
+          </div>
+          <div className="stat-hint">Inside a VR experience</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-top">
+            <span className="stat-label">Offline</span>
+            <span className="stat-icon tint-neutral">
+              <WifiOff className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="stat-value" style={{ color: '#8b7d72' }}>
+            {devices.length - onlineDevices.length}
+          </div>
+          <div className="stat-hint">Standby or powered off</div>
+        </div>
+      </div>
+
+      {/* Pending pairing */}
+      {pairingRequests.length > 0 && (
+        <div className="alert alert-warning">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#c98a2e]/15 text-[#92601a]">
+            <AlertCircle className="h-4 w-4 animate-pulse" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12.5px] font-semibold text-[#7f571d]">
+              {pairingRequests.length} headset{pairingRequests.length === 1 ? '' : 's'} requesting pairing
+            </div>
+            <p className="mt-0.5 text-[11.5px] text-[#7f571d]/85">
+              A Meta Quest headset is waiting to join this gateway. Review the code to connect it.
+            </p>
+          </div>
+          <button onClick={onOpenPairing} className="btn btn-dark btn-sm shrink-0">
+            Review &amp; pair
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
-      {/* Top Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Total Fleet</span>
-            <Glasses className="w-4 h-4 text-slate-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-white">{devices.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Paired Meta Quest 2</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <div className="flex items-center justify-between text-xs text-emerald-400">
-            <span>Online</span>
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-400">{onlineDevices.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Ready for commands</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <div className="flex items-center justify-between text-xs text-cyan-400">
-            <span>Actively Playing</span>
-            <Play className="w-4 h-4" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-cyan-400">{playingDevices.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">In VR experience</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Offline</span>
-            <Glasses className="w-4 h-4 text-slate-600" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-400">
-            {devices.length - onlineDevices.length}
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">Standby / Powered off</div>
-        </div>
-      </div>
-
-      {/* Control Bar: Global Sync Controls + Search & Pair */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider mr-2">
-            Fleet controls:
-          </span>
+      {/* Controls */}
+      <div className="toolbar">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="toolbar-label mr-1 hidden sm:inline">Fleet controls</span>
           <button
             onClick={onOpenGroup}
             disabled={onlineDevices.length === 0}
             title="Open synchronized group playback"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition disabled:opacity-40"
+            className="btn btn-dark btn-sm"
           >
-            <Users className="w-3.5 h-3.5" />
-            <span>Group Playback…</span>
+            <Users className="h-3.5 w-3.5" />
+            Group playback
           </button>
           <button
             onClick={handleGlobalPause}
             disabled={onlineDevices.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition disabled:opacity-40"
+            className="btn btn-secondary btn-sm"
           >
-            <Pause className="w-3.5 h-3.5 fill-current" />
-            <span>Pause All</span>
+            <Pause className="h-3.5 w-3.5" />
+            Pause all
           </button>
           <button
             onClick={handleGlobalStop}
             disabled={onlineDevices.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition disabled:opacity-40"
+            className="btn btn-secondary btn-sm"
           >
-            <Square className="w-3.5 h-3.5 fill-current" />
-            <span>Stop All</span>
+            <Square className="h-3 w-3" />
+            Stop all
           </button>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Search box */}
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="search-field w-full sm:w-52">
+            <Search />
             <input
               type="text"
-              placeholder="Search headsets..."
+              placeholder="Search headsets…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-slate-800/80 border border-slate-700 text-slate-200 text-xs rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-cyan-500 transition w-full sm:w-48"
+              className="input"
             />
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700 text-xs">
+          <div className="pill-group">
             <button
               onClick={() => setFilter('all')}
-              className={`px-2.5 py-1 rounded ${filter === 'all' ? 'bg-slate-700 text-white font-medium' : 'text-slate-400'}`}
+              className={`pill ${filter === 'all' ? 'is-active' : ''}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter('online')}
-              className={`px-2.5 py-1 rounded ${filter === 'online' ? 'bg-slate-700 text-emerald-400 font-medium' : 'text-slate-400'}`}
+              className={`pill ${filter === 'online' ? 'is-active' : ''}`}
             >
               Online
             </button>
+            <button
+              onClick={() => setFilter('playing')}
+              className={`pill ${filter === 'playing' ? 'is-active' : ''}`}
+            >
+              Playing
+            </button>
           </div>
 
-          {/* Pair New Headset Button */}
-          <button
-            onClick={onOpenPairing}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Pair Headset</span>
+          <button onClick={onOpenPairing} className="btn btn-primary btn-sm">
+            <Plus className="h-4 w-4" />
+            Pair headset
           </button>
         </div>
       </div>
 
-      {/* Headset Grid */}
+      {/* Fleet grid */}
       {filteredDevices.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredDevices.map((device) => (
-            <DeviceCard
-              key={device.id}
-              device={device}
-              onOpenPreview={onOpenPreview}
-            />
+            <DeviceCard key={device.id} device={device} onOpenPreview={onOpenPreview} />
           ))}
         </div>
       ) : (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30">
-          <Glasses className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-300">No Headsets Found</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <div className="empty-state">
+          <div className="empty-icon">
+            <Glasses className="h-6 w-6" />
+          </div>
+          <h3 className="empty-title">No headsets found</h3>
+          <p className="empty-desc">
             {devices.length === 0
               ? 'Pair your first Meta Quest 2 headset to begin independent playback control.'
-              : 'No headsets match your current filter criteria.'}
+              : 'No headsets match your current filter. Try a different view or search term.'}
           </p>
           {devices.length === 0 && (
-            <button
-              onClick={onOpenPairing}
-              className="mt-4 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition"
-            >
-              Pair First Headset
+            <button onClick={onOpenPairing} className="btn btn-primary btn-sm mt-5">
+              <Plus className="h-4 w-4" />
+              Pair first headset
             </button>
           )}
         </div>
@@ -235,4 +300,3 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
     </div>
   );
 };
-

@@ -10,6 +10,12 @@ function formatSeconds(seconds: number | null | undefined): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+function statusTone(status: string | null | undefined): string {
+  if (status === 'completed') return 'badge-success';
+  if (status === 'stopped') return 'badge-neutral';
+  return 'badge-warning';
+}
+
 export const SessionsView: React.FC = () => {
   const [sessions, setSessions] = useState<PlaybackSessionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,67 +39,52 @@ export const SessionsView: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+    <div className="page-stack">
+      <div className="section-head">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <History className="w-5 h-5 text-cyan-400" />
-            Playback Session History
-          </h2>
-          <p className="text-xs text-slate-400">
-            Log of user viewing sessions, durations watched, and completion statuses across all headsets
+          <span className="eyebrow">Analytics</span>
+          <h1 className="page-title">
+            Playback <span className="serif-accent text-[#6d3a52]">history</span>
+          </h1>
+          <p className="page-desc">
+            A log of viewing sessions, durations watched, and completion statuses across every paired
+            headset.
           </p>
         </div>
 
-        <button
-          onClick={fetchSessions}
-          disabled={loading}
-          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-          title="Refresh"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        <button onClick={fetchSessions} disabled={loading} className="btn btn-secondary btn-sm" title="Refresh">
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
         </button>
       </div>
 
       {sessions.length > 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+        <div className="table-wrap">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Headset</th>
-                  <th className="py-3 px-4">Video Title</th>
-                  <th className="py-3 px-4">Started At</th>
-                  <th className="py-3 px-4">Watched Duration</th>
-                  <th className="py-3 px-4">Final Status</th>
+                <tr>
+                  <th>Headset</th>
+                  <th>Video title</th>
+                  <th>Started at</th>
+                  <th>Watched duration</th>
+                  <th>Final status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody>
                 {sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-4 font-semibold text-white">
-                      {s.deviceName}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-300">
-                      {s.videoName || 'Direct Stream / Flat'}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono">
-                      {new Date(s.startedAt).toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-cyan-400">
+                  <tr key={s.id}>
+                    <td className="font-semibold !text-[#2a2320]">{s.deviceName}</td>
+                    <td>{s.videoName || 'Direct stream / flat'}</td>
+                    <td className="font-mono text-[11px]">{new Date(s.startedAt).toLocaleString()}</td>
+                    <td className="font-mono text-[11px] text-[#c34c37]">
                       {formatSeconds(s.lastPositionSeconds)} / {formatSeconds(s.durationSeconds)}
                     </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize border ${
-                        s.finalStatus === 'completed'
-                          ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                          : s.finalStatus === 'stopped'
-                          ? 'bg-slate-800 text-slate-300 border-slate-700'
-                          : 'bg-amber-950/60 text-amber-400 border-amber-800'
-                      }`}>
-                        {s.finalStatus === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-                        {s.finalStatus === 'stopped' && <CheckCircle2 className="w-3 h-3 text-slate-400" />}
-                        {s.finalStatus === 'interrupted' && <AlertCircle className="w-3 h-3" />}
+                    <td>
+                      <span className={`badge ${statusTone(s.finalStatus)} capitalize`}>
+                        {s.finalStatus === 'completed' && <CheckCircle2 className="h-3 w-3" />}
+                        {s.finalStatus === 'stopped' && <CheckCircle2 className="h-3 w-3" />}
+                        {s.finalStatus === 'interrupted' && <AlertCircle className="h-3 w-3" />}
                         <span>{s.finalStatus || 'Active'}</span>
                       </span>
                     </td>
@@ -104,15 +95,17 @@ export const SessionsView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30">
-          <History className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-300">No Playback Sessions Yet</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            Playback sessions are automatically recorded whenever an experience starts on any paired headset.
+        <div className="empty-state">
+          <div className="empty-icon">
+            <History className="h-6 w-6" />
+          </div>
+          <h3 className="empty-title">No playback sessions yet</h3>
+          <p className="empty-desc">
+            Playback sessions are recorded automatically whenever an experience starts on any paired
+            headset.
           </p>
         </div>
       )}
     </div>
   );
 };
-

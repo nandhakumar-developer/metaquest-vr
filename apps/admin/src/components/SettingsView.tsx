@@ -11,6 +11,8 @@ import {
   AlertCircle,
   Shield,
   Save,
+  Globe2,
+  Radio,
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -73,114 +75,133 @@ export const SettingsView: React.FC = () => {
   const gw = gatewayConfig?.gateway;
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Settings className="w-5 h-5 text-cyan-400" />
-          System Status & Gateway Configuration
-        </h2>
-        <p className="text-xs text-slate-400">
-          Network endpoints, hardware acceleration status, and operator thresholds
-        </p>
+    <div className="page-stack max-w-5xl">
+      <div className="section-head">
+        <div>
+          <span className="eyebrow">Configuration</span>
+          <h1 className="page-title">
+            System <span className="serif-accent text-[#6d3a52]">settings</span>
+          </h1>
+          <p className="page-desc">
+            Network endpoints, hardware acceleration status, and the operational thresholds that keep
+            this gateway in shape.
+          </p>
+        </div>
       </div>
 
-      {/* Network & Endpoints */}
-      <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <Network className="w-4 h-4 text-cyan-400" />
-          Local Gateway Endpoints
+      {/* Network */}
+      <section className="panel panel-pad space-y-4">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+          <span className="grid h-7 w-7 place-items-center tint-lilac">
+            <Network className="h-3.5 w-3.5" />
+          </span>
+          Local gateway endpoints
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800">
-            <span className="text-slate-400">Public Gateway URL:</span>
-            <div className="font-mono text-cyan-400 text-sm mt-1">{gw?.publicUrl || 'http://localhost:4000'}</div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="panel-inset px-4 py-3">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8b7d72]">
+              <Globe2 className="h-3 w-3" /> Public gateway URL
+            </span>
+            <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
+              {gw?.publicUrl || 'http://localhost:4000'}
+            </div>
           </div>
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800">
-            <span className="text-slate-400">WebSocket URL for Headsets:</span>
-            <div className="font-mono text-cyan-400 text-sm mt-1">{gw?.wsUrl || 'ws://localhost:4000/ws'}</div>
+
+          <div className="panel-inset px-4 py-3">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8b7d72]">
+              <Radio className="h-3 w-3" /> WebSocket URL for headsets
+            </span>
+            <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
+              {gw?.wsUrl || 'ws://localhost:4000/ws'}
+            </div>
           </div>
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 col-span-1 md:col-span-2">
-            <span className="text-slate-400">LAN Interface IP Addresses:</span>
-            <div className="font-mono text-white text-sm mt-1">
+
+          <div className="panel-inset px-4 py-3 md:col-span-2">
+            <span className="text-[10.5px] font-medium text-[#8b7d72]">LAN interface IP addresses</span>
+            <div className="mt-1 font-mono text-[12.5px] text-[#2a2320]">
               {gw?.lanAddresses?.length ? gw.lanAddresses.join(', ') : '127.0.0.1 (Localhost only)'}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Ensure Meta Quest 2 headsets are connected to the same Wi-Fi subnet as these IP addresses.
+            <p className="field-hint">
+              Ensure Meta Quest 2 headsets are connected to the same Wi-Fi subnet as these addresses.
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Hardware & Cloud Capabilities */}
-      <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-emerald-400" />
-          Components & Services
+      {/* Components */}
+      <section className="panel panel-pad space-y-4">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+          <span className="grid h-7 w-7 place-items-center tint-mint">
+            <Cpu className="h-3.5 w-3.5" />
+          </span>
+          Components &amp; services
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-slate-400">SQLite Database</div>
-              <div className="text-sm font-semibold text-white mt-0.5">Active (WAL)</div>
+              <div className="text-[10.5px] text-[#8b7d72]">SQLite database</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">Active (WAL)</div>
             </div>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+          <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-slate-400">FFmpeg Inspection</div>
-              <div className="text-sm font-semibold text-white mt-0.5">
-                {gatewayConfig?.features.ffmpeg ? 'Installed' : 'Optional (Not found)'}
+              <div className="text-[10.5px] text-[#8b7d72]">FFmpeg inspection</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">
+                {gatewayConfig?.features.ffmpeg ? 'Installed' : 'Optional (not found)'}
               </div>
             </div>
             {gatewayConfig?.features.ffmpeg ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-amber-400" />
+              <AlertCircle className="h-5 w-5 shrink-0 text-[#c98a2e]" />
             )}
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+          <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-slate-400">Cloud Sync (Supabase)</div>
-              <div className="text-sm font-semibold text-white mt-0.5">
-                {cloud?.configured ? (cloud.online ? 'Synchronized' : 'Offline') : 'Disabled (Local Mode)'}
+              <div className="text-[10.5px] text-[#8b7d72]">Cloud sync</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#2a2320]">
+                {cloud?.configured ? (cloud.online ? 'Synchronized' : 'Offline') : 'Disabled (local)'}
               </div>
             </div>
             {cloud?.online ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
             ) : (
-              <Shield className="w-5 h-5 text-slate-500" />
+              <Shield className="h-5 w-5 shrink-0 text-[#a99a90]" />
             )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tunable Operational Settings */}
+      {/* Operational parameters */}
       {formSettings && (
-        <form onSubmit={handleSettingsSubmit} className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Settings className="w-4 h-4 text-amber-400" />
-              Operational Parameters
+        <form onSubmit={handleSettingsSubmit} className="panel panel-pad space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+              <span className="grid h-7 w-7 place-items-center tint-gold">
+                <Settings className="h-3.5 w-3.5" />
+              </span>
+              Operational parameters
             </h3>
             {saveSuccess && (
-              <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Saved!
+              <span className="badge badge-success">
+                <CheckCircle2 className="h-3 w-3" /> Saved
               </span>
             )}
             {saveError && (
-              <span className="text-xs font-semibold text-rose-400 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {saveError}
+              <span className="badge badge-danger">
+                <AlertCircle className="h-3 w-3" /> {saveError}
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Stale Headset Threshold (Seconds)
-              </label>
+              <label className="field-label">Stale headset threshold (seconds)</label>
               <input
                 type="number"
                 min={5}
@@ -189,17 +210,15 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, staleAfterSeconds: Number(e.target.value) })
                 }
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+                className="input"
               />
-              <span className="text-[11px] text-slate-500">
-                Mark device offline after this many seconds without heartbeat.
+              <span className="field-hint">
+                Mark a device offline after this many seconds without a heartbeat.
               </span>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Seek Skip Step (Seconds)
-              </label>
+              <label className="field-label">Seek skip step (seconds)</label>
               <input
                 type="number"
                 min={1}
@@ -208,17 +227,13 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, seekStepSeconds: Number(e.target.value) })
                 }
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+                className="input"
               />
-              <span className="text-[11px] text-slate-500">
-                Seconds to jump on quick forward/back buttons.
-              </span>
+              <span className="field-hint">Seconds to jump on quick forward/back buttons.</span>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Preview Snapshot Max FPS (5-15)
-              </label>
+              <label className="field-label">Preview snapshot max FPS (5–15)</label>
               <input
                 type="number"
                 min={5}
@@ -227,18 +242,16 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, previewMaxFps: Number(e.target.value) })
                 }
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+                className="input"
               />
-              <span className="text-[11px] text-slate-500">
-                The preview defaults to 12 FPS. Higher values look smoother but use more headset and
-                network capacity; snapshots may slow down on a busy device or Wi-Fi connection.
+              <span className="field-hint">
+                Defaults to 12 FPS. Higher values look smoother but use more headset and network
+                capacity; snapshots may slow down on a busy device or Wi-Fi connection.
               </span>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Default Master Volume (0.0 - 1.0)
-              </label>
+              <label className="field-label">Default master volume (0.0 – 1.0)</label>
               <input
                 type="number"
                 step={0.05}
@@ -248,89 +261,82 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, defaultVolume: Number(e.target.value) })
                 }
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+                className="input"
               />
-              <span className="text-[11px] text-slate-500">
-                Starting audio level for new playback sessions.
-              </span>
+              <span className="field-hint">Starting audio level for new playback sessions.</span>
             </div>
           </div>
 
-          <div className="pt-2 flex justify-end">
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition shadow-lg shadow-cyan-900/30"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>Save Configuration</span>
+          <div className="flex justify-end border-t border-[#4a3e35]/[0.075] pt-4">
+            <button type="submit" className="btn btn-primary btn-sm">
+              <Save className="h-3.5 w-3.5" />
+              Save configuration
             </button>
           </div>
         </form>
       )}
 
-      {/* Admin Password Change */}
-      <form onSubmit={handlePasswordSubmit} className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-cyan-400" />
-          Change Administrator Password
+      {/* Password */}
+      <form onSubmit={handlePasswordSubmit} className="panel panel-pad space-y-4">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+          <span className="grid h-7 w-7 place-items-center tint-coral">
+            <KeyRound className="h-3.5 w-3.5" />
+          </span>
+          Change administrator password
         </h3>
 
         {pwSuccess && (
-          <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" /> Password successfully updated!
+          <div className="alert alert-success">
+            <CheckCircle2 className="h-4 w-4" /> Password successfully updated.
           </div>
         )}
         {pwError && (
-          <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {pwError}
+          <div className="alert alert-danger">
+            <AlertCircle className="h-4 w-4" /> {pwError}
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Current Password</label>
+            <label className="field-label">Current password</label>
             <input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">New Password (min 12 chars)</label>
+            <label className="field-label">New password (min 12 chars)</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Confirm New Password</label>
+            <label className="field-label">Confirm new password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+              className="input"
             />
           </div>
         </div>
 
-        <div className="pt-2 flex justify-end">
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition"
-          >
-            Update Password
+        <div className="flex justify-end border-t border-[#4a3e35]/[0.075] pt-4">
+          <button type="submit" className="btn btn-secondary btn-sm">
+            Update password
           </button>
         </div>
       </form>
     </div>
   );
 };
-

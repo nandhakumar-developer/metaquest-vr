@@ -94,192 +94,187 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
-              <Glasses className="w-5 h-5" />
+    <div className="modal-backdrop">
+      <div className="modal max-w-xl">
+        <div className="modal-head">
+          <div className="flex items-center gap-3">
+            <div className="modal-icon tint-mint">
+              <Glasses className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">Pair Meta Quest Headset</h3>
-              <p className="text-xs text-slate-400">Connect a new headset over local LAN</p>
+              <h3 className="modal-title">Pair Meta Quest headset</h3>
+              <p className="modal-sub">Connect a new headset over your local network</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="btn btn-ghost btn-icon-sm" aria-label="Close">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {error && (
-            <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Player link + QR: the headset runs this page in Meta Quest Browser */}
-          <div className="rounded-xl bg-slate-950/70 border border-slate-800 p-4">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0">
-                {qrDataUrl ? (
-                  <img
-                    src={qrDataUrl}
-                    alt="QR code for the Quest browser player"
-                    className="w-28 h-28 rounded-lg border border-slate-700 bg-slate-900"
-                  />
-                ) : (
-                  <div className="w-28 h-28 rounded-lg border border-dashed border-slate-700 flex items-center justify-center text-slate-600">
-                    <QrCode className="w-8 h-8" />
-                  </div>
-                )}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="modal-body space-y-5">
+            {error && (
+              <div className="alert alert-danger">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
               </div>
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
-                  Open the player on each headset
+            )}
+
+            {/* Player link + QR */}
+            <div className="panel-inset p-4">
+              <div className="flex items-start gap-4">
+                <div className="shrink-0">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="QR code for the Quest browser player"
+                      className="h-28 w-28 rounded-xl border border-white/70 bg-white shadow-sm"
+                    />
+                  ) : (
+                    <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-dashed border-[#4a3e35]/20 text-[#a99a90]">
+                      <QrCode className="h-8 w-8" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <code
-                    className="min-w-0 flex-1 truncate rounded-md bg-slate-900 border border-slate-700 px-2 py-1.5 text-[11px] font-mono text-cyan-300"
-                    title={playerUrl}
-                  >
-                    {playerUrl || 'Generating link…'}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={() => void copyPlayerUrl()}
-                    disabled={!playerUrl}
-                    className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold transition disabled:opacity-40"
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                <p className="text-[11px] leading-relaxed text-slate-400">
-                  Scan the QR code or type this URL into <strong className="text-slate-300">Meta Quest Browser</strong>.
-                  Open the <strong className="text-slate-300">same URL on each headset</strong> and pair each one
-                  separately — every headset gets its own single-use 6-digit code.
-                </p>
-                <p className="text-[11px] leading-relaxed text-slate-500">
-                  Immersive WebXR needs HTTPS. Over plain HTTP the player still streams and plays flat 2D.
-                </p>
-                {linkError && (
-                  <p className="text-[11px] text-amber-400 flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{linkError}</span>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#2a2320]">
+                    <Smartphone className="h-3.5 w-3.5 text-[#6c56a8]" />
+                    Open the player on each headset
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code
+                      className="min-w-0 flex-1 truncate rounded-lg border border-[#4a3e35]/10 bg-white/60 px-2.5 py-1.5 font-mono text-[10.5px] text-[#c34c37]"
+                      title={playerUrl}
+                    >
+                      {playerUrl || 'Generating link…'}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => void copyPlayerUrl()}
+                      disabled={!playerUrl}
+                      className="btn btn-secondary btn-xs shrink-0"
+                    >
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5 text-[#4e9e7e]" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[10.5px] leading-relaxed text-[#8b7d72]">
+                    Scan the QR code or type this URL into{' '}
+                    <strong className="font-semibold text-[#5c4f46]">Meta Quest Browser</strong>. Open
+                    the same URL on each headset and pair each one separately — every headset gets its
+                    own single-use 6-digit code.
                   </p>
-                )}
+                  <p className="text-[10px] leading-relaxed text-[#a99a90]">
+                    Immersive WebXR needs HTTPS. Over plain HTTP the player still streams and plays
+                    flat 2D.
+                  </p>
+                  {linkError && (
+                    <p className="flex items-center gap-1.5 text-[10.5px] text-[#92601a]">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span>{linkError}</span>
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Pending Headsets Detected */}
-          {pairingRequests.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                Detected Headsets Awaiting Pairing:
-              </div>
+            {/* Pending requests */}
+            {pairingRequests.length > 0 && (
               <div className="space-y-2">
-                {pairingRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>PIN:</span>
-                        <span className="font-mono text-cyan-400 tracking-wider text-base bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                          {req.code}
-                        </span>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#92601a]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#c98a2e]" />
+                  Detected headsets awaiting pairing
+                </div>
+                <div className="space-y-2">
+                  {pairingRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#4a3e35]/10 bg-white/45 px-3.5 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-[11.5px] font-semibold text-[#2a2320]">
+                          PIN
+                          <span className="rounded-md border border-[#4a3e35]/10 bg-white/70 px-2 py-0.5 font-mono text-[13px] tracking-[0.16em] text-[#c34c37]">
+                            {req.code}
+                          </span>
+                        </div>
+                        <div className="mt-1 truncate text-[10.5px] text-[#8b7d72]">
+                          {req.ipAddress || 'LAN'} · {req.deviceModel}
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-400 mt-1">
-                        IP: {req.ipAddress || 'LAN'} • Model: {req.deviceModel}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleQuickPair(req.code)}
+                          className="btn btn-dark btn-xs"
+                        >
+                          Select PIN
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void cancelPairing(req.id)}
+                          className="btn btn-ghost btn-icon-sm text-[#8b7d72] hover:text-[#a23f36]"
+                          title="Dismiss"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleQuickPair(req.code)}
-                        className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition"
-                      >
-                        Select PIN
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void cancelPairing(req.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700 transition"
-                        title="Dismiss"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Manual Entry Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                6-Digit Pairing PIN
-              </label>
+              <label className="field-label">6-digit pairing PIN</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a99a90]" />
                 <input
                   type="text"
                   maxLength={6}
                   placeholder="e.g. 849201"
                   value={pinCode}
                   onChange={(e) => setPinCode(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-3 py-2.5 text-sm font-mono text-cyan-400 placeholder-slate-500 outline-none focus:border-cyan-500 transition tracking-widest"
+                  className="input input-mono min-h-[46px] pl-10 text-[15px] tracking-[0.28em]"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="field-hint">
                 Enter the 6-digit code shown in the VR Control Center player in Meta Quest Browser.
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Headset Name / Location
-              </label>
+              <label className="field-label">Headset name / location</label>
               <input
                 type="text"
                 placeholder="e.g. Headset #1 (Booth A)"
                 value={deviceName}
                 onChange={(e) => setDeviceName(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-500 transition"
+                className="input"
               />
             </div>
+          </div>
 
-            <div className="pt-2 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-900/30 flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {loading ? 'Pairing...' : <><Check className="w-4 h-4" /> Pair Headset</>}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="modal-foot">
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn btn-primary btn-sm">
+              {loading ? (
+                'Pairing…'
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Pair headset
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
-

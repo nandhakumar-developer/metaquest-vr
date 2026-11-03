@@ -5,8 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    // Allow the dashboard dev server to be opened from a Quest on the LAN.
-    host: '0.0.0.0',
+    host: '127.0.0.1',
     port: 3000,
     strictPort: true,
     proxy: {

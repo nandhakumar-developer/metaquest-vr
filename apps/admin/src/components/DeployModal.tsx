@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { DeploymentDto, DeviceSnapshot, VideoDto } from '@vrcc/shared-types';
 import { useApp } from '../context/AppContext.js';
-import { X, DownloadCloud, AlertCircle } from 'lucide-react';
+import { X, DownloadCloud, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface DeployModalProps {
   video: VideoDto | null;
@@ -47,19 +47,22 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
     isBrowserPlayer(device.appVersion),
   ).length;
   const selectedNativeCount = selectedDevices.length - selectedBrowserCount;
-  const visibleDeployments = submittedDeploymentIds.map(
-    (deploymentId) =>
-      deployments.find((deployment) => deployment.id === deploymentId) ??
-      submittedDeployments.find((deployment) => deployment.id === deploymentId),
-  ).filter((deployment): deployment is DeploymentDto => Boolean(deployment));
+  const visibleDeployments = submittedDeploymentIds
+    .map(
+      (deploymentId) =>
+        deployments.find((deployment) => deployment.id === deploymentId) ??
+        submittedDeployments.find((deployment) => deployment.id === deploymentId),
+    )
+    .filter((deployment): deployment is DeploymentDto => Boolean(deployment));
   const downloadsComplete =
-    visibleDeployments.length > 0 && visibleDeployments.every((deployment) => deployment.status === 'ready');
+    visibleDeployments.length > 0 &&
+    visibleDeployments.every((deployment) => deployment.status === 'ready');
   const actionLabel =
     selectedNativeCount > 0 && selectedBrowserCount > 0
-      ? 'Send to Headsets'
+      ? 'Send to headsets'
       : selectedBrowserCount > 0
-        ? 'Download to Headsets'
-        : 'Start Deployment';
+        ? 'Download to headsets'
+        : 'Start deployment';
   const deviceName = (deviceId: string) =>
     devices.find((device) => device.id === deviceId)?.name ?? 'Headset';
 
@@ -118,38 +121,38 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-cyan-950/60 text-cyan-400 border border-cyan-800/60">
-              <DownloadCloud className="w-5 h-5" />
+    <div className="modal-backdrop">
+      <div className="modal max-w-lg">
+        <div className="modal-head">
+          <div className="flex items-center gap-3">
+            <div className="modal-icon tint-lilac">
+              <DownloadCloud className="h-5 w-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-white text-base">Send Video to Headsets</h3>
-              <p className="text-xs text-slate-400 truncate max-w-sm">"{video.name}"</p>
+            <div className="min-w-0">
+              <h3 className="modal-title">Send video to headsets</h3>
+              <p className="modal-sub max-w-[320px] truncate">“{video.name}”</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="btn btn-ghost btn-icon-sm" aria-label="Close">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="modal-body space-y-4">
           {error && (
-            <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="alert alert-danger">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="p-3 rounded-lg bg-cyan-950/30 border border-cyan-900/60 text-xs leading-relaxed text-cyan-100/90">
-            <strong className="text-cyan-200">Download to Quest storage:</strong> the selected player
-            saves a verified local copy and shows its download progress in the headset's Downloads
-            panel. Library streaming remains available separately.
+          <div className="alert alert-info text-[11px]">
+            <DownloadCloud className="h-4 w-4 shrink-0" />
+            <span>
+              <strong className="font-semibold">Download to Quest storage:</strong> the selected player
+              saves a verified local copy and shows progress in the headset's Downloads panel. Library
+              streaming remains available separately.
+            </span>
           </div>
 
           {visibleDeployments.length > 0 && (
@@ -166,42 +169,44 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       ? `Downloading ${percent}%`
                       : deployment.status === 'verifying'
                         ? 'Verifying local copy'
-                      : deployment.status === 'failed'
-                        ? `Failed: ${deployment.error || 'Download could not be saved'}`
-                        : deployment.status === 'queued'
-                          ? 'Waiting for headset connection'
-                          : deployment.status === 'cancelled'
-                            ? 'Download cancelled'
-                            : 'Starting download';
+                        : deployment.status === 'failed'
+                          ? `Failed: ${deployment.error || 'Download could not be saved'}`
+                          : deployment.status === 'queued'
+                            ? 'Waiting for headset connection'
+                            : deployment.status === 'cancelled'
+                              ? 'Download cancelled'
+                              : 'Starting download';
                 return (
-                  <div key={deployment.id} className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <div className="flex items-center justify-between gap-3 text-xs">
-                      <span className="font-medium text-white">{deployment.deviceName}</span>
-                      <span className={
-                        deployment.status === 'ready'
-                          ? 'text-emerald-400'
-                          : deployment.status === 'failed'
-                            ? 'text-rose-400'
-                            : 'text-cyan-300'
-                      }>
-                        {transferActive && <DownloadCloud className="inline w-3 h-3 mr-1 animate-pulse" />}
+                  <div key={deployment.id} className="panel-inset px-3.5 py-3">
+                    <div className="flex items-center justify-between gap-3 text-[11.5px]">
+                      <span className="font-semibold text-[#2a2320]">{deployment.deviceName}</span>
+                      <span
+                        className={
+                          deployment.status === 'ready'
+                            ? 'text-[#347f63]'
+                            : deployment.status === 'failed'
+                              ? 'text-[#a23f36]'
+                              : 'text-[#c34c37]'
+                        }
+                      >
+                        {transferActive && (
+                          <DownloadCloud className="mr-1 inline h-3 w-3 animate-pulse" />
+                        )}
                         {statusLabel}
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="progress mt-2">
                       <div
-                        className={`h-full transition-all duration-300 ${
+                        className={`progress-fill ${
                           deployment.status === 'ready'
-                            ? 'bg-emerald-500'
+                            ? 'is-success'
                             : deployment.status === 'failed'
-                              ? 'bg-rose-500'
-                              : 'bg-cyan-500'
+                              ? 'is-danger'
+                              : ''
                         } ${transferActive ? 'animate-pulse' : ''}`}
                         style={{
                           width: `${
-                            transferActive && percent === 0
-                              ? 28
-                              : Math.max(0, Math.min(100, percent))
+                            transferActive && percent === 0 ? 28 : Math.max(0, Math.min(100, percent))
                           }%`,
                         }}
                       />
@@ -213,34 +218,37 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
           )}
 
           <div hidden={submittedDeploymentIds.length > 0} className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-300">Choose Target Headsets:</span>
-            <div className="flex gap-2">
+            <span className="field-label !mb-0">Choose target headsets</span>
+            <div className="flex items-center gap-2 text-[10.5px]">
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                className="font-semibold text-[#d9533b] hover:text-[#b8493f]"
               >
-                Select Online ({onlineDevices.length})
+                Online ({onlineDevices.length})
               </button>
-              <span className="text-slate-600">|</span>
+              <span className="text-[#c3b6ab]">/</span>
               <button
                 type="button"
                 onClick={selectAll}
-                className="text-xs text-slate-400 hover:text-white"
+                className="font-semibold text-[#8b7d72] hover:text-[#2a2320]"
               >
-                Select All ({selectableDevices.length})
+                All ({selectableDevices.length})
               </button>
             </div>
           </div>
 
           {selectableDevices.length === 0 && submittedDeploymentIds.length === 0 && (
-            <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-200 text-xs">
+            <div className="alert alert-warning text-[11px]">
               No headsets are selectable right now. Open the player page on a browser headset so it
               comes online, then try again.
             </div>
           )}
 
-          <div hidden={submittedDeploymentIds.length > 0} className="max-h-60 overflow-y-auto space-y-2 pr-1">
+          <div
+            hidden={submittedDeploymentIds.length > 0}
+            className="max-h-60 space-y-2 overflow-y-auto pr-1"
+          >
             {devices.map((device) => {
               const browser = isBrowserPlayer(device.appVersion);
               const selectable = isSelectable(device);
@@ -250,81 +258,85 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                   key={device.id}
                   onClick={() => toggleDevice(device.id)}
                   aria-disabled={!selectable}
-                  className={`p-3 rounded-xl border flex items-center justify-between transition ${
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition ${
                     !selectable
-                      ? 'bg-slate-950/50 border-slate-800/60 text-slate-500 cursor-not-allowed'
+                      ? 'cursor-not-allowed border-[#4a3e35]/[0.06] bg-white/20 text-[#a99a90]'
                       : checked
-                        ? 'bg-cyan-950/40 border-cyan-700 text-white cursor-pointer'
-                        : 'bg-slate-800/50 border-slate-700/60 text-slate-300 hover:bg-slate-800 cursor-pointer'
+                        ? 'cursor-pointer border-[#ee6a52]/30 bg-[#ee6a52]/[0.06]'
+                        : 'cursor-pointer border-[#4a3e35]/[0.09] bg-white/35 hover:border-[#4a3e35]/20'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <input
                       type="checkbox"
                       checked={checked}
                       disabled={!selectable}
-                      onChange={() => {}} // handled by parent div click
-                      className="accent-cyan-500 rounded"
+                      onChange={() => {}}
                     />
-                    <div>
-                      <div className="text-sm font-semibold">{device.name}</div>
-                      <div className="text-xs text-slate-400 flex items-center gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-[12px] font-semibold text-[#2a2320]">
+                        {device.name}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8b7d72]">
                         <span>{device.model}</span>
-                        <span>|</span>
-                        <span className={device.online ? 'text-emerald-400' : 'text-slate-500'}>
+                        <span className="text-[#c3b6ab]">·</span>
+                        <span className={device.online ? 'text-[#347f63]' : 'text-[#a99a90]'}>
                           {device.online ? 'Online' : 'Offline'}
                         </span>
-                        <span className={browser ? 'text-cyan-400/80' : 'text-slate-400'}>
+                        <span className="text-[#c3b6ab]">·</span>
+                        <span>
                           {browser
                             ? device.online
-                              ? 'Browser player - saves to on-headset storage'
-                              : 'Browser player - open it to receive downloads'
-                            : 'Native client - downloads the file'}
+                              ? 'Browser player — saves to headset'
+                              : 'Browser player — open to receive'
+                            : 'Native client — downloads the file'}
                         </span>
                       </div>
                     </div>
                   </div>
+                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#d9533b]" />}
                 </div>
               );
             })}
           </div>
 
-          <p className="text-[11px] text-slate-400">
-            Browser players download the video to local Quest Browser storage and show it under
-            "On this headset". Playback from the shared video library remains a separate streaming
-            option. Available browser storage is checked when reported; if space is unavailable,
-            the transfer status shows the storage error.
+          <p className="text-[10px] leading-relaxed text-[#8b7d72]">
+            Browser players download the video to local Quest Browser storage and show it under “On
+            this headset”. Playback from the shared library remains a separate streaming option.
+            Available browser storage is checked when reported; if space is unavailable, the transfer
+            status shows the storage error.
           </p>
+        </div>
 
-          <div className="pt-2 flex items-center justify-between gap-3">
-            <span className="text-[11px] text-slate-500">
-              Keep the headset player open until its download finishes.
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              >
-                {submittedDeploymentIds.length > 0 ? 'Close' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                onClick={handleDeploy}
-                disabled={loading || selectedDevices.length === 0 || submittedDeploymentIds.length > 0}
-                className="px-5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition shadow-lg shadow-cyan-900/30 flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {loading ? (
-                  'Sending...'
-                ) : submittedDeploymentIds.length > 0 ? (
-                  downloadsComplete ? 'Downloads complete' : 'Download started'
+        <div className="modal-foot">
+          <span className="flex items-center gap-1.5 text-[10px] text-[#8b7d72]">
+            <Clock className="h-3 w-3" />
+            Keep the headset player open until its download finishes.
+          </span>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+              {submittedDeploymentIds.length > 0 ? 'Close' : 'Cancel'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDeploy}
+              disabled={loading || selectedDevices.length === 0 || submittedDeploymentIds.length > 0}
+              className="btn btn-primary btn-sm"
+            >
+              {loading ? (
+                'Sending…'
+              ) : submittedDeploymentIds.length > 0 ? (
+                downloadsComplete ? (
+                  'Downloads complete'
                 ) : (
-                  <>
-                    <DownloadCloud className="w-4 h-4" /> {actionLabel} ({selectedDevices.length})
-                  </>
-                )}
-              </button>
-            </div>
+                  'Download started'
+                )
+              ) : (
+                <>
+                  <DownloadCloud className="h-3.5 w-3.5" /> {actionLabel} ({selectedDevices.length})
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

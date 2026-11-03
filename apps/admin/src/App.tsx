@@ -28,9 +28,13 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 gap-3">
-        <Activity className="w-8 h-8 animate-spin text-cyan-500" />
-        <span className="text-xs font-mono">Initializing VR Control Center...</span>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-[#5c4f46]">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl border border-white/70 bg-white/50 shadow-[0_20px_45px_-25px_rgba(58,42,32,0.5)] backdrop-blur-md">
+          <Activity className="h-6 w-6 animate-spin text-[#ee6a52]" />
+        </div>
+        <span className="font-mono text-[11px] tracking-[0.14em] uppercase text-[#8b7d72]">
+          Initializing control center
+        </span>
       </div>
     );
   }
@@ -44,33 +48,31 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen">
       <Header />
       <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        {currentTab === 'devices' && (
-          <DevicesView
-            onOpenPairing={() => setPairingModalOpen(true)}
-            onOpenPreview={(id) => void startPreview(id)}
-            onOpenGroup={() => openGroupPlayback()}
-          />
-        )}
-        {currentTab === 'group' && <GroupPlaybackView initialVideoId={groupVideoId} />}
-        {currentTab === 'videos' && <VideosView onOpenGroup={openGroupPlayback} />}
-        {currentTab === 'deployments' && <DeploymentsView />}
-        {currentTab === 'sessions' && <SessionsView />}
-        {currentTab === 'audit' && <AuditLogView />}
-        {currentTab === 'settings' && <SettingsView />}
+      <main className="page">
+        <div className="page-stack">
+          {currentTab === 'devices' && (
+            <DevicesView
+              onOpenPairing={() => setPairingModalOpen(true)}
+              onOpenPreview={(id) => void startPreview(id)}
+              onOpenGroup={() => openGroupPlayback()}
+            />
+          )}
+          {currentTab === 'group' && <GroupPlaybackView initialVideoId={groupVideoId} />}
+          {currentTab === 'videos' && <VideosView onOpenGroup={openGroupPlayback} />}
+          {currentTab === 'deployments' && <DeploymentsView />}
+          {currentTab === 'sessions' && <SessionsView />}
+          {currentTab === 'audit' && <AuditLogView />}
+          {currentTab === 'settings' && <SettingsView />}
+        </div>
       </main>
 
       {/* Global Modals */}
-      <PairingModal
-        isOpen={pairingModalOpen}
-        onClose={() => setPairingModalOpen(false)}
-      />
+      <PairingModal isOpen={pairingModalOpen} onClose={() => setPairingModalOpen(false)} />
       <PreviewModal />
     </div>
   );
 };
-

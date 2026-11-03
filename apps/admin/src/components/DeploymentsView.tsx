@@ -8,94 +8,91 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+function statusTone(status: string): string {
+  if (status === 'ready') return 'badge-success';
+  if (status === 'downloading') return 'badge-coral';
+  if (status === 'failed') return 'badge-danger';
+  return 'badge-neutral';
+}
+
 export const DeploymentsView: React.FC = () => {
   const { deployments, cancelDeployment } = useApp();
 
   return (
-    <div className="space-y-6">
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+    <div className="page-stack">
+      <div className="section-head">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <DownloadCloud className="w-5 h-5 text-cyan-400" />
-            Active Transfers & Deployments ({deployments.length})
-          </h2>
-          <p className="text-xs text-slate-400">
-            Local headset download progress and checksum verification. Shared library playback remains separate.
+          <span className="eyebrow">Transfers</span>
+          <h1 className="page-title">
+            Deployments <span className="serif-accent text-[#6d3a52]">&amp; transfers</span>
+          </h1>
+          <p className="page-desc">
+            Local headset download progress and checksum verification. Shared library playback remains
+            separate from these offline copies.
           </p>
         </div>
+        <span className="badge badge-neutral h-7 px-3">
+          {deployments.length} active record{deployments.length === 1 ? '' : 's'}
+        </span>
       </div>
 
       {deployments.length > 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+        <div className="table-wrap">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Video Asset</th>
-                  <th className="py-3 px-4">Target Headset</th>
-                  <th className="py-3 px-4">Transfer Status</th>
-                  <th className="py-3 px-4">Progress</th>
-                  <th className="py-3 px-4">Data Transferred</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr>
+                  <th>Video asset</th>
+                  <th>Target headset</th>
+                  <th>Status</th>
+                  <th className="w-52">Progress</th>
+                  <th>Data transferred</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody>
                 {deployments.map((d) => {
                   const percent = Math.round(d.progress * 100);
                   const isActive = d.status === 'downloading' || d.status === 'queued' || d.status === 'pending';
 
                   return (
-                    <tr key={d.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-medium text-white max-w-xs truncate">
-                        {d.videoName}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300">
-                        {d.deviceName}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize border ${
-                          d.status === 'ready'
-                            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                            : d.status === 'downloading'
-                            ? 'bg-cyan-950/60 text-cyan-400 border-cyan-800 animate-pulse'
-                            : d.status === 'failed'
-                            ? 'bg-rose-950/60 text-rose-400 border-rose-800'
-                            : 'bg-slate-800 text-slate-400 border-slate-700'
-                        }`}>
-                          {d.status === 'ready' && <CheckCircle2 className="w-3 h-3" />}
-                          {d.status === 'downloading' && <DownloadCloud className="w-3 h-3" />}
-                          {d.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
-                          {d.status === 'cancelled' && <XCircle className="w-3 h-3" />}
-                          {(d.status === 'pending' || d.status === 'queued') && <Clock className="w-3 h-3" />}
+                    <tr key={d.id}>
+                      <td className="max-w-xs truncate font-semibold !text-[#2a2320]">{d.videoName}</td>
+                      <td>{d.deviceName}</td>
+                      <td>
+                        <span className={`badge ${statusTone(d.status)} capitalize`}>
+                          {d.status === 'ready' && <CheckCircle2 className="h-3 w-3" />}
+                          {d.status === 'downloading' && <DownloadCloud className="h-3 w-3" />}
+                          {d.status === 'failed' && <AlertTriangle className="h-3 w-3" />}
+                          {d.status === 'cancelled' && <XCircle className="h-3 w-3" />}
+                          {(d.status === 'pending' || d.status === 'queued') && <Clock className="h-3 w-3" />}
                           <span>{d.status}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 w-48">
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[11px] font-mono text-slate-400">
+                      <td>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between font-mono text-[10px] text-[#8b7d72]">
                             <span>{percent}%</span>
                           </div>
-                          <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                          <div className="progress">
                             <div
-                              className={`h-full transition-all duration-300 ${
-                                d.status === 'ready' ? 'bg-emerald-500' : 'bg-cyan-500'
-                              }`}
+                              className={`progress-fill ${d.status === 'ready' ? 'is-success' : ''}`}
                               style={{ width: `${percent}%` }}
                             />
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                      <td className="font-mono text-[11px]">
                         {formatBytes(d.bytesReceived)} / {formatBytes(d.totalBytes)}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="text-right">
                         {isActive && (
                           <button
                             onClick={() => void cancelDeployment(d.id)}
-                            title="Cancel Deployment"
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                            title="Cancel deployment"
+                            className="btn btn-ghost btn-icon-sm text-[#8b7d72] hover:text-[#a23f36]"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="h-4 w-4" />
                           </button>
                         )}
                       </td>
@@ -107,15 +104,17 @@ export const DeploymentsView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30">
-          <DownloadCloud className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-300">No Deployments Queued</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            When you deploy videos from the library to headsets, live download progress and checksum verification appear here.
+        <div className="empty-state">
+          <div className="empty-icon">
+            <DownloadCloud className="h-6 w-6" />
+          </div>
+          <h3 className="empty-title">No deployments queued</h3>
+          <p className="empty-desc">
+            When you deploy videos from the library to headsets, live download progress and checksum
+            verification appear here.
           </p>
         </div>
       )}
     </div>
   );
 };
-

@@ -31,13 +31,13 @@ const PHASE_LABELS: Record<GroupPlaybackPhase, string> = {
   offline: 'Offline',
 };
 
-const STATUS_STYLES: Record<string, string> = {
-  idle: 'bg-slate-800 text-slate-300 border-slate-700',
-  preparing: 'bg-amber-950/70 text-amber-300 border-amber-800/80',
-  scheduled: 'bg-sky-950/70 text-sky-300 border-sky-800/80',
-  playing: 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80',
-  stopped: 'bg-slate-800 text-slate-300 border-slate-700',
-  error: 'bg-rose-950/70 text-rose-300 border-rose-800/80',
+const GROUP_STATUS_TONE: Record<string, string> = {
+  idle: 'badge-neutral',
+  preparing: 'badge-warning',
+  scheduled: 'badge-info',
+  playing: 'badge-success',
+  stopped: 'badge-neutral',
+  error: 'badge-danger',
 };
 
 function formatTime(seconds: number | null | undefined): string {
@@ -60,24 +60,26 @@ function driftLabel(driftMs: number | null): string {
 function healthStyle(health: 'good' | 'fair' | 'poor' | 'unknown'): string {
   switch (health) {
     case 'good':
-      return 'text-emerald-400';
+      return 'text-[#347f63]';
     case 'fair':
-      return 'text-amber-400';
+      return 'text-[#92601a]';
     case 'poor':
-      return 'text-rose-400';
+      return 'text-[#a23f36]';
     default:
-      return 'text-slate-500';
+      return 'text-[#8b7d72]';
   }
 }
 
+function phaseTone(phase: GroupPlaybackPhase): string {
+  if (phase === 'playing') return 'badge-success';
+  if (phase === 'error' || phase === 'offline') return 'badge-danger';
+  if (phase === 'scheduled') return 'badge-info';
+  if (phase === 'loading' || phase === 'ready') return 'badge-warning';
+  return 'badge-neutral';
+}
+
 export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVideoId }) => {
-  const {
-    devices,
-    videos,
-    group,
-    startGroupPlayback,
-    stopGroupPlayback,
-  } = useApp();
+  const { devices, videos, group, startGroupPlayback, stopGroupPlayback } = useApp();
 
   const onlineDevices = useMemo(() => devices.filter((device) => device.online), [devices]);
   const [mode, setMode] = useState<'same' | 'mixed'>('same');
@@ -123,10 +125,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
   const assignments = selectedDevices
     .map((device) => ({
       deviceId: device.id,
-      videoId:
-        mode === 'same'
-          ? sharedVideoId
-          : perDeviceVideo[device.id] || sharedVideoId,
+      videoId: mode === 'same' ? sharedVideoId : perDeviceVideo[device.id] || sharedVideoId,
     }))
     .filter((assignment) => Boolean(assignment.videoId));
 
@@ -206,35 +205,29 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
       ? Math.max(0, (Date.parse(group.scheduledStartAt) - now) / 1000)
       : null;
 
+  const statusTone = GROUP_STATUS_TONE[group?.status ?? 'idle'] || 'badge-neutral';
+
   return (
-    <div className="space-y-6">
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack">
+      <div className="section-head">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-400" />
-            Synchronized Group Playback
-          </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            The gateway loads each selected headset, waits for a confirmed ready report, then sends
-            a common future start timestamp. Each player schedules locally against its measured
-            clock offset. Drift is monitored and corrected with a controlled seek.
+          <span className="eyebrow">Synchronized playback</span>
+          <h1 className="page-title">
+            Group <span className="serif-accent text-[#6d3a52]">playback</span>
+          </h1>
+          <p className="page-desc">
+            Load each selected headset, wait for a confirmed ready report, then start every player on
+            a shared future timestamp. Drift is monitored and corrected with controlled seeks.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-              STATUS_STYLES[group?.status ?? 'idle'] || STATUS_STYLES.idle
-            }`}
-          >
-            {group?.status === 'idle' || !group ? 'Idle' : group.status.toUpperCase()}
+
+        <div className="flex items-center gap-2">
+          <span className={`badge ${statusTone} h-7 px-3 uppercase`}>
+            {group?.status === 'idle' || !group ? 'Idle' : group.status}
           </span>
           {group && group.status !== 'idle' && group.status !== 'stopped' && (
-            <button
-              onClick={() => void handleStop()}
-              disabled={busy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition disabled:opacity-40"
-            >
-              <Square className="w-3.5 h-3.5 fill-current" />
+            <button onClick={() => void handleStop()} disabled={busy} className="btn btn-danger btn-sm">
+              <Square className="h-3 w-3" />
               Stop group
             </button>
           )}
@@ -242,42 +235,47 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="alert alert-danger">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {notice && (
-        <div className="p-3 rounded-lg bg-emerald-950/50 border border-emerald-800/70 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <div className="alert alert-success">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <section className="xl:col-span-2 p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Glasses className="w-4 h-4 text-emerald-400" />
-            Headsets
-          </h3>
-
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">
-              {selectedDevices.length} of {devices.length} selected · {onlineDevices.length} online
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+        <section className="panel panel-pad space-y-4 xl:col-span-2">
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+              <span className="grid h-7 w-7 place-items-center rounded-lg tint-mint">
+                <Glasses className="h-3.5 w-3.5" />
+              </span>
+              Headsets
+            </h3>
+            <span className="font-mono text-[10px] text-[#8b7d72]">
+              {selectedDevices.length}/{devices.length} selected
             </span>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-[#8b7d72]">{onlineDevices.length} online now</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="text-cyan-400 hover:text-cyan-300 font-semibold"
+                className="font-semibold text-[#d9533b] transition hover:text-[#b8493f]"
               >
                 Select online
               </button>
-              <span className="text-slate-700">|</span>
+              <span className="text-[#c3b6ab]">/</span>
               <button
                 type="button"
                 onClick={clearSelection}
-                className="text-slate-400 hover:text-slate-200 font-semibold"
+                className="font-semibold text-[#8b7d72] transition hover:text-[#2a2320]"
               >
                 Clear
               </button>
@@ -285,7 +283,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
           </div>
 
           {devices.length === 0 ? (
-            <div className="p-6 text-center rounded-lg border border-dashed border-slate-800 text-xs text-slate-400">
+            <div className="rounded-xl border border-dashed border-[#4a3e35]/15 px-4 py-6 text-center text-[11px] text-[#8b7d72]">
               Pair a headset first from the Headsets page.
             </div>
           ) : (
@@ -295,38 +293,39 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 return (
                   <div
                     key={device.id}
-                    className={`p-3 rounded-lg border transition ${
+                    className={`rounded-xl border px-3 py-2.5 transition ${
                       device.online
                         ? checked
-                          ? 'bg-cyan-950/40 border-cyan-800/80'
-                          : 'bg-slate-950/60 border-slate-800'
-                        : 'bg-slate-950/40 border-slate-800/60 opacity-60'
+                          ? 'border-[#ee6a52]/30 bg-[#ee6a52]/[0.06]'
+                          : 'border-[#4a3e35]/[0.09] bg-white/35 hover:border-[#4a3e35]/20'
+                        : 'border-[#4a3e35]/[0.06] bg-white/20 opacity-60'
                     }`}
                   >
-                    <label className="flex items-start gap-3 cursor-pointer">
+                    <label className="flex cursor-pointer items-start gap-2.5">
                       <input
                         type="checkbox"
                         checked={checked}
                         disabled={!device.online}
                         onChange={() => toggleDevice(device.id)}
-                        className="mt-0.5 accent-cyan-500"
+                        className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-white truncate">
+                          <span className="truncate text-[12px] font-semibold text-[#2a2320]">
                             {device.name}
                           </span>
                           {device.online ? (
-                            <span className="text-[10px] uppercase font-mono text-emerald-400">
+                            <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wide text-[#347f63]">
+                              <span className="status-dot is-live !h-1.5 !w-1.5" />
                               Online
                             </span>
                           ) : (
-                            <span className="text-[10px] uppercase font-mono text-slate-500 flex items-center gap-1">
-                              <WifiOff className="w-3 h-3" /> Offline
+                            <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wide text-[#a99a90]">
+                              <WifiOff className="h-3 w-3" /> Offline
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        <div className="mt-0.5 truncate text-[10.5px] text-[#8b7d72]">
                           {device.model} · {device.ipAddress || 'No LAN IP'}
                         </div>
 
@@ -334,7 +333,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                           <select
                             value={perDeviceVideo[device.id] || sharedVideoId}
                             onChange={(event) => setDeviceVideo(device.id, event.target.value)}
-                            className="mt-2 w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 outline-none focus:border-cyan-500"
+                            className="select select-sm mt-2"
                           >
                             <option value="">Choose video…</option>
                             {videos.map((video) => (
@@ -352,29 +351,21 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
             </div>
           )}
 
-          <div className="pt-2 border-t border-slate-800 space-y-3">
+          <div className="space-y-3 border-t border-[#4a3e35]/[0.075] pt-4">
             <div>
-              <div className="text-xs font-semibold text-slate-300 mb-1.5">Content mode</div>
-              <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-700 text-xs">
+              <div className="field-label">Content mode</div>
+              <div className="pill-group w-full">
                 <button
                   type="button"
                   onClick={() => setMode('same')}
-                  className={`flex-1 px-3 py-1.5 rounded ${
-                    mode === 'same'
-                      ? 'bg-slate-700 text-white font-semibold'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`pill flex-1 justify-center ${mode === 'same' ? 'is-active' : ''}`}
                 >
                   Same video
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('mixed')}
-                  className={`flex-1 px-3 py-1.5 rounded ${
-                    mode === 'mixed'
-                      ? 'bg-slate-700 text-white font-semibold'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`pill flex-1 justify-center ${mode === 'mixed' ? 'is-active' : ''}`}
                 >
                   Per headset
                 </button>
@@ -383,13 +374,11 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
 
             {mode === 'same' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Video for the group
-                </label>
+                <label className="field-label">Video for the group</label>
                 <select
                   value={sharedVideoId}
                   onChange={(event) => setSharedVideoId(event.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-cyan-500"
+                  className="select"
                 >
                   <option value="">Choose video…</option>
                   {videos.map((video) => (
@@ -403,13 +392,11 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Start lead time
-              </label>
+              <label className="field-label">Start lead time</label>
               <select
                 value={leadMs}
                 onChange={(event) => setLeadMs(Number(event.target.value))}
-                className="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-cyan-500"
+                className="select"
               >
                 <option value={3000}>3 seconds</option>
                 <option value={4000}>4 seconds</option>
@@ -417,9 +404,9 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 <option value={8000}>8 seconds</option>
                 <option value={10000}>10 seconds</option>
               </select>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Longer lead time gives every headset time to finish buffering before the shared
-                start timestamp.
+              <p className="field-hint">
+                Longer lead time gives every headset time to finish buffering before the shared start
+                timestamp.
               </p>
             </div>
 
@@ -427,32 +414,34 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               type="button"
               onClick={() => void handleStart()}
               disabled={busy || videos.length === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition shadow-lg shadow-cyan-900/30 disabled:opacity-40"
+              className="btn btn-primary w-full"
             >
               {busy ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="h-4 w-4 fill-current" />
               )}
               <span>{busy ? 'Working…' : 'Load and schedule group start'}</span>
             </button>
             {videos.length === 0 && (
-              <p className="text-[11px] text-amber-400">
+              <p className="text-[10.5px] text-[#92601a]">
                 Upload a video to the library before starting group playback.
               </p>
             )}
           </div>
         </section>
 
-        <section className="xl:col-span-3 p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Gauge className="w-4 h-4 text-cyan-400" />
+        <section className="panel panel-pad space-y-4 xl:col-span-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#2a2320]">
+              <span className="grid h-7 w-7 place-items-center tint-lilac">
+                <Gauge className="h-3.5 w-3.5" />
+              </span>
               Run feedback
             </h3>
             {group?.scheduledStartAt && (
-              <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                <Clock3 className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#8b7d72]">
+                <Clock3 className="h-3.5 w-3.5" />
                 {scheduledInSeconds !== null
                   ? `Start in ${scheduledInSeconds.toFixed(1)}s`
                   : `Started ${new Date(group.scheduledStartAt).toLocaleTimeString()}`}
@@ -461,101 +450,89 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
           </div>
 
           {!group || group.status === 'idle' ? (
-            <div className="p-10 text-center rounded-xl border border-dashed border-slate-800 bg-slate-950/40">
-              <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-              <h4 className="text-sm font-semibold text-slate-300">No group run yet</h4>
-              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            <div className="rounded-2xl border border-dashed border-[#4a3e35]/15 bg-white/25 px-6 py-12 text-center">
+              <div className="empty-icon">
+                <Users className="h-6 w-6" />
+              </div>
+              <h4 className="empty-title">No group run yet</h4>
+              <p className="empty-desc">
                 Select headsets, choose a video, and start a scheduled group run. Independent
                 per-headset controls remain available on the Headsets page at all times.
               </p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800">
-                  <div className="text-slate-400">Mode</div>
-                  <div className="text-sm font-semibold text-white mt-0.5 capitalize">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div className="panel-inset px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Mode</div>
+                  <div className="mt-1 text-[12px] font-semibold capitalize text-[#2a2320]">
                     {group.mode === 'same' ? 'Same video' : 'Per headset'}
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800">
-                  <div className="text-slate-400">Run position</div>
-                  <div className="text-sm font-semibold text-white mt-0.5 font-mono">
+                <div className="panel-inset px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Position</div>
+                  <div className="mt-1 font-mono text-[12px] font-semibold text-[#2a2320]">
                     {formatTime(group.positionSeconds)}
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800">
-                  <div className="text-slate-400">Headsets</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
+                <div className="panel-inset px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Headsets</div>
+                  <div className="mt-1 text-[12px] font-semibold text-[#2a2320]">
                     {group.devices.filter((device) => device.phase !== 'offline').length}/
                     {group.devices.length}
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800">
-                  <div className="text-slate-400">Lead time</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
+                <div className="panel-inset px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-[#8b7d72]">Lead time</div>
+                  <div className="mt-1 text-[12px] font-semibold text-[#2a2320]">
                     {(group.leadMs / 1000).toFixed(1)}s
                   </div>
                 </div>
               </div>
 
               {group.message && (
-                <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300">
+                <div className="panel-inset px-3.5 py-2.5 text-[11.5px] text-[#5c4f46]">
                   {group.message}
                 </div>
               )}
 
-              <div className="rounded-xl border border-slate-800 overflow-hidden">
+              <div className="table-wrap">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider">
+                  <table className="data-table">
+                    <thead>
                       <tr>
-                        <th className="px-3 py-2">Headset</th>
-                        <th className="px-3 py-2">Video</th>
-                        <th className="px-3 py-2">Phase</th>
-                        <th className="px-3 py-2">Position</th>
-                        <th className="px-3 py-2">Drift</th>
-                        <th className="px-3 py-2">Sync</th>
+                        <th>Headset</th>
+                        <th>Video</th>
+                        <th>Phase</th>
+                        <th>Position</th>
+                        <th>Drift</th>
+                        <th>Sync</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/80">
+                    <tbody>
                       {group.devices.map((device) => (
-                        <tr key={device.deviceId} className="bg-slate-900/40">
-                          <td className="px-3 py-2.5 font-semibold text-slate-200">
+                        <tr key={device.deviceId}>
+                          <td className="font-semibold !text-[#2a2320]">
                             {device.deviceName}
                             {device.error && (
-                              <div className="text-[10px] text-rose-400 font-normal mt-0.5">
+                              <div className="mt-0.5 text-[9.5px] font-normal text-[#a23f36]">
                                 {device.error}
                               </div>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-slate-400 max-w-[180px] truncate">
+                          <td className="max-w-[180px] truncate">
                             {device.videoName ||
                               (device.videoId ? videoById.get(device.videoId)?.name : null) ||
                               '—'}
                           </td>
-                          <td className="px-3 py-2.5">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded border text-[10px] font-semibold ${
-                                device.phase === 'playing'
-                                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/70'
-                                  : device.phase === 'error' || device.phase === 'offline'
-                                    ? 'bg-rose-950/60 text-rose-300 border-rose-800/70'
-                                    : device.phase === 'scheduled'
-                                      ? 'bg-sky-950/60 text-sky-300 border-sky-800/70'
-                                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                              }`}
-                            >
+                          <td>
+                            <span className={`badge ${phaseTone(device.phase)}`}>
                               {PHASE_LABELS[device.phase]}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 font-mono text-slate-300">
-                            {formatTime(device.positionSeconds)}
-                          </td>
-                          <td className="px-3 py-2.5 font-mono text-slate-300">
-                            {driftLabel(device.driftMs)}
-                          </td>
-                          <td className={`px-3 py-2.5 font-semibold ${healthStyle(device.syncHealth)}`}>
+                          <td className="font-mono">{formatTime(device.positionSeconds)}</td>
+                          <td className="font-mono">{driftLabel(device.driftMs)}</td>
+                          <td className={`font-semibold ${healthStyle(device.syncHealth)}`}>
                             {device.syncHealth === 'unknown' ? '—' : device.syncHealth}
                           </td>
                         </tr>
@@ -565,12 +542,12 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-                <Video className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 rounded-xl bg-white/30 px-3.5 py-2.5 text-[10.5px] leading-relaxed text-[#8b7d72]">
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#6c56a8]" />
                 <span>
-                  Drift is measured from confirmed player reports, so values update at the
-                  heartbeat interval. Sync is coordinated over the local network and is not
-                  frame-perfect; use the drift and sync columns to judge each headset.
+                  Drift is measured from confirmed player reports, so values update at the heartbeat
+                  interval. Sync is coordinated over the local network and is not frame-perfect; use
+                  the drift and sync columns to judge each headset.
                 </span>
               </div>
             </>

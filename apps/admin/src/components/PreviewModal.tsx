@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.js';
 import { useActivePreview } from '../context/previewStore.js';
-import { X, Eye, Compass, Activity, Radio } from 'lucide-react';
+import { X, Eye, Compass, Activity } from 'lucide-react';
 
 export const PreviewModal: React.FC = () => {
   const activePreview = useActivePreview();
@@ -37,7 +37,6 @@ export const PreviewModal: React.FC = () => {
   const device = devices.find((d) => d.id === activePreview.deviceId);
   const rotation = activePreview.rotation;
 
-  // Convert quaternion to rough Euler angles for display
   let pitch = 0;
   let yaw = 0;
   let roll = 0;
@@ -48,7 +47,9 @@ export const PreviewModal: React.FC = () => {
     roll = Math.round(Math.atan2(sinr_cosp, cosr_cosp) * (180 / Math.PI));
 
     const sinp = 2 * (w * y - z * x);
-    pitch = Math.round(Math.abs(sinp) >= 1 ? (Math.sign(sinp) * Math.PI) / 2 : Math.asin(sinp) * (180 / Math.PI));
+    pitch = Math.round(
+      Math.abs(sinp) >= 1 ? (Math.sign(sinp) * Math.PI) / 2 : Math.asin(sinp) * (180 / Math.PI),
+    );
 
     const siny_cosp = 2 * (w * z + x * y);
     const cosy_cosp = 1 - 2 * (y * y + z * z);
@@ -56,92 +57,84 @@ export const PreviewModal: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+    <div className="modal-backdrop">
+      <div className="modal max-w-3xl">
+        <div className="modal-head">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cyan-950/60 text-cyan-400 border border-cyan-800/60">
-              <Eye className="w-5 h-5" />
+            <div className="modal-icon tint-coral">
+              <Eye className="h-5 w-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-white text-base">
-                  Live Headset View: {device?.name || 'Headset'}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="modal-title truncate">
+                  Live view · {device?.name || 'Headset'}
                 </h3>
-                <span className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
-                  <Radio className="w-3 h-3 animate-pulse" />
-                  Live Preview · Snapshots
+                <span className="badge badge-success">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#4e9e7e]" />
+                  Live preview
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Target: {settings?.previewMaxFps ?? 12} FPS · Actual headset preview: {previewFps || 'waiting'} FPS
+              <p className="modal-sub">
+                Target {settings?.previewMaxFps ?? 12} FPS · Actual {previewFps || 'waiting'} FPS
               </p>
             </div>
           </div>
-          <button
-            onClick={closeActivePreview}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={closeActivePreview} className="btn btn-ghost btn-icon-sm" aria-label="Close">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Viewport content */}
-        <div className="p-6 flex flex-col items-center">
-          <div className="relative w-full aspect-video bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center shadow-inner">
+        <div className="modal-body space-y-4">
+          <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-black/20 bg-[#141110] shadow-inner">
             {activePreview.dataBase64 ? (
               <img
                 src={`data:image/jpeg;base64,${activePreview.dataBase64}`}
-                alt="Headset View"
-                className="w-full h-full object-contain"
+                alt="Headset view"
+                className="h-full w-full object-contain"
               />
             ) : (
-              <div className="text-center p-6 text-slate-500">
-                <Activity className="w-8 h-8 animate-spin mx-auto mb-2 text-cyan-500" />
-                <p className="text-sm">Waiting for the first headset snapshot...</p>
+              <div className="p-6 text-center text-[#a99a90]">
+                <Activity className="mx-auto mb-2 h-8 w-8 animate-spin text-[#ee6a52]" />
+                <p className="text-[12px]">Waiting for the first headset snapshot…</p>
               </div>
             )}
 
-            {/* Overlaid timestamp watermark */}
-            <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded text-[11px] font-mono text-slate-300 border border-slate-800">
-              Captured: {new Date(activePreview.capturedAt).toLocaleTimeString()}
+            <div className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-[#241f1c]/70 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
+              Captured {new Date(activePreview.capturedAt).toLocaleTimeString()}
             </div>
           </div>
 
-          {/* Head Pose Attitude Telemetry */}
-          <div className="w-full mt-4 p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+          <div className="panel-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-semibold text-slate-300">Headset Orientation:</span>
+              <Compass className="h-4 w-4 text-[#6c56a8]" />
+              <span className="text-[11.5px] font-semibold text-[#2a2320]">Headset orientation</span>
             </div>
-            <div className="flex items-center gap-6 font-mono text-xs">
+            <div className="flex items-center gap-5 font-mono text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400">Pitch:</span>
-                <span className="text-cyan-400 font-semibold">{pitch}°</span>
+                <span className="text-[#8b7d72]">Pitch</span>
+                <span className="font-semibold text-[#c34c37]">{pitch}°</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400">Yaw:</span>
-                <span className="text-emerald-400 font-semibold">{yaw}°</span>
+                <span className="text-[#8b7d72]">Yaw</span>
+                <span className="font-semibold text-[#347f63]">{yaw}°</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400">Roll:</span>
-                <span className="text-amber-400 font-semibold">{roll}°</span>
+                <span className="text-[#8b7d72]">Roll</span>
+                <span className="font-semibold text-[#92601a]">{roll}°</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Snapshot preview updates while this view is open. Playback itself remains on the headset.</span>
-          <button
-            onClick={closeActivePreview}
-            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition"
-          >
-            Close View
+        <div className="modal-foot">
+          <span className="text-[10.5px] text-[#8b7d72]">
+            Snapshot preview updates while this view is open. Playback itself remains on the headset.
+          </span>
+          <button onClick={closeActivePreview} className="btn btn-secondary btn-sm">
+            Close view
           </button>
         </div>
       </div>
     </div>
   );
 };
-

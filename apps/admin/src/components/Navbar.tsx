@@ -30,14 +30,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     label: string;
     icon: React.FC<{ className?: string }>;
     badge?: number | string;
-    badgeColor?: string;
+    badgeTone?: 'neutral' | 'live' | 'alert';
   }> = [
     {
       key: 'devices',
       label: 'Headsets',
       icon: Glasses,
       badge: pairingRequests.length > 0 ? `+${pairingRequests.length}` : `${onlineCount}/${devices.length}`,
-      badgeColor: pairingRequests.length > 0 ? 'bg-amber-500 text-slate-950 font-bold animate-pulse' : 'bg-slate-800 text-slate-300',
+      badgeTone: pairingRequests.length > 0 ? 'alert' : 'neutral',
     },
     {
       key: 'group',
@@ -47,26 +47,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
         group && group.status !== 'idle' && group.status !== 'stopped'
           ? group.status
           : undefined,
-      badgeColor:
-        group?.status === 'playing'
-          ? 'bg-emerald-500 text-slate-950 font-bold'
-          : group?.status === 'scheduled'
-            ? 'bg-sky-500 text-slate-950 font-bold'
-            : 'bg-amber-500 text-slate-950 font-bold',
+      badgeTone: group?.status === 'playing' ? 'live' : 'neutral',
     },
     {
       key: 'videos',
       label: 'Video Library',
       icon: Film,
       badge: videos.length > 0 ? videos.length : undefined,
-      badgeColor: 'bg-slate-800 text-slate-300',
+      badgeTone: 'neutral',
     },
     {
       key: 'deployments',
-      label: 'Transfers & Deploy',
+      label: 'Transfers',
       icon: DownloadCloud,
       badge: activeDownloads > 0 ? activeDownloads : undefined,
-      badgeColor: 'bg-cyan-500 text-slate-950 font-bold animate-pulse',
+      badgeTone: activeDownloads > 0 ? 'alert' : 'neutral',
     },
     {
       key: 'sessions',
@@ -86,8 +81,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
   ];
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-900/50 px-6">
-      <div className="flex gap-2 overflow-x-auto py-2">
+    <nav className="tabbar" aria-label="Primary">
+      <div className="tabbar-inner">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = currentTab === tab.key;
@@ -95,17 +90,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
             <button
               key={tab.key}
               onClick={() => onSelectTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                active
-                  ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
+              className={`tab ${active ? 'is-active' : ''}`}
+              aria-current={active ? 'page' : undefined}
             >
-              <Icon className={`w-4 h-4 ${active ? 'text-cyan-400' : 'text-slate-400'}`} />
+              <Icon className={`h-4 w-4 ${active ? 'text-[#f8f1e9]' : 'text-[#9a8b80]'}`} />
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
-                  className={`text-[11px] px-2 py-0.5 rounded-full ${tab.badgeColor || 'bg-slate-800 text-slate-300'}`}
+                  className={`tab-badge ${
+                    tab.badgeTone === 'live' ? 'is-live' : tab.badgeTone === 'alert' ? 'is-alert' : ''
+                  }`}
                 >
                   {tab.badge}
                 </span>
@@ -117,4 +111,3 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     </nav>
   );
 };
-
