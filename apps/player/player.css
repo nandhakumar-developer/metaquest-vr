@@ -1,21 +1,21 @@
 :root {
-  color-scheme: dark;
-  --bg: #060910;
-  --bg-soft: #0b111c;
-  --panel: rgba(13, 20, 34, 0.92);
-  --panel-solid: #0d1422;
-  --line: rgba(94, 116, 145, 0.34);
-  --line-strong: rgba(111, 145, 181, 0.52);
-  --text: #f3f7fc;
-  --muted: #94a6bc;
-  --dim: #64758b;
-  --cyan: #22d3ee;
-  --cyan-strong: #06b6d4;
-  --emerald: #34d399;
-  --amber: #fbbf24;
-  --rose: #fb7185;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+  --bg: #E4E4E4;
+  --bg-soft: #F1F1F1;
+  --panel: #FFFFFF;
+  --panel-solid: #FFFFFF;
+  --line: #E1E1E1;
+  --line-strong: #6B5CF6;
+  --text: #111111;
+  --muted: #555555;
+  --dim: #8A8A8A;
+  --cyan: #462FF6;
+  --cyan-strong: #3F329D;
+  --emerald: #20D9A5;
+  --amber: #FF9A00;
+  --rose: #FF2525;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -53,7 +53,7 @@ button {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -155,7 +155,7 @@ button {
 .brand-name {
   color: #f7fbff;
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -202,7 +202,7 @@ button {
 .now-playing-label {
   color: var(--cyan);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -210,7 +210,7 @@ button {
 h1 {
   margin: 13px 0 12px;
   font-size: clamp(32px, 6vw, 54px);
-  font-weight: 680;
+  font-weight: 600;
   letter-spacing: -0.055em;
   line-height: 1.04;
 }
@@ -253,7 +253,7 @@ h1 {
   background: rgba(8, 145, 178, 0.12);
   color: #a5f3fc;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .button {
@@ -334,7 +334,7 @@ summary:focus-visible {
   margin-bottom: 9px;
   color: var(--muted);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -345,9 +345,9 @@ summary:focus-visible {
   border-radius: 18px;
   background: radial-gradient(circle at 50% 0%, rgba(8, 145, 178, 0.18), transparent 66%), #070d17;
   color: #cffafe;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: clamp(44px, 11vw, 72px);
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.19em;
   line-height: 1;
   text-align: center;
@@ -394,7 +394,7 @@ summary:focus-visible {
 
 .pairing-meta strong {
   color: #dbeafe;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .inline-error,
@@ -436,7 +436,7 @@ summary:focus-visible {
 .pairing-help summary {
   padding: 10px 0;
   color: #b9c7d8;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -488,7 +488,7 @@ summary:focus-visible {
   overflow: hidden;
   color: #f8fafc;
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -607,7 +607,7 @@ summary:focus-visible {
 .empty-card h2 {
   margin: 12px 0 10px;
   font-size: clamp(22px, 4vw, 30px);
-  font-weight: 680;
+  font-weight: 600;
   letter-spacing: -0.04em;
 }
 
@@ -702,7 +702,7 @@ summary:focus-visible {
   margin-top: 5px;
   color: white;
   font-size: clamp(18px, 3vw, 26px);
-  font-weight: 720;
+  font-weight: 700;
   letter-spacing: -0.035em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -747,7 +747,7 @@ summary:focus-visible {
 .library-title {
   color: #f8fafc;
   font-size: 16px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.025em;
 }
 
@@ -799,7 +799,7 @@ summary:focus-visible {
 .library-section-title {
   color: #dbeafe;
   font-size: 11px;
-  font-weight: 780;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -855,7 +855,7 @@ summary:focus-visible {
   overflow: hidden;
   color: #eef6ff;
   font-size: 12px;
-  font-weight: 680;
+  font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1003,7 +1003,7 @@ summary:focus-visible {
   overflow: hidden;
   color: #eef6ff;
   font-size: 12px;
-  font-weight: 680;
+  font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1362,4 +1362,400 @@ input[type="range"]::-moz-range-thumb {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Shared VR Control Center palette. The video frames remain untouched. */
+.pairing-screen {
+  background: #E4E4E4;
+}
+
+.pairing-screen::before,
+.pairing-orbit {
+  display: none;
+}
+
+.brand-mark {
+  border-color: #E1E1E1;
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  color: #2A1B92;
+}
+
+.brand-name,
+.device-name,
+.library-title {
+  color: #111111;
+}
+
+.brand-caption,
+.device-meta,
+.pairing-lead,
+.pairing-help,
+.pairing-footer,
+.pairing-help p,
+.empty-card p,
+.library-subtitle,
+.library-section-subtitle,
+.download-item-meta,
+.library-item-meta,
+.library-empty,
+.status-line {
+  color: #555555;
+}
+
+.badge {
+  border-color: rgba(255, 154, 0, 0.32);
+  background: rgba(255, 154, 0, 0.14);
+  color: #8A4B00;
+}
+
+.badge--ok,
+.library-section-badge {
+  border-color: rgba(32, 217, 165, 0.32);
+  background: rgba(32, 217, 165, 0.14);
+  color: #08785D;
+}
+
+.pairing-card,
+.empty-card {
+  border-color: #E1E1E1;
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  backdrop-filter: none;
+}
+
+.pairing-eyebrow,
+.empty-kicker,
+.now-playing-label {
+  color: #462FF6;
+}
+
+h1,
+.empty-card h2,
+.pairing-point {
+  color: #111111;
+}
+
+.step-number {
+  border-color: #E1E1E1;
+  background: #EEEAFE;
+  color: #2A1B92;
+}
+
+.button {
+  border-color: #E1E1E1;
+  background: #F1F1F1;
+  color: #222222;
+}
+
+.button:hover:not(:disabled),
+.icon-button:hover {
+  border-color: #E1E1E1;
+  background: #E1E1E1;
+  color: #111111;
+  filter: none;
+}
+
+.button--primary,
+.control-button--primary {
+  border-color: #462FF6;
+  background: #462FF6;
+  color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.button--primary:hover:not(:disabled),
+.control-button--primary:hover:not(:disabled) {
+  border-color: #3F329D;
+  background: #3F329D;
+}
+
+.button--ghost {
+  background: #F1F1F1;
+  color: #222222;
+}
+
+.button--danger:hover:not(:disabled),
+.download-button--danger {
+  border-color: rgba(255, 37, 37, 0.28);
+  background: rgba(255, 37, 37, 0.1);
+  color: #B91C1C;
+}
+
+.button:focus-visible,
+.control-button:focus-visible,
+.icon-button:focus-visible,
+input[type="range"]:focus-visible,
+summary:focus-visible {
+  outline-color: rgba(70, 47, 246, 0.55);
+}
+
+.pairing-code {
+  border-color: #E1E1E1;
+  background: #EEEAFE;
+  color: #2A1B92;
+  text-shadow: none;
+}
+
+.pairing-progress {
+  background: #F1F1F1;
+}
+
+.pairing-progress span {
+  background: linear-gradient(90deg, transparent, #462FF6, transparent);
+}
+
+.inline-error,
+.panel-note--error {
+  border-color: rgba(255, 37, 37, 0.24);
+  background: rgba(255, 37, 37, 0.09);
+  color: #B91C1C;
+}
+
+.pairing-footer,
+.library-header,
+.library-section-heading--gateway {
+  border-color: #E1E1E1;
+}
+
+.pairing-help summary {
+  color: #555555;
+}
+
+.player-header,
+.library-panel {
+  border-color: #E1E1E1;
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  backdrop-filter: none;
+}
+
+.player-screen,
+.stage,
+.flat-video,
+.xr-canvas {
+  background: #2A2A2A;
+}
+
+.connection-pill {
+  border-color: #E1E1E1;
+  background: #F5F5F5;
+  color: #555555;
+}
+
+.connection-pill[data-state="online"] {
+  border-color: rgba(32, 217, 165, 0.32);
+  background: rgba(32, 217, 165, 0.12);
+  color: #08785D;
+}
+
+.connection-pill[data-state="offline"] {
+  border-color: rgba(255, 37, 37, 0.26);
+  background: rgba(255, 37, 37, 0.1);
+  color: #B91C1C;
+}
+
+.stage-empty {
+  background: #F1F1F1;
+}
+
+.stage-overlay {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #2A2A2A;
+  color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: none;
+}
+
+.tap-banner {
+  border-color: rgba(255, 154, 0, 0.32);
+  background: rgba(255, 154, 0, 0.14);
+  color: #8A4B00;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: none;
+}
+
+.title-overlay {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(42, 42, 42, 0.92);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: none;
+}
+
+.library-panel {
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.06);
+}
+
+.icon-button {
+  border-color: #E1E1E1;
+  background: #F1F1F1;
+  color: #222222;
+}
+
+.library-section-title,
+.download-item-title,
+.library-item-title {
+  color: #111111;
+}
+
+.download-item,
+.library-item {
+  border-color: #E1E1E1;
+  background: #FFFFFF;
+}
+
+.download-item--active,
+.library-item[aria-current="true"] {
+  border-color: #6B5CF6;
+  background: #EEEAFE;
+}
+
+.library-item:hover {
+  border-color: #6B5CF6;
+  background: #F5F5F5;
+}
+
+.download-progress {
+  background: #F1F1F1;
+}
+
+.download-progress-bar {
+  background: linear-gradient(90deg, #6B5CF6, #462FF6);
+}
+
+.download-button {
+  border-color: #E1E1E1;
+  background: #F1F1F1;
+  color: #222222;
+}
+
+.download-button:hover {
+  border-color: #462FF6;
+  background: #EEEAFE;
+  color: #2A1B92;
+}
+
+.library-pill {
+  border-color: rgba(70, 47, 246, 0.25);
+  background: #EEEAFE;
+  color: #2A1B92;
+}
+
+.library-pill--warn {
+  border-color: rgba(255, 154, 0, 0.32);
+  background: rgba(255, 154, 0, 0.12);
+  color: #8A4B00;
+}
+
+.library-pill--offline {
+  border-color: rgba(32, 217, 165, 0.32);
+  background: rgba(32, 217, 165, 0.12);
+  color: #08785D;
+}
+
+.controls {
+  background: linear-gradient(to top, rgba(42, 42, 42, 0.98) 18%, rgba(42, 42, 42, 0.82) 62%, transparent);
+}
+
+.time {
+  color: #FFFFFF;
+}
+
+.status-line {
+  color: #E1E1E1;
+}
+
+input[type="range"] {
+  background: #8A8A8A;
+}
+
+input[type="range"]::-webkit-slider-thumb,
+input[type="range"]::-moz-range-thumb {
+  background: #462FF6;
+}
+
+.control-button {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: #2A2A2A;
+  color: #FFFFFF;
+}
+
+.control-button:hover:not(:disabled) {
+  border-color: #6B5CF6;
+  background: #3F329D;
+}
+
+.control-button--vr {
+  border-color: #2A1B92;
+  background: #2A1B92;
+  color: #FFFFFF;
+}
+
+.toast {
+  border-color: #E1E1E1;
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  color: #111111;
+  backdrop-filter: none;
+}
+
+.toast--success {
+  border-color: rgba(32, 217, 165, 0.32);
+  background: rgba(32, 217, 165, 0.12);
+  color: #08785D;
+}
+
+.toast--warn {
+  border-color: rgba(255, 154, 0, 0.32);
+  background: rgba(255, 154, 0, 0.12);
+  color: #8A4B00;
+}
+
+.toast--error {
+  border-color: rgba(255, 37, 37, 0.28);
+  background: rgba(255, 37, 37, 0.1);
+  color: #B91C1C;
+}
+
+.pairing-status {
+  color: #555555;
+}
+
+.pairing-meta strong {
+  color: #111111;
+}
+
+.spinner {
+  border-color: #E1E1E1;
+  border-top-color: #462FF6;
+}
+
+.connection-dot {
+  box-shadow: 0 0 0 3px rgba(255, 154, 0, 0.14);
+}
+
+.connection-pill[data-state="online"] .connection-dot {
+  box-shadow: 0 0 0 3px rgba(32, 217, 165, 0.14);
+}
+
+.connection-pill[data-state="offline"] .connection-dot {
+  box-shadow: 0 0 0 3px rgba(255, 37, 37, 0.12);
+}
+
+.now-playing-meta {
+  color: #E1E1E1;
+}
+
+.downloads-empty {
+  border-color: #E1E1E1;
+}
+
+.library-thumb {
+  border-color: #E1E1E1;
+  background: #2A2A2A;
+}
+
+.download-button--danger:hover {
+  background: rgba(255, 37, 37, 0.16);
+  color: #B91C1C;
 }

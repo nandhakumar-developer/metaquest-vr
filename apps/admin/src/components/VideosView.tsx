@@ -53,7 +53,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
         <div>
           <span className="eyebrow">Content library</span>
           <h1 className="page-title">
-          Video media <span className="serif-accent text-[#5B94D7]">library</span>
+          Video media <span className="serif-accent text-[#462FF6]">library</span>
           </h1>
           <p className="page-desc">
             {videos.length > 0
@@ -82,7 +82,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {videos.map((video) => (
             <article key={video.id} className="panel panel-hover flex flex-col overflow-hidden">
-              <div className="relative aspect-video overflow-hidden border-b border-[#dce6f1] bg-[linear-gradient(140deg,#f1f6fc,#fffafd_45%,#dceafa)]">
+              <div className="relative aspect-video overflow-hidden border-b border-[#E1E1E1] bg-[linear-gradient(140deg,#F5F5F5,#F5F5F5_45%,#EEEAFE)]">
                 {video.thumbnailPath ? (
                   <img
                     src={`/api/videos/${video.id}/thumbnail`}
@@ -91,7 +91,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Film className="h-10 w-10 text-[#b9a89b]" strokeWidth={1.4} />
+                    <Film className="h-10 w-10 text-[#8A8A8A]" strokeWidth={1.4} />
                   </div>
                 )}
 
@@ -106,16 +106,16 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   )}
                 </div>
 
-                <div className="absolute bottom-3 right-3 rounded-full border border-white/20 bg-[#1d3550]/75 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
+                <div className="absolute bottom-3 right-3 rounded-full border border-white/20 bg-[#2A2A2A]/75 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
                   {formatSeconds(video.durationSeconds)}
                 </div>
 
                 <button
                   onClick={() => setPreviewVideo(video)}
                   title="Stream preview"
-                  className="group absolute inset-0 flex items-center justify-center bg-[#1d3550]/25 opacity-0 backdrop-blur-[2px] transition duration-200 hover:opacity-100"
+                  className="group absolute inset-0 flex items-center justify-center bg-[#2A2A2A]/25 opacity-0 backdrop-blur-[2px] transition duration-200 hover:opacity-100"
                 >
-                  <span className="grid h-12 w-12 place-items-center rounded-full bg-white/90 text-[#203248] shadow-lg transition group-hover:scale-105">
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-white/90 text-[#111111] shadow-lg transition group-hover:scale-105">
                     <Play className="ml-0.5 h-5 w-5 fill-current" />
                   </span>
                 </button>
@@ -123,26 +123,26 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
 
               <div className="flex flex-1 flex-col gap-3 p-4">
                 <div>
-                  <h3 className="truncate text-[13.5px] font-semibold text-[#203248]" title={video.name}>
+                  <h3 className="truncate text-[13.5px] font-semibold text-[#111111]" title={video.name}>
                     {video.name}
                   </h3>
-                  <div className="mt-0.5 truncate font-mono text-[10.5px] text-[#8091a5]">
+                  <div className="mt-0.5 truncate font-mono text-[10.5px] text-[#8A8A8A]">
                     {video.originalFilename}
                   </div>
                 </div>
 
-                <div className="mt-auto grid grid-cols-2 gap-2 border-t border-[#7189a4]/[0.07] pt-3 text-[10.5px] text-[#8091a5]">
+                <div className="mt-auto grid grid-cols-2 gap-2 border-t border-[#E1E1E1] pt-3 text-[10.5px] text-[#8A8A8A]">
                   <div className="flex items-center gap-1.5">
-                    <HardDrive className="h-3.5 w-3.5 text-[#90a0b2]" />
+                    <HardDrive className="h-3.5 w-3.5 text-[#8A8A8A]" />
                     <span>{formatBytes(video.sizeBytes)}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-[#90a0b2]" />
+                    <Clock className="h-3.5 w-3.5 text-[#8A8A8A]" />
                     <span>{formatSeconds(video.durationSeconds)}</span>
                   </div>
                   {video.width && video.height && (
                     <div className="col-span-2 flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-[#90a0b2]" />
+                      <Layers className="h-3.5 w-3.5 text-[#8A8A8A]" />
                       <span className="truncate">
                         {video.width}×{video.height}{' '}
                         {video.frameRate ? `@ ${video.frameRate} fps` : ''} ({video.videoCodec || 'H.264'})
@@ -152,7 +152,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#7189a4]/[0.075] bg-white/25 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E1E1E1] bg-[#F5F5F5] px-4 py-3">
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onOpenGroup(video.id)}
@@ -176,14 +176,14 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   <button
                     onClick={() => setPreviewVideo(video)}
                     title="Play preview"
-                    className="btn btn-ghost btn-icon-sm text-[#8091a5]"
+                    className="btn btn-ghost btn-icon-sm text-[#8A8A8A]"
                   >
                     <Play className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => void handleDelete(video.id, video.name)}
                     title="Delete video"
-                    className="btn btn-ghost btn-icon-sm text-[#8091a5] hover:text-[#a23f36]"
+                    className="btn btn-ghost btn-icon-sm text-[#8A8A8A] hover:text-[#B91C1C]"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -227,7 +227,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="aspect-video bg-[#141110]">
+            <div className="aspect-video bg-[#2A2A2A]">
               <video
                 src={`/api/videos/${previewVideo.id}/stream`}
                 controls

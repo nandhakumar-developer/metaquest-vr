@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.js';
 import {
   ArrowRight,
-  Glasses,
   KeyRound,
   LockKeyhole,
   Mail,
@@ -38,7 +37,7 @@ export const LoginView: React.FC = () => {
         <aside className="auth-story">
           <div className="auth-brand">
             <div className="auth-brand-mark">
-              <Glasses size={23} strokeWidth={1.8} />
+              <img src="/image.png" alt="Meta Quest" className="brand-logo" />
             </div>
             <div>
               <div className="auth-brand-name">VR Control Center</div>

@@ -65,23 +65,17 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
   };
 
   return (
-    <div className="page-stack">
+    <div className="page-stack dashboard">
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
           <span className="hero-eyebrow">
             <Sparkles className="h-3 w-3" />
-            Live fleet operations
+            Live VR Video Experience
           </span>
           <h1 className="hero-title">
-            Your fleet,
-            <br />
-            <span className="serif-accent">in focus.</span>
+            Explore new worlds 💙
           </h1>
-          <p className="hero-desc">
-            Every Meta Quest 2 headset on one calm control surface. Pair, preview and cue
-            synchronized playback without leaving your local network.
-          </p>
           <div className="hero-actions">
             <button onClick={onOpenPairing} className="btn btn-primary">
               <Plus className="h-4 w-4" />
@@ -98,7 +92,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
         <div className="stat-grid">
           <div className="stat-card">
             <div className="stat-top">
-              <span className="stat-label">Total fleet</span>
+              <span className="stat-label">Total </span>
               <span className="stat-icon tint-neutral">
                 <Glasses className="h-4 w-4" />
               </span>
@@ -114,7 +108,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
                 <CheckCircle2 className="h-4 w-4" />
               </span>
             </div>
-            <div className="stat-value" style={{ color: '#438a70' }}>
+            <div className="stat-value" style={{ color: '#08785D' }}>
               {onlineDevices.length}
             </div>
             <div className="stat-hint">Ready for commands</div>
@@ -127,7 +121,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
                 <Play className="h-4 w-4" />
               </span>
             </div>
-            <div className="stat-value" style={{ color: '#5B94D7' }}>
+            <div className="stat-value" style={{ color: '#462FF6' }}>
               {playingDevices.length}
             </div>
             <div className="stat-hint">Inside a VR experience</div>
@@ -140,7 +134,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
                 <WifiOff className="h-4 w-4" />
               </span>
             </div>
-            <div className="stat-value" style={{ color: '#71849a' }}>
+            <div className="stat-value" style={{ color: '#FF2525' }}>
               {devices.length - onlineDevices.length}
             </div>
             <div className="stat-hint">Standby or powered off</div>
@@ -151,14 +145,14 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
       {/* Pending pairing */}
       {pairingRequests.length > 0 && (
         <div className="alert alert-warning">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#c98a2e]/15 text-[#92601a]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#FF9A00]/15 text-[#8A4B00]">
             <AlertCircle className="h-4 w-4 animate-pulse" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[12.5px] font-semibold text-[#7f571d]">
+            <div className="text-[12.5px] font-semibold text-[#8A4B00]">
               {pairingRequests.length} headset{pairingRequests.length === 1 ? '' : 's'} requesting pairing
             </div>
-            <p className="mt-0.5 text-[11.5px] text-[#7f571d]/85">
+            <p className="mt-0.5 text-[11.5px] text-[#8A4B00]/85">
               A Meta Quest headset is waiting to join this gateway. Review the code to connect it.
             </p>
           </div>
@@ -172,7 +166,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
       {/* Controls */}
       <div className="toolbar">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="toolbar-label mr-1 hidden sm:inline">Fleet controls</span>
+          <span className="toolbar-label mr-1 hidden sm:inline">Controls</span>
           <button
             onClick={onOpenGroup}
             disabled={onlineDevices.length === 0}

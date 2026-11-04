@@ -83,7 +83,7 @@ export const SettingsView: React.FC = () => {
         <div>
           <span className="eyebrow">Configuration</span>
           <h1 className="page-title">
-            System <span className="serif-accent text-[#5B94D7]">settings</span>
+            System <span className="serif-accent text-[#462FF6]">settings</span>
           </h1>
           <p className="page-desc">
             Network endpoints, hardware acceleration status, and the operational thresholds that keep
@@ -94,7 +94,7 @@ export const SettingsView: React.FC = () => {
 
       {/* Network */}
       <section className="panel panel-pad space-y-4">
-        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
           <span className="grid h-7 w-7 place-items-center tint-lilac">
             <Network className="h-3.5 w-3.5" />
           </span>
@@ -103,26 +103,26 @@ export const SettingsView: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="panel-inset px-4 py-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8091a5]">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8A8A8A]">
               <Globe2 className="h-3 w-3" /> Public gateway URL
             </span>
-            <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
+            <div className="mt-1 break-all font-mono text-[12.5px] text-[#555555]">
               {gw?.publicUrl || 'http://localhost:4000'}
             </div>
           </div>
 
           <div className="panel-inset px-4 py-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8091a5]">
+            <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-[#8A8A8A]">
               <Radio className="h-3 w-3" /> WebSocket URL for headsets
             </span>
-            <div className="mt-1 break-all font-mono text-[12.5px] text-[#c34c37]">
+            <div className="mt-1 break-all font-mono text-[12.5px] text-[#555555]">
               {gw?.wsUrl || 'ws://localhost:4000/ws'}
             </div>
           </div>
 
           <div className="panel-inset px-4 py-3 md:col-span-2">
-            <span className="text-[10.5px] font-medium text-[#8091a5]">LAN interface IP addresses</span>
-            <div className="mt-1 font-mono text-[12.5px] text-[#203248]">
+            <span className="text-[10.5px] font-medium text-[#8A8A8A]">LAN interface IP addresses</span>
+            <div className="mt-1 font-mono text-[12.5px] text-[#111111]">
               {gw?.lanAddresses?.length ? gw.lanAddresses.join(', ') : '127.0.0.1 (Localhost only)'}
             </div>
             <p className="field-hint">
@@ -134,7 +134,7 @@ export const SettingsView: React.FC = () => {
 
       {/* Components */}
       <section className="panel panel-pad space-y-4">
-        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
           <span className="grid h-7 w-7 place-items-center tint-mint">
             <Cpu className="h-3.5 w-3.5" />
           </span>
@@ -144,37 +144,37 @@ export const SettingsView: React.FC = () => {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8091a5]">SQLite database</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">Active (WAL)</div>
+              <div className="text-[10.5px] text-[#8A8A8A]">SQLite database</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#111111]">Active (WAL)</div>
             </div>
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-[#20D9A5]" />
           </div>
 
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8091a5]">FFmpeg inspection</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">
+              <div className="text-[10.5px] text-[#8A8A8A]">FFmpeg inspection</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#111111]">
                 {gatewayConfig?.features.ffmpeg ? 'Installed' : 'Optional (not found)'}
               </div>
             </div>
             {gatewayConfig?.features.ffmpeg ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#20D9A5]" />
             ) : (
-              <AlertCircle className="h-5 w-5 shrink-0 text-[#c98a2e]" />
+              <AlertCircle className="h-5 w-5 shrink-0 text-[#FF9A00]" />
             )}
           </div>
 
           <div className="panel-inset flex items-center justify-between gap-3 px-4 py-3">
             <div>
-              <div className="text-[10.5px] text-[#8091a5]">Cloud sync</div>
-              <div className="mt-0.5 text-[12px] font-semibold text-[#203248]">
+              <div className="text-[10.5px] text-[#8A8A8A]">Cloud sync</div>
+              <div className="mt-0.5 text-[12px] font-semibold text-[#111111]">
                 {cloud?.configured ? (cloud.online ? 'Synchronized' : 'Offline') : 'Disabled (local)'}
               </div>
             </div>
             {cloud?.online ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#4e9e7e]" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#20D9A5]" />
             ) : (
-              <Shield className="h-5 w-5 shrink-0 text-[#90a0b2]" />
+              <Shield className="h-5 w-5 shrink-0 text-[#8A8A8A]" />
             )}
           </div>
         </div>
@@ -184,7 +184,7 @@ export const SettingsView: React.FC = () => {
       {formSettings && (
         <form onSubmit={handleSettingsSubmit} className="panel panel-pad space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
+            <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
               <span className="grid h-7 w-7 place-items-center tint-gold">
                 <Settings className="h-3.5 w-3.5" />
               </span>
@@ -270,7 +270,7 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-[#7189a4]/[0.075] pt-4">
+          <div className="flex justify-end border-t border-[#E1E1E1] pt-4">
             <button type="submit" className="btn btn-primary btn-sm">
               <Save className="h-3.5 w-3.5" />
               Save configuration
@@ -282,7 +282,7 @@ export const SettingsView: React.FC = () => {
       {/* Password */}
       <form onSubmit={handlePasswordSubmit} className="panel panel-pad space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#203248]">
+          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
             <span className="grid h-7 w-7 place-items-center tint-coral">
               <KeyRound className="h-3.5 w-3.5" />
             </span>
@@ -345,7 +345,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-[#7189a4]/[0.075] pt-4">
+        <div className="flex justify-end border-t border-[#E1E1E1] pt-4">
           <button type="submit" className="btn btn-secondary btn-sm">
             Update password
           </button>

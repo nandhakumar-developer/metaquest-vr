@@ -122,9 +122,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
             className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
               isOnline
                 ? isBuffering
-                  ? 'bg-[#e0a13f] shadow-[0_0_0_4px_rgba(224,161,63,0.16)]'
-                  : 'bg-[#4aa880] shadow-[0_0_0_4px_rgba(74,168,128,0.15)]'
-                : 'bg-[#c0b3a9]'
+                  ? 'bg-[#FF9A00] shadow-[0_0_0_4px_rgba(255,154,0,0.16)]'
+                  : 'bg-[#20D9A5] shadow-[0_0_0_4px_rgba(32,217,165,0.15)]'
+                : 'bg-[#8A8A8A]'
             }`}
           />
 
@@ -138,20 +138,20 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
                   className="input h-8 min-h-8 w-40 px-2 text-[12px]"
                   autoFocus
                 />
-                <button type="submit" className="text-[11px] font-semibold text-[#d9533b]">
+                <button type="submit" className="text-[11px] font-semibold text-[#462FF6]">
                   Save
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsRenaming(false)}
-                  className="text-[11px] font-medium text-[#8091a5]"
+                  className="text-[11px] font-medium text-[#8A8A8A]"
                 >
                   Cancel
                 </button>
               </form>
             ) : (
               <div className="flex flex-wrap items-center gap-1.5">
-                <h3 className="truncate text-[14.5px] font-semibold tracking-[-0.02em] text-[#203248]">
+                <h3 className="truncate text-[14.5px] font-semibold tracking-[-0.02em] text-[#111111]">
                   {device.name}
                 </h3>
                 <span className="badge badge-neutral badge-mono">{device.model}</span>
@@ -159,19 +159,19 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
               </div>
             )}
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10.5px] text-[#8091a5]">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10.5px] text-[#8A8A8A]">
               <span className="flex items-center gap-1 font-mono">
                 {isOnline ? (
-                  <Wifi className="h-3 w-3 text-[#4e9e7e]" />
+                  <Wifi className="h-3 w-3 text-[#20D9A5]" />
                 ) : (
-                  <WifiOff className="h-3 w-3 text-[#90a0b2]" />
+                  <WifiOff className="h-3 w-3 text-[#8A8A8A]" />
                 )}
                 {device.ipAddress || 'No LAN IP'}
               </span>
-              <span className="h-0.5 w-0.5 rounded-full bg-[#c3b6ab]" />
+              <span className="h-0.5 w-0.5 rounded-full bg-[#E1E1E1]" />
               <span
                 className={`font-medium capitalize ${
-                  isBuffering ? 'text-[#92601a]' : isOnline ? 'text-[#52677f]' : 'text-[#8091a5]'
+                  isBuffering ? 'text-[#8A4B00]' : isOnline ? 'text-[#555555]' : 'text-[#8A8A8A]'
                 }`}
               >
                 {stateLabel}
@@ -185,8 +185,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
             <div
               className={`flex h-7 items-center gap-1.5 rounded-full border px-2.5 font-mono text-[10.5px] font-medium ${
                 (device.batteryLevel ?? 0) > 20
-                  ? 'border-[#4e9e7e]/20 bg-[#4e9e7e]/10 text-[#347f63]'
-                  : 'border-[#c5544a]/20 bg-[#c5544a]/10 text-[#a23f36]'
+                  ? 'border-[#20D9A5]/20 bg-[#20D9A5]/10 text-[#08785D]'
+                  : 'border-[#FF2525]/20 bg-[#FF2525]/10 text-[#B91C1C]'
               }`}
             >
               {device.charging ? (
@@ -202,7 +202,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Headset options"
-              className="btn btn-ghost btn-icon-sm text-[#8091a5]"
+              className="btn btn-ghost btn-icon-sm text-[#8A8A8A]"
             >
               <MoreVertical className="h-4 w-4" />
             </button>
@@ -210,13 +210,13 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="panel absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden p-1.5 shadow-[0_24px_50px_-20px_rgba(58,42,32,0.45)]">
+                <div className="panel absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden p-1.5 shadow-[0_24px_50px_-20px_rgba(0,0,0,0.06)]">
                   <button
                     onClick={() => {
                       setIsRenaming(true);
                       setMenuOpen(false);
                     }}
-                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#52677f] transition hover:bg-[#7189a4]/[0.06] hover:text-[#203248]"
+                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#555555] transition hover:bg-[#F1F1F1] hover:text-[#111111]"
                   >
                     Rename headset
                   </button>
@@ -226,17 +226,17 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
                       setMenuOpen(false);
                     }}
                     disabled={!isOnline}
-                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#52677f] transition hover:bg-[#7189a4]/[0.06] hover:text-[#203248] disabled:opacity-40"
+                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#555555] transition hover:bg-[#F1F1F1] hover:text-[#111111] disabled:opacity-40"
                   >
                     Reload player
                   </button>
-                  <div className="my-1 h-px bg-[#7189a4]/[0.08]" />
+                  <div className="my-1 h-px bg-[#F1F1F1]" />
                   <button
                     onClick={() => {
                       void unpairDevice(device.id);
                       setMenuOpen(false);
                     }}
-                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#92601a] transition hover:bg-[#c98a2e]/10"
+                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#8A4B00] transition hover:bg-[#FF9A00]/10"
                   >
                     Unpair device
                   </button>
@@ -245,7 +245,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
                       void deleteDevice(device.id);
                       setMenuOpen(false);
                     }}
-                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#a23f36] transition hover:bg-[#c5544a]/10"
+                    className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11.5px] font-medium text-[#B91C1C] transition hover:bg-[#FF2525]/10"
                   >
                     Delete record
                   </button>
@@ -258,15 +258,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
 
       {/* Now playing */}
       <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
-        <div className="rounded-2xl border border-[#7189a4]/[0.07] bg-white/35 px-3.5 py-3">
+        <div className="device-playback rounded-2xl border border-[#E1E1E1] bg-[#F5F5F5] px-3.5 py-3">
           <div className="flex items-center justify-between gap-3 text-[11px]">
-            <div className="flex min-w-0 items-center gap-1.5 font-medium text-[#52677f]">
-              <Film className="h-3.5 w-3.5 shrink-0 text-[#d9533b]" />
+            <div className="flex min-w-0 items-center gap-1.5 font-medium text-[#555555]">
+              <Film className="h-3.5 w-3.5 shrink-0 text-[#462FF6]" />
               <span className="truncate">
                 {device.playback.videoName || 'No video loaded'}
               </span>
             </div>
-            <div className="shrink-0 font-mono text-[10.5px] text-[#8091a5]">
+            <div className="shrink-0 font-mono text-[10.5px] text-[#8A8A8A]">
               {formatTime(currentPos)} / {formatTime(duration)}
             </div>
           </div>
@@ -345,10 +345,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
               onClick={() => handleVolumeChange(device.playback.volume > 0 ? 0 : 0.8)}
               disabled={!isOnline}
               aria-label="Toggle mute"
-              className="text-[#8091a5] transition hover:text-[#203248] disabled:opacity-40"
+              className="text-[#8A8A8A] transition hover:text-[#111111] disabled:opacity-40"
             >
               {device.playback.volume === 0 ? (
-                <VolumeX className="h-4 w-4 text-[#c5544a]" />
+                <VolumeX className="h-4 w-4 text-[#FF2525]" />
               ) : (
                 <Volume2 className="h-4 w-4" />
               )}
@@ -382,16 +382,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
         </select>
 
         {controlError && (
-          <p role="alert" className="text-[11px] leading-snug text-[#a23f36]">
+          <p role="alert" className="text-[11px] leading-snug text-[#B91C1C]">
             {controlError}
           </p>
         )}
       </div>
 
       {/* Footer */}
-      <div className="mt-auto flex items-center justify-between border-t border-[#7189a4]/[0.075] bg-white/25 px-4 py-2.5">
-        <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-[#8091a5]">
-          <HardDrive className="h-3.5 w-3.5 text-[#90a0b2]" />
+      <div className="mt-auto flex items-center justify-between border-t border-[#E1E1E1] bg-[#F5F5F5] px-4 py-2.5">
+        <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-[#8A8A8A]">
+          <HardDrive className="h-3.5 w-3.5 text-[#8A8A8A]" />
           <span>Free {formatBytes(device.storage.freeBytes)}</span>
         </div>
 

@@ -179,14 +179,14 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                 return (
                   <div key={deployment.id} className="panel-inset px-3.5 py-3">
                     <div className="flex items-center justify-between gap-3 text-[11.5px]">
-                      <span className="font-semibold text-[#203248]">{deployment.deviceName}</span>
+                      <span className="font-semibold text-[#111111]">{deployment.deviceName}</span>
                       <span
                         className={
                           deployment.status === 'ready'
-                            ? 'text-[#347f63]'
+                            ? 'text-[#08785D]'
                             : deployment.status === 'failed'
-                              ? 'text-[#a23f36]'
-                              : 'text-[#c34c37]'
+                              ? 'text-[#B91C1C]'
+                              : 'text-[#555555]'
                         }
                       >
                         {transferActive && (
@@ -223,15 +223,15 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="font-semibold text-[#d9533b] hover:text-[#b8493f]"
+                className="font-semibold text-[#462FF6] hover:text-[#B91C1C]"
               >
                 Online ({onlineDevices.length})
               </button>
-              <span className="text-[#c3b6ab]">/</span>
+              <span className="text-[#E1E1E1]">/</span>
               <button
                 type="button"
                 onClick={selectAll}
-                className="font-semibold text-[#8091a5] hover:text-[#203248]"
+                className="font-semibold text-[#8A8A8A] hover:text-[#111111]"
               >
                 All ({selectableDevices.length})
               </button>
@@ -260,10 +260,10 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                   aria-disabled={!selectable}
                   className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition ${
                     !selectable
-                      ? 'cursor-not-allowed border-[#7189a4]/[0.06] bg-white/20 text-[#90a0b2]'
+                      ? 'cursor-not-allowed border-[#E1E1E1] bg-[#F5F5F5] text-[#8A8A8A]'
                       : checked
-                        ? 'cursor-pointer border-[#5B94D7]/30 bg-[#5B94D7]/[0.06]'
-                        : 'cursor-pointer border-[#7189a4]/[0.09] bg-white/35 hover:border-[#7189a4]/20'
+                        ? 'cursor-pointer border-[#462FF6]/30 bg-[#EEEAFE]'
+                        : 'cursor-pointer border-[#E1E1E1] bg-[#F5F5F5] hover:border-[#E1E1E1]'
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -274,16 +274,16 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       onChange={() => {}}
                     />
                     <div className="min-w-0">
-                      <div className="truncate text-[12px] font-semibold text-[#203248]">
+                      <div className="truncate text-[12px] font-semibold text-[#111111]">
                         {device.name}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8091a5]">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8A8A8A]">
                         <span>{device.model}</span>
-                        <span className="text-[#c3b6ab]">·</span>
-                        <span className={device.online ? 'text-[#347f63]' : 'text-[#90a0b2]'}>
+                        <span className="text-[#E1E1E1]">·</span>
+                        <span className={device.online ? 'text-[#08785D]' : 'text-[#8A8A8A]'}>
                           {device.online ? 'Online' : 'Offline'}
                         </span>
-                        <span className="text-[#c3b6ab]">·</span>
+                        <span className="text-[#E1E1E1]">·</span>
                         <span>
                           {browser
                             ? device.online
@@ -294,13 +294,13 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       </div>
                     </div>
                   </div>
-                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#d9533b]" />}
+                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#462FF6]" />}
                 </div>
               );
             })}
           </div>
 
-          <p className="text-[10px] leading-relaxed text-[#8091a5]">
+          <p className="text-[10px] leading-relaxed text-[#8A8A8A]">
             Browser players download the video to local Quest Browser storage and show it under “On
             this headset”. Playback from the shared library remains a separate streaming option.
             Available browser storage is checked when reported; if space is unavailable, the transfer
@@ -309,7 +309,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
         </div>
 
         <div className="modal-foot">
-          <span className="flex items-center gap-1.5 text-[10px] text-[#8091a5]">
+          <span className="flex items-center gap-1.5 text-[10px] text-[#8A8A8A]">
             <Clock className="h-3 w-3" />
             Keep the headset player open until its download finishes.
           </span>

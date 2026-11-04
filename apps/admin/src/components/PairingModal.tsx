@@ -131,19 +131,19 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
                       className="h-28 w-28 rounded-xl border border-white/70 bg-white shadow-sm"
                     />
                   ) : (
-                    <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-dashed border-[#7189a4]/20 text-[#90a0b2]">
+                    <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-dashed border-[#E1E1E1] text-[#8A8A8A]">
                       <QrCode className="h-8 w-8" />
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#203248]">
-                    <Smartphone className="h-3.5 w-3.5 text-[#5B94D7]" />
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#111111]">
+                    <Smartphone className="h-3.5 w-3.5 text-[#462FF6]" />
                     Open the player on each headset
                   </div>
                   <div className="flex items-center gap-2">
                     <code
-                      className="min-w-0 flex-1 truncate rounded-lg border border-[#7189a4]/10 bg-white/60 px-2.5 py-1.5 font-mono text-[10.5px] text-[#c34c37]"
+                      className="min-w-0 flex-1 truncate rounded-lg border border-[#E1E1E1] bg-[#F5F5F5] px-2.5 py-1.5 font-mono text-[10.5px] text-[#555555]"
                       title={playerUrl}
                     >
                       {playerUrl || 'Generating link…'}
@@ -155,25 +155,25 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
                       className="btn btn-secondary btn-xs shrink-0"
                     >
                       {copied ? (
-                        <Check className="h-3.5 w-3.5 text-[#4e9e7e]" />
+                        <Check className="h-3.5 w-3.5 text-[#20D9A5]" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
                       <span>{copied ? 'Copied' : 'Copy'}</span>
                     </button>
                   </div>
-                  <p className="text-[10.5px] leading-relaxed text-[#8091a5]">
+                  <p className="text-[10.5px] leading-relaxed text-[#8A8A8A]">
                     Scan the QR code or type this URL into{' '}
-                    <strong className="font-semibold text-[#52677f]">Meta Quest Browser</strong>. Open
+                    <strong className="font-semibold text-[#555555]">Meta Quest Browser</strong>. Open
                     the same URL on each headset and pair each one separately — every headset gets its
                     own single-use 6-digit code.
                   </p>
-                  <p className="text-[10px] leading-relaxed text-[#90a0b2]">
+                  <p className="text-[10px] leading-relaxed text-[#8A8A8A]">
                     Immersive WebXR needs HTTPS. Over plain HTTP the player still streams and plays
                     flat 2D.
                   </p>
                   {linkError && (
-                    <p className="flex items-center gap-1.5 text-[10.5px] text-[#92601a]">
+                    <p className="flex items-center gap-1.5 text-[10.5px] text-[#8A4B00]">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                       <span>{linkError}</span>
                     </p>
@@ -185,24 +185,24 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
             {/* Pending requests */}
             {pairingRequests.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#92601a]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#c98a2e]" />
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#8A4B00]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FF9A00]" />
                   Detected headsets awaiting pairing
                 </div>
                 <div className="space-y-2">
                   {pairingRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[#7189a4]/10 bg-white/45 px-3.5 py-2.5"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#E1E1E1] bg-[#F5F5F5] px-3.5 py-2.5"
                     >
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-[11.5px] font-semibold text-[#203248]">
+                        <div className="flex items-center gap-2 text-[11.5px] font-semibold text-[#111111]">
                           PIN
-                          <span className="rounded-md border border-[#7189a4]/10 bg-white/70 px-2 py-0.5 font-mono text-[13px] tracking-[0.16em] text-[#c34c37]">
+                          <span className="rounded-md border border-[#E1E1E1] bg-[#F5F5F5] px-2 py-0.5 font-mono text-[13px] tracking-[0.16em] text-[#555555]">
                             {req.code}
                           </span>
                         </div>
-                        <div className="mt-1 truncate text-[10.5px] text-[#8091a5]">
+                        <div className="mt-1 truncate text-[10.5px] text-[#8A8A8A]">
                           {req.ipAddress || 'LAN'} · {req.deviceModel}
                         </div>
                       </div>
@@ -217,7 +217,7 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
                         <button
                           type="button"
                           onClick={() => void cancelPairing(req.id)}
-                          className="btn btn-ghost btn-icon-sm text-[#8091a5] hover:text-[#a23f36]"
+                          className="btn btn-ghost btn-icon-sm text-[#8A8A8A] hover:text-[#B91C1C]"
                           title="Dismiss"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -232,7 +232,7 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
             <div>
               <label className="field-label">6-digit pairing PIN</label>
               <div className="relative">
-                <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#90a0b2]" />
+                <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A8A8A]" />
                 <input
                   type="text"
                   maxLength={6}

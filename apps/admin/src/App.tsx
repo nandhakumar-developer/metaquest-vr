@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from './context/AppContext.js';
 import { Header } from './components/Header.js';
-import { Navbar, type TabKey } from './components/Navbar.js';
+import type { TabKey } from './components/Navbar.js';
 import { DevicesView } from './components/DevicesView.js';
 import { GroupPlaybackView } from './components/GroupPlaybackView.js';
 import { VideosView } from './components/VideosView.js';
@@ -24,11 +24,11 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-[#52677f]">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl border border-white/70 bg-white/50 shadow-[0_20px_45px_-25px_rgba(58,42,32,0.5)] backdrop-blur-md">
-          <Activity className="h-6 w-6 animate-spin text-[#5B94D7]" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-[#555555]">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl border border-[#E1E1E1] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+          <Activity className="h-6 w-6 animate-spin text-[#462FF6]" />
         </div>
-        <span className="font-mono text-[11px] tracking-[0.14em] uppercase text-[#8091a5]">
+        <span className="font-mono text-[11px] tracking-[0.14em] uppercase text-[#8A8A8A]">
           Initializing control center
         </span>
       </div>
@@ -44,9 +44,8 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />
+    <div className={`min-h-screen ${currentTab === 'devices' ? 'dashboard-screen' : ''}`}>
+      <Header currentTab={currentTab} onSelectTab={setCurrentTab} />
 
       <main className="page">
         <div className="page-stack">

@@ -14,9 +14,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
-  const { devices, videos, pairingRequests, group } = useApp();
-
-  const onlineCount = devices.filter((d) => d.online).length;
+  const { videos, group } = useApp();
 
   const tabs: Array<{
     key: TabKey;
@@ -29,8 +27,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
       key: 'devices',
       label: 'Headsets',
       icon: Glasses,
-      badge: pairingRequests.length > 0 ? `+${pairingRequests.length}` : `${onlineCount}/${devices.length}`,
-      badgeTone: pairingRequests.length > 0 ? 'alert' : 'neutral',
     },
     {
       key: 'group',
@@ -52,33 +48,31 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
   ];
 
   return (
-    <nav className="tabbar" aria-label="Primary">
-      <div className="tabbar-inner">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const active = currentTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => onSelectTab(tab.key)}
-              className={`tab ${active ? 'is-active' : ''}`}
-              aria-current={active ? 'page' : undefined}
-            >
-              <Icon className={`h-4 w-4 ${active ? 'text-white' : 'text-[#71849a]'}`} />
-              <span>{tab.label}</span>
-              {tab.badge !== undefined && (
-                <span
-                  className={`tab-badge ${
-                    tab.badgeTone === 'live' ? 'is-live' : tab.badgeTone === 'alert' ? 'is-alert' : ''
-                  }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+    <nav className="primary-nav" aria-label="Primary">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const active = currentTab === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => onSelectTab(tab.key)}
+            className={`tab ${active ? 'is-active' : ''}`}
+            aria-current={active ? 'page' : undefined}
+          >
+            <Icon className={`h-4 w-4 ${active ? 'text-[#2A1B92]' : 'text-white/80'}`} />
+            <span>{tab.label}</span>
+            {tab.badge !== undefined && (
+              <span
+                className={`tab-badge ${
+                  tab.badgeTone === 'live' ? 'is-live' : tab.badgeTone === 'alert' ? 'is-alert' : ''
+                }`}
+              >
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 };

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.js';
 import {
   ArrowRight,
-  Glasses,
   KeyRound,
   LockKeyhole,
   Mail,
@@ -57,7 +56,7 @@ export const BootstrapView: React.FC = () => {
         <aside className="auth-story">
           <div className="auth-brand">
             <div className="auth-brand-mark">
-              <Glasses size={23} strokeWidth={1.8} />
+              <img src="/image.png" alt="Meta Quest" className="brand-logo" />
             </div>
             <div>
               <div className="auth-brand-name">VR Control Center</div>
@@ -145,7 +144,7 @@ export const BootstrapView: React.FC = () => {
               </div>
 
               <div>
-                <label className="auth-field-label" htmlFor="setup-name">Display name <span className="font-normal text-[#90a0b2]">(optional)</span></label>
+                <label className="auth-field-label" htmlFor="setup-name">Display name <span className="font-normal text-[#8A8A8A]">(optional)</span></label>
                 <div className="auth-input-wrap">
                   <UserRound className="auth-input-icon" size={17} />
                   <input
@@ -161,7 +160,7 @@ export const BootstrapView: React.FC = () => {
               </div>
 
               <div>
-                <label className="auth-field-label" htmlFor="setup-password">Password <span className="font-normal text-[#90a0b2]">(at least 12 characters)</span></label>
+                <label className="auth-field-label" htmlFor="setup-password">Password <span className="font-normal text-[#8A8A8A]">(at least 12 characters)</span></label>
                 <div className="auth-input-wrap">
                   <LockKeyhole className="auth-input-icon" size={17} />
                   <input

@@ -70,7 +70,7 @@ export const PreviewModal: React.FC = () => {
                   Live view · {device?.name || 'Headset'}
                 </h3>
                 <span className="badge badge-success">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#4e9e7e]" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#20D9A5]" />
                   Live preview
                 </span>
               </div>
@@ -85,7 +85,7 @@ export const PreviewModal: React.FC = () => {
         </div>
 
         <div className="modal-body space-y-4">
-          <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-black/20 bg-[#141110] shadow-inner">
+          <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-black/20 bg-[#2A2A2A] shadow-inner">
             {activePreview.dataBase64 ? (
               <img
                 src={`data:image/jpeg;base64,${activePreview.dataBase64}`}
@@ -93,41 +93,41 @@ export const PreviewModal: React.FC = () => {
                 className="h-full w-full object-contain"
               />
             ) : (
-              <div className="p-6 text-center text-[#90a0b2]">
-                <Activity className="mx-auto mb-2 h-8 w-8 animate-spin text-[#5B94D7]" />
+              <div className="p-6 text-center text-[#8A8A8A]">
+                <Activity className="mx-auto mb-2 h-8 w-8 animate-spin text-[#462FF6]" />
                 <p className="text-[12px]">Waiting for the first headset snapshot…</p>
               </div>
             )}
 
-            <div className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-[#1d3550]/70 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
+            <div className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-[#2A2A2A]/70 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
               Captured {new Date(activePreview.capturedAt).toLocaleTimeString()}
             </div>
           </div>
 
           <div className="panel-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-[#5B94D7]" />
-              <span className="text-[11.5px] font-semibold text-[#203248]">Headset orientation</span>
+              <Compass className="h-4 w-4 text-[#462FF6]" />
+              <span className="text-[11.5px] font-semibold text-[#111111]">Headset orientation</span>
             </div>
             <div className="flex items-center gap-5 font-mono text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="text-[#8091a5]">Pitch</span>
-                <span className="font-semibold text-[#c34c37]">{pitch}°</span>
+                <span className="text-[#8A8A8A]">Pitch</span>
+                <span className="font-semibold text-[#555555]">{pitch}°</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[#8091a5]">Yaw</span>
-                <span className="font-semibold text-[#347f63]">{yaw}°</span>
+                <span className="text-[#8A8A8A]">Yaw</span>
+                <span className="font-semibold text-[#08785D]">{yaw}°</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[#8091a5]">Roll</span>
-                <span className="font-semibold text-[#92601a]">{roll}°</span>
+                <span className="text-[#8A8A8A]">Roll</span>
+                <span className="font-semibold text-[#8A4B00]">{roll}°</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="modal-foot">
-          <span className="text-[10.5px] text-[#8091a5]">
+          <span className="text-[10.5px] text-[#8A8A8A]">
             Snapshot preview updates while this view is open. Playback itself remains on the headset.
           </span>
           <button onClick={closeActivePreview} className="btn btn-secondary btn-sm">
