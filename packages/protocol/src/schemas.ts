@@ -9,7 +9,7 @@ import {
   type ProjectionType,
   type StereoLayout,
 } from "@vrcc/shared-types";
-import { PROTOCOL_VERSION } from "./constants.js";
+import { MAX_PREVIEW_FPS, PROTOCOL_VERSION } from "./constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Primitive schemas                                                           */
@@ -379,7 +379,7 @@ export const authOkPayloadSchema = z
     config: z
       .object({
         heartbeatIntervalMs: z.number().int().min(1000).max(60_000),
-        previewMaxFps: z.number().int().min(5).max(15),
+        previewMaxFps: z.number().int().min(5).max(MAX_PREVIEW_FPS),
         timeoutsMs: z.number().int().min(1000).max(120_000),
       })
       .strict(),

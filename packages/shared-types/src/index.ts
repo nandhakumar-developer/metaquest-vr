@@ -286,7 +286,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   staleAfterSeconds: 15,
   seekStepSeconds: 1,
-  previewMaxFps: 12,
+  previewMaxFps: 30,
   defaultVolume: 0.8,
   confirmDestructiveActions: true,
 };

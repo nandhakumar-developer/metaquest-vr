@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  authOkPayloadSchema,
   makeMessage,
   parseQuestMessage,
   parseDeviceCommandMessage,
@@ -11,6 +12,28 @@ import { DEFAULT_CAPABILITIES } from '@vrcc/shared-types';
 describe('Protocol Message Handling', () => {
   const deviceUuid = '11111111-2222-4333-8444-555555555555';
   const secretHex = 'a'.repeat(64);
+
+  it('accepts a 30 FPS preview target and rejects values above the supported maximum', () => {
+    const payload = {
+      deviceId: deviceUuid,
+      deviceUuid,
+      displayName: 'Quest',
+      serverTime: new Date().toISOString(),
+      config: {
+        heartbeatIntervalMs: 5000,
+        previewMaxFps: 30,
+        timeoutsMs: 6000,
+      },
+    };
+
+    expect(authOkPayloadSchema.safeParse(payload).success).toBe(true);
+    expect(
+      authOkPayloadSchema.safeParse({
+        ...payload,
+        config: { ...payload.config, previewMaxFps: 31 },
+      }).success,
+    ).toBe(false);
+  });
 
   it('serializes and parses a valid DEVICE_AUTH message', () => {
     const raw = makeMessage('DEVICE_AUTH', deviceUuid, {

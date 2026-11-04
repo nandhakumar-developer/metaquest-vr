@@ -4,7 +4,7 @@ import { homedir, networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
-import { DEFAULT_PREVIEW_MAX_FPS } from '@vrcc/protocol';
+import { DEFAULT_PREVIEW_MAX_FPS, MAX_PREVIEW_FPS } from '@vrcc/protocol';
 
 export interface SupabaseConfig {
   url: string | null;
@@ -70,7 +70,7 @@ const previewFpsFromEnv = () =>
         // PREVIEW_MAX_FPS=1 was the old sample default, not a useful target.
         return parsed === 1 ? DEFAULT_PREVIEW_MAX_FPS : parsed;
       },
-      z.number().int().min(5).max(15),
+      z.number().int().min(5).max(MAX_PREVIEW_FPS),
     )
     .default(DEFAULT_PREVIEW_MAX_FPS);
 

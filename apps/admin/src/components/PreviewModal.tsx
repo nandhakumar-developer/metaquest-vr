@@ -75,7 +75,7 @@ export const PreviewModal: React.FC = () => {
                 </span>
               </div>
               <p className="modal-sub">
-                Target {settings?.previewMaxFps ?? 12} FPS · Actual {previewFps || 'waiting'} FPS
+                Target {settings?.previewMaxFps ?? 30} FPS · Received {previewFps || 'waiting'} FPS
               </p>
             </div>
           </div>

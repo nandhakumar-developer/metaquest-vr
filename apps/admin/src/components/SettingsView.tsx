@@ -236,11 +236,11 @@ export const SettingsView: React.FC = () => {
             </div>
 
             <div>
-              <label className="field-label">Preview snapshot max FPS (5–15)</label>
+              <label className="field-label">Preview snapshot max FPS (5–30)</label>
               <input
                 type="number"
                 min={5}
-                max={15}
+                max={30}
                 value={formSettings.previewMaxFps}
                 onChange={(e) =>
                   setFormSettings({ ...formSettings, previewMaxFps: Number(e.target.value) })
@@ -248,8 +248,8 @@ export const SettingsView: React.FC = () => {
                 className="input"
               />
               <span className="field-hint">
-                Defaults to 12 FPS. Higher values look smoother but use more headset and network
-                capacity; snapshots may slow down on a busy device or Wi-Fi connection.
+                Defaults to 30 FPS on a capable headset and network. Actual FPS may be lower if
+                capture, encoding, or Wi-Fi cannot keep up.
               </span>
             </div>
 

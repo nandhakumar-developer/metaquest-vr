@@ -135,7 +135,7 @@ const state = {
   downloadJobs: new Map(),
   offlineDb: null,
   localMediaUrls: new Map(),
-  previewMaxFps: 12,
+  previewMaxFps: 30,
   libraryFromCache: false,
   storageEstimate: null,
   storageEstimateAt: 0,
@@ -1460,7 +1460,7 @@ function applyRuntimeConfig(config) {
   }
   const nextFps = Number(config.previewMaxFps);
   if (Number.isFinite(nextFps) && nextFps > 0) {
-    const clamped = clamp(nextFps, 5, 15);
+    const clamped = clamp(nextFps, 5, 30);
     if (clamped !== state.previewMaxFps) {
       state.previewMaxFps = clamped;
       if (state.previewActive) {
@@ -2130,8 +2130,8 @@ async function startPreview() {
   stopPreview();
   state.previewActive = true;
   void captureAndSendPreview();
-  const fps = clamp(Number(state.previewMaxFps) || 12, 5, 15);
-  const intervalMs = Math.max(66, Math.round(1000 / fps));
+  const fps = clamp(Number(state.previewMaxFps) || 30, 5, 30);
+  const intervalMs = Math.max(1, Math.round(1000 / fps));
   state.previewTimer = setInterval(() => void captureAndSendPreview(), intervalMs);
 }
 

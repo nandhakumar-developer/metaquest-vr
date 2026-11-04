@@ -227,7 +227,7 @@ The full configuration template is in [.env.example](.env.example). Common setti
 | `EXTRA_ALLOWED_ORIGINS`                                         | Comma-separated additional browser origins allowed by the gateway                  |
 | `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories                                          |
 | `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Set both to enable HTTPS/WSS directly on the gateway                               |
-| `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–15 FPS; default: 12)                    |
+| `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–30 FPS; default: 30)                    |
 | `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                      |
 | `SUPABASE_*`, `VITE_SUPABASE_*`                                 | Optional cloud integration values; never expose a service-role key in browser code |
 
