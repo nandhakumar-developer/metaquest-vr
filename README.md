@@ -265,7 +265,15 @@ The Windows helper also supports `.\scripts\windows\start.ps1 -Dev`.
 
 This builds the shared workspace packages, then starts the gateway watcher on port `4000` and Vite on port `3000`. Open `http://localhost:3000` for the dashboard. Stop both processes with `Ctrl+C`.
 
-Allow Node.js through Windows Firewall on private networks (TCP port `4000`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls. See [docs/network-https.md](docs/network-https.md) for TLS and proxy setup.
+Allow Node.js through Windows Firewall on private networks (TCP port `4000`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls.
+
+To use immersive 180/360 playback on a headset, enable the bundled local HTTPS setup:
+
+```powershell
+npm run https:setup
+```
+
+Set `TLS_CERT_PATH=./certs/gateway.crt` and `TLS_KEY_PATH=./certs/gateway.key` in `.env`, then restart the gateway. Open the new `https://<PC-LAN-IP>:4000/player/` URL on the headset, accept the certificate warning once, and pair the headset again (browser storage is per origin). See [docs/network-https.md](docs/network-https.md) for trusted-certificate and proxy options.
 
 ### 5. Check gateway health
 

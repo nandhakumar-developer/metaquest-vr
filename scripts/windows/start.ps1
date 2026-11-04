@@ -23,9 +23,14 @@ Get-Content (Join-Path $root '.env') | ForEach-Object {
   }
 }
 
+$hasTls =
+  (Test-Path (Join-Path $root 'certs\gateway.crt')) -and
+  (Test-Path (Join-Path $root 'certs\gateway.key'))
+$scheme = if ($hasTls) { 'https' } else { 'http' }
+
 Write-Host '=== VR Control Center ===' -ForegroundColor Cyan
 if ($Dev) {
-  Write-Host 'Development mode: Vite http://localhost:3000 + gateway http://localhost:4000'
+  Write-Host "Development mode: Vite http://localhost:3000 + gateway $scheme`://localhost:4000"
   Write-Host 'Press Ctrl+C to stop both processes.' -ForegroundColor DarkGray
   npm run dev
 } else {
@@ -33,8 +38,8 @@ if ($Dev) {
     Write-Host "Dashboard:      $publicUrl"
     Write-Host "Quest player:   $publicUrl/player/"
   } else {
-    Write-Host 'Dashboard:      http://localhost:4000'
-    Write-Host 'Quest player:   http://localhost:4000/player/'
+    Write-Host "Dashboard:      $scheme`://localhost:4000"
+    Write-Host "Quest player:   $scheme`://localhost:4000/player/"
   }
   if (-not (Test-Path (Join-Path $root 'apps\gateway\dist\index.js'))) {
     Write-Host 'Production build missing; npm start will build it first.' -ForegroundColor Yellow

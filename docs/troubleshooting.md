@@ -126,14 +126,22 @@ file are out of sync.
 
 ## "Enter VR" fails
 
-WebXR requires a secure context:
+WebXR requires a secure context, so the player must be opened over `https://` (or
+localhost, which is not applicable to a headset). Plain `http://<lan-ip>` always shows:
 
-- Use `https://` with a trusted certificate, or
-- open the player on localhost (not applicable to a headset), or
-- use flat 2D playback over HTTP.
+> Immersive VR needs HTTPS…
 
-A self-signed certificate without a trusted CA still fails. See
-[network-https.md](network-https.md).
+Fix it on the gateway PC:
+
+1. Run `npm run https:setup` to create `certs/gateway.crt` and `certs/gateway.key`.
+2. Set `TLS_CERT_PATH=./certs/gateway.crt` and `TLS_KEY_PATH=./certs/gateway.key` in `.env`.
+3. Restart the gateway and open the new `https://<lan-ip>:4000/player/` URL on the headset.
+4. Accept the certificate warning once, then tap **Enter VR**.
+
+Pairing and offline downloads are stored per browser origin. After switching from HTTP to
+HTTPS, pair the headset again and re-download any offline copies. See
+[network-https.md](network-https.md) for trusted-certificate options if your Quest firmware
+blocks WebXR on a self-signed certificate.
 
 ## Snapshot preview is blank
 

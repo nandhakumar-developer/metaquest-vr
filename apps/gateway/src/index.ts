@@ -1,5 +1,5 @@
 import { buildServer, listen } from './server.js';
-import { loadConfig } from './config.js';
+import { loadConfig, tlsCertificateCoversHost } from './config.js';
 import { APP_VERSION } from './version.js';
 
 async function main(): Promise<void> {
@@ -23,12 +23,28 @@ async function main(): Promise<void> {
   if (ctx.urls.lanAddresses.length > 0) {
     process.stdout.write(`  LAN Addresses:    ${ctx.urls.lanAddresses.join(', ')}\n`);
   }
+  if (ctx.urls.secure) {
+    process.stdout.write(
+      '  TLS:              Enabled (accept the certificate warning on the headset once)\n',
+    );
+  }
   process.stdout.write(`  Dashboard Origin: ${config.adminOrigin}\n`);
   process.stdout.write(`  Data Directory:   ${config.dataDir}\n`);
   process.stdout.write(`  Video Directory:  ${config.videoDir}\n`);
   process.stdout.write(`  FFmpeg/Probe:     ${ctx.media.available ? 'Available' : 'Not found (optional)'}\n`);
   process.stdout.write(`  Supabase Sync:    ${config.supabase.configured ? 'Configured' : 'Disabled (local mode)'}\n`);
   process.stdout.write(`${separator}\n`);
+
+  if (ctx.urls.secure && config.tlsCertPath) {
+    const host = new URL(ctx.urls.publicUrl).hostname;
+    if (!tlsCertificateCoversHost(config.tlsCertPath, host)) {
+      process.stdout.write(
+        `\n[VRCC WARNING] The TLS certificate does not include ${host}.\n` +
+          '  Re-run `npm run https:setup` after a LAN address change, then restart the gateway.\n' +
+          '  The headset will show a certificate name-mismatch warning until then.\n',
+      );
+    }
+  }
 
   if (ctx.bootstrap.status().needsBootstrap) {
     const token = ctx.bootstrap.activeToken;

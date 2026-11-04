@@ -29,6 +29,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "admin:create": "npm run admin:create -w @vrcc/gateway --",
+    "https:setup": "node scripts/development/generate-https-cert.mjs",
     "quest:simulate": "npm run simulate -w @vrcc/gateway --",
     "clean": "node scripts/development/clean.mjs"
   },

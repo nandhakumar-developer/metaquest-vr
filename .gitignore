@@ -21,6 +21,7 @@ npm-debug.log*
 # TLS certificates and private keys
 server.key
 server.crt
+certs/
 *.pem
 *.key
 

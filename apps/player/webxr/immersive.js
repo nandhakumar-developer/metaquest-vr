@@ -44,8 +44,9 @@ export class ImmersivePlayer {
 
   async ensureThree() {
     if (!isSecureContextForXr()) {
+      const secureUrl = `https://${location.host}${location.pathname}`;
       throw new Error(
-        'Immersive WebXR needs HTTPS or localhost. Open the player over HTTPS to use 180/360 VR; flat playback still works.',
+        `Immersive VR needs HTTPS. Open ${secureUrl} on the headset, accept the certificate warning, then tap Enter VR again. If HTTPS is not enabled yet, run "npm run https:setup" on the gateway PC and restart it. Flat playback still works here.`,
       );
     }
     if (!navigator.xr) {
