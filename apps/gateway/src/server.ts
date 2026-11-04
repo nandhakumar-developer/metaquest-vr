@@ -258,7 +258,10 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
       decorateReply: false,
       index: ['index.html'],
       setHeaders: (reply: any, filePath: string) => {
-        const val = filePath.endsWith('.html') ? 'no-cache' : 'public, max-age=300';
+        const val =
+          filePath.endsWith('.html') || filePath.endsWith('.js')
+            ? 'no-cache'
+            : 'public, max-age=300';
         if (typeof reply.header === 'function') reply.header('Cache-Control', val);
       },
     });

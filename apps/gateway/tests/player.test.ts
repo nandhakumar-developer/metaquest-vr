@@ -210,6 +210,29 @@ describe('Browser player pairing, library and streaming', () => {
     expect(String(coreRes.headers['content-type'])).toContain('javascript');
   });
 
+  it('serves the immersive player module without stale browser caching', async () => {
+    const res = await server.app.inject({
+      method: 'GET',
+      url: '/player/webxr/immersive.js',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['cache-control']).toBe('no-cache');
+    expect(res.body).toContain('uniform int stereoLayout;');
+  });
+
+  it('captures admin preview frames from the video during immersive playback', async () => {
+    const res = await server.app.inject({
+      method: 'GET',
+      url: '/player/player.js',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('async function captureFrame() {');
+    expect(res.body).toContain('const source = el.video;');
+    expect(res.body).not.toContain('state.isImmersive ? el.xrCanvas : el.video');
+  });
+
   it('exposes the player URL and QR for the pairing modal', async () => {
     const res = await server.app.inject({
       method: 'GET',

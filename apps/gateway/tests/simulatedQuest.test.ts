@@ -123,7 +123,32 @@ describe('Quest WebSocket Protocol & Device Lifecycle', () => {
     const devDto = server.ctx.state.getDeviceDto(deviceId);
     expect(devDto.online).toBe(true);
 
-    // 4. Uploading media in the dashboard pushes a library invalidation to the headset.
+    // 4. A 30 FPS preview plus headset pose and heartbeat messages must fit
+    // within the device WebSocket rate limit.
+    const previewTraffic = new Promise<number>((resolve, reject) => {
+      let pongCount = 0;
+      const timeout = setTimeout(() => {
+        ws.off('message', onMessage);
+        reject(new Error('Timed out while checking the device WebSocket rate limit'));
+      }, 5000);
+      const onMessage = (raw: WebSocket.RawData) => {
+        const parsed = parseDeviceCommandMessage(raw.toString());
+        if (!parsed.ok || parsed.data.type !== 'PONG') return;
+        pongCount += 1;
+        if (pongCount === 400) {
+          clearTimeout(timeout);
+          ws.off('message', onMessage);
+          resolve(pongCount);
+        }
+      };
+      ws.on('message', onMessage);
+      for (let i = 0; i < 400; i += 1) {
+        ws.send(JSON.stringify(makeMessage('PING', deviceUuid, {})));
+      }
+    });
+    await expect(previewTraffic).resolves.toBe(400);
+
+    // 5. Uploading media in the dashboard pushes a library invalidation to the headset.
     const libraryUpdated = new Promise<void>((resolve) => {
       ws.on('message', (raw) => {
         const parsed = parseDeviceCommandMessage(raw.toString());
@@ -177,4 +202,3 @@ describe('Quest WebSocket Protocol & Device Lifecycle', () => {
     });
   });
 });
-

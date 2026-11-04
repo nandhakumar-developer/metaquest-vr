@@ -1832,6 +1832,7 @@ async function loadVideo(videoId) {
       state.intent = 'idle';
       showVideoSurface();
       updateNowPlaying();
+      updateProjectionSurface();
       hideLoading();
       hideVideoError();
       // Emit a confirmed ready event even when the file is already buffered so a
@@ -1876,6 +1877,7 @@ async function loadVideo(videoId) {
     if (state.immersive) state.immersive.setMedia(video);
     updateTransportUi();
     updateNowPlaying();
+    updateProjectionSurface();
     showToast(
       `Loaded ${video.name}${localUrl ? ' (offline copy)' : ''}`,
       'success',
@@ -2084,6 +2086,7 @@ async function ensureImmersive() {
       el.btnExitVr.hidden = !active;
       el.titleOverlay.hidden = active || !state.current;
       showControls();
+      updateProjectionSurface();
       if (active) {
         showToast(
           hasDomOverlay
@@ -2155,15 +2158,21 @@ function stopPreview() {
 }
 
 async function captureFrame() {
-  const source = state.isImmersive ? el.xrCanvas : el.video;
-  const width = state.isImmersive ? el.xrCanvas.width : el.video.videoWidth;
-  const height = state.isImmersive ? el.xrCanvas.height : el.video.videoHeight;
-  if (!width || !height || (!state.isImmersive && el.video.readyState < 2)) return null;
+  const source = el.video;
+  const width = el.video.videoWidth;
+  const height = el.video.videoHeight;
+  if (!width || !height || el.video.readyState < 2) return null;
   const canvas = state.previewCanvas || document.createElement('canvas');
   state.previewCanvas = canvas;
-  const scale = Math.min(1, 540 / width);
-  const targetWidth = Math.max(2, Math.round(width * scale));
-  const targetHeight = Math.max(2, Math.round(height * scale));
+
+  const isSbs = state.current?.stereoLayout === 'sbs';
+  const isOu = state.current?.stereoLayout === 'ou';
+  const srcW = isSbs ? Math.floor(width / 2) : width;
+  const srcH = isOu ? Math.floor(height / 2) : height;
+
+  const scale = Math.min(1, 540 / srcW);
+  const targetWidth = Math.max(2, Math.round(srcW * scale));
+  const targetHeight = Math.max(2, Math.round(srcH * scale));
   if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -2171,7 +2180,7 @@ async function captureFrame() {
   const context = canvas.getContext('2d');
   if (!context) return null;
   try {
-    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    context.drawImage(source, 0, 0, srcW, srcH, 0, 0, canvas.width, canvas.height);
     const dataUrl = await canvasToDataUrl(canvas, 0.5);
     if (!dataUrl) return null;
     return { dataUrl, width: canvas.width, height: canvas.height };
@@ -2349,6 +2358,29 @@ function showVideoSurface() {
   el.stageEmpty.hidden = true;
 }
 
+function updateProjectionSurface() {
+  if (!state.current) {
+    if (state.immersive) state.immersive.stopInline();
+    el.xrCanvas.hidden = true;
+    return;
+  }
+  const isSphere = state.current.projectionType === '360' || state.current.projectionType === '180';
+  if (isSphere && !state.isImmersive) {
+    void ensureImmersive()
+      .then((immersive) => {
+        if (!state.isImmersive && state.current && (state.current.projectionType === '360' || state.current.projectionType === '180')) {
+          void immersive.startInline(state.current);
+        }
+      })
+      .catch(() => {
+        el.xrCanvas.hidden = true;
+      });
+  } else if (!isSphere && !state.isImmersive) {
+    if (state.immersive) state.immersive.stopInline();
+    el.xrCanvas.hidden = true;
+  }
+}
+
 function resetPlaybackUi() {
   clearSchedule();
   stopPreview();
@@ -2357,6 +2389,7 @@ function resetPlaybackUi() {
   state.playbackError = null;
   state.intent = 'idle';
   state.isImmersive = false;
+  if (state.immersive) state.immersive.stopInline();
   el.video.pause();
   el.video.removeAttribute('src');
   el.video.load();
@@ -2566,6 +2599,7 @@ function bindUi() {
   });
   el.video.addEventListener('play', () => {
     if (state.current && state.immersive) state.immersive.setMedia(state.current);
+    updateProjectionSurface();
     if (state.current) setPlaybackState('playing');
   });
   el.video.addEventListener('playing', () => {
