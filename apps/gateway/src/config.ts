@@ -308,21 +308,98 @@ export function listLanAddresses(): LanAddress[] {
   return results;
 }
 
-export function resolveGatewayUrls(config: GatewayConfig): {
+/** Names used by virtual adapters that are never reachable from a headset. */
+const VIRTUAL_INTERFACE_PATTERN =
+  /(vethernet|hyper-?v|virtualbox|vmware|virtual|docker|wsl|loopback|tailscale|zerotier|nordlynx|wireguard|bluetooth|npcap|^tap\b|^tun\b)/i;
+
+function isPrivateIpv4(address: string): boolean {
+  return (
+    address.startsWith('10.') ||
+    address.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(address)
+  );
+}
+
+/**
+ * Scores a LAN address so the primary physical adapter (Wi-Fi/Ethernet) wins
+ * over VirtualBox, Hyper-V, WSL, Docker, VPN, and other virtual adapters.
+ * `listLanAddresses()` order comes from the OS and is not meaningful here.
+ */
+export function lanAddressScore(entry: LanAddress): number {
+  let score = 0;
+  if (VIRTUAL_INTERFACE_PATTERN.test(entry.interfaceName)) score -= 1_000;
+  // VirtualBox host-only networks and Docker/WSL bridge ranges are not routable
+  // from a Quest on the real LAN, even when the adapter name looks physical.
+  if (/^192\.168\.56\./.test(entry.address)) score -= 500;
+  if (/^172\.(1[7-9]|2\d|3[01])\./.test(entry.address)) score -= 100;
+  if (/(^|\b)(wi-?fi|wlan|wireless)/i.test(entry.interfaceName)) score += 100;
+  else if (/(^|\b)(ethernet|eth\d|en\d)/i.test(entry.interfaceName)) score += 80;
+  if (isPrivateIpv4(entry.address)) score += 20;
+  return score;
+}
+
+export function listRankedLanAddresses(): LanAddress[] {
+  return [...listLanAddresses()].sort((a, b) => lanAddressScore(b) - lanAddressScore(a));
+}
+
+function isIpv4Literal(host: string): boolean {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+}
+
+function isLoopbackHost(host: string): boolean {
+  return host === 'localhost' || host === '::1' || host.startsWith('127.');
+}
+
+/**
+ * A configured PUBLIC_GATEWAY_URL that points at a private IPv4 address which
+ * this PC no longer owns is almost always a stale DHCP address. Reporting it as
+ * stale lets the gateway fall back to the live LAN address instead of handing
+ * out a player URL and QR code that no headset can reach.
+ */
+function isStaleConfiguredUrl(configured: string, lanAddresses: string[]): boolean {
+  let host: string;
+  try {
+    host = new URL(configured).hostname.replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+  if (!isIpv4Literal(host) || !isPrivateIpv4(host) || isLoopbackHost(host)) return false;
+  return !lanAddresses.includes(host);
+}
+
+export interface ResolvedGatewayUrls {
   publicUrl: string;
   wsUrl: string;
   lanAddresses: string[];
   secure: boolean;
-} {
+  /** Human-readable warnings about configuration that was ignored or corrected. */
+  warnings: string[];
+}
+
+export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
   const secure = Boolean(config.tlsCertPath && config.tlsKeyPath);
   const protocol = secure ? 'https' : 'http';
   const wsProtocol = secure ? 'wss' : 'ws';
-  const lanAddresses = listLanAddresses().map((entry) => entry.address);
-  const publicUrl =
-    config.publicGatewayUrl?.replace(/\/+$/, '') ??
-    `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
+  const lanAddresses = listRankedLanAddresses().map((entry) => entry.address);
+  const detectedUrl = `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
+  const warnings: string[] = [];
+
+  let publicUrl = detectedUrl;
+  const configured = config.publicGatewayUrl?.replace(/\/+$/, '');
+  if (configured) {
+    if (isStaleConfiguredUrl(configured, lanAddresses)) {
+      warnings.push(
+        `PUBLIC_GATEWAY_URL is set to ${configured}, but this PC does not currently own that ` +
+          `address. Falling back to ${detectedUrl}. Update .env, or leave PUBLIC_GATEWAY_URL ` +
+          `blank to always auto-detect the LAN address.`,
+      );
+    } else {
+      publicUrl = configured;
+    }
+  }
+
   const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
-  return { publicUrl, wsUrl, lanAddresses, secure };
+  return { publicUrl, wsUrl, lanAddresses, secure, warnings };
 }
 
 export function defaultAdminEmail(): string {

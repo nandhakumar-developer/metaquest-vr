@@ -3,7 +3,7 @@ import type { GatewayConfigResponse, GatewayInfo, HealthResponse } from '@vrcc/s
 import { PROTOCOL_VERSION } from '@vrcc/protocol';
 import type { GatewayContext } from '../context.js';
 import { APP_VERSION } from '../version.js';
-import { requireSession } from './helpers.js';
+import { playerUrlForRequest, requireSession } from './helpers.js';
 
 export function gatewayInfo(ctx: GatewayContext): GatewayInfo {
   return {
@@ -46,7 +46,7 @@ export async function registerSystemRoutes(
     return reply.code(database === 'ok' ? 200 : 503).send(health);
   });
 
-  app.get('/api/config', async (): Promise<GatewayConfigResponse> => {
+  app.get('/api/config', async (request): Promise<GatewayConfigResponse> => {
     const needsBootstrap = ctx.bootstrap.status().needsBootstrap;
     return {
       auth: {
@@ -65,7 +65,7 @@ export async function registerSystemRoutes(
             : null,
       },
       gateway: gatewayInfo(ctx),
-      playerUrl: ctx.config.playerUrl,
+      playerUrl: playerUrlForRequest(request, ctx),
       settings: ctx.store.ops.getSettings(),
       features: {
         previewSnapshot: true,

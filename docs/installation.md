@@ -49,8 +49,14 @@ Get-NetIPAddress -AddressFamily IPv4 |
 ```
 
 Set `PUBLIC_GATEWAY_URL` to the address the headsets can reach. If you leave it blank, the
-gateway auto-detects the first non-loopback IPv4 address, which can pick a virtual adapter
-on machines with VPNs or hypervisor networks. Setting it explicitly is safer.
+gateway auto-detects a LAN address and prefers physical Wi-Fi/Ethernet adapters over
+virtual ones (WSL, Hyper-V, VirtualBox, Docker, VPN). Explicit values are still useful
+when a machine has several physical adapters.
+
+If an explicit `PUBLIC_GATEWAY_URL` points at an IPv4 address this PC no longer owns (for
+example after a DHCP change), the gateway logs a warning and falls back to the detected
+LAN address so the player link and QR code keep working. Delete the value or leave it
+blank to always follow the current address.
 
 `ADMIN_ORIGIN` is the Vite dev-server origin. It does not affect the production build served
 by the gateway. Add any extra LAN origins to `EXTRA_ALLOWED_ORIGINS`, comma separated.
@@ -60,7 +66,8 @@ by the gateway. Add any extra LAN origins to `EXTRA_ALLOWED_ORIGINS`, comma sepa
 `.env` is already populated for this PC:
 
 ```dotenv
-PUBLIC_GATEWAY_URL=http://192.168.1.125:4000
+# Blank means auto-detect the current Wi-Fi/Ethernet LAN address.
+PUBLIC_GATEWAY_URL=
 VITE_SUPABASE_URL=https://jlmvpzugvwwglpkqtcly.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_wXb9MCrLiSXMlSdpA38RGQ_SZSuWeel
 CLOUD_SYNC_ENABLED=false

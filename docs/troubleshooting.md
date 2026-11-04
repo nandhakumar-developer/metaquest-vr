@@ -62,13 +62,16 @@ active sessions. It also clears the one-time bootstrap token file.
 
 1. Confirm the PC and headset are on the same network (not guest Wi-Fi / client isolation).
 2. From the headset browser, try `http://<gateway-ip>:4000/api/health`.
-3. Check `PUBLIC_GATEWAY_URL` in `.env` matches a reachable LAN IP.
+3. Check that the player URL uses the PC's current Wi-Fi/Ethernet address. The gateway
+   prints the `Player URL` and any `WARNING` at startup; the **Pair Headset** dialog and its
+   QR code use the same address.
 4. Allow TCP 4000 through Windows Firewall on Private networks.
 5. If using HTTPS, make sure the headset trusts the certificate; otherwise the browser may
    block the page before it loads.
 
-The player header shows the gateway host. If it is a virtual adapter address, fix
-`PUBLIC_GATEWAY_URL`.
+If `PUBLIC_GATEWAY_URL` in `.env` holds an old DHCP address, the gateway now logs a warning
+and automatically uses the detected LAN address. Clear the value to always follow the
+current address. The player header also shows the gateway host it is connected to.
 
 ## Pairing code does not appear or expires
 

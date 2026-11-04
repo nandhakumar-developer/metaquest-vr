@@ -258,7 +258,11 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
       decorateReply: false,
       index: ['index.html'],
       setHeaders: (reply: any, filePath: string) => {
-        const val = filePath.endsWith('.html') ? 'no-cache' : 'public, max-age=300';
+        // Player code is plain ES modules with no build step, so it changes in
+        // place. Always revalidate (ETag/304) to avoid serving stale modules
+        // after an update; `max-age` previously kept broken code alive in the
+        // Quest Browser cache for minutes after a fix.
+        const val = filePath.endsWith('.html') ? 'no-cache' : 'no-cache, must-revalidate';
         if (typeof reply.header === 'function') reply.header('Cache-Control', val);
       },
     });
@@ -296,7 +300,9 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
     {
       origin: [...allowedOrigins(config)],
       publicUrl: ctx.urls.publicUrl,
+      playerUrl: config.playerUrl,
       lanAddresses: ctx.urls.lanAddresses,
+      urlWarnings: ctx.urls.warnings,
       supabaseConfigured: config.supabase.configured,
       ffmpeg: ctx.media.available,
       adminDist: config.adminDistDir,

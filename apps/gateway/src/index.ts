@@ -19,9 +19,13 @@ async function main(): Promise<void> {
   process.stdout.write(`  Meta Quest 2 Management & Playback Controller\n`);
   process.stdout.write(`${thinSeparator}\n`);
   process.stdout.write(`  Local Gateway:    ${ctx.urls.publicUrl}\n`);
+  process.stdout.write(`  Player URL:       ${config.playerUrl}\n`);
   process.stdout.write(`  WebSocket:        ${ctx.urls.wsUrl}\n`);
   if (ctx.urls.lanAddresses.length > 0) {
     process.stdout.write(`  LAN Addresses:    ${ctx.urls.lanAddresses.join(', ')}\n`);
+  }
+  for (const warning of ctx.urls.warnings) {
+    process.stdout.write(`  WARNING:          ${warning}\n`);
   }
   process.stdout.write(`  Dashboard Origin: ${config.adminOrigin}\n`);
   process.stdout.write(`  Data Directory:   ${config.dataDir}\n`);

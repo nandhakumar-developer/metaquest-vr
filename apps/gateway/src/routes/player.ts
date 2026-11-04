@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { uuidSchema } from '@vrcc/protocol';
 import type { GatewayContext } from '../context.js';
 import { notFound } from '../utils/errors.js';import { contentTypeForFilename, parseRangeHeader } from '../utils/httpRange.js';
-import { clientIp, parseBody, requireSession } from './helpers.js';
+import { clientIp, parseBody, playerUrlForRequest, requireSession } from './helpers.js';
 
 const secretSchema = z.string().regex(/^[0-9a-f]{64}$/i, 'A 64-character hex secret is required');
 const deviceAuthBody = z
@@ -24,8 +24,8 @@ export async function registerPlayerRoutes(
   app: FastifyInstance,
   ctx: GatewayContext,
 ): Promise<void> {
-  app.get('/api/player/bootstrap', async () => ({
-    playerUrl: ctx.config.playerUrl,
+  app.get('/api/player/bootstrap', async (request) => ({
+    playerUrl: playerUrlForRequest(request, ctx),
     wsPath: '/ws',
     protocolVersion: 1,
     serverTime: new Date().toISOString(),
@@ -58,7 +58,7 @@ export async function registerPlayerRoutes(
         pollToken: challenge.pollToken,
         expiresAt: challenge.expiresAt,
         expiresInSeconds: challenge.expiresInSeconds,
-        playerUrl: ctx.config.playerUrl,
+        playerUrl: playerUrlForRequest(request, ctx),
         wsUrl: ctx.urls.wsUrl,
         claimIntervalMs: 1_500,
       });
@@ -176,7 +176,7 @@ export async function registerPlayerRoutes(
   /** Admin helper: LAN player URL + QR for the Add Quest screen. */
   app.get('/api/player/link', async (request) => {
     requireSession(ctx, request);
-    const playerUrl = ctx.config.playerUrl;
+    const playerUrl = playerUrlForRequest(request, ctx);
     const dataUrl = await toDataURL(playerUrl, {
       width: 360,
       margin: 1,

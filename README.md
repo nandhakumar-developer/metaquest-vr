@@ -215,7 +215,7 @@ Get-NetIPAddress -AddressFamily IPv4 |
   Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' }
 ```
 
-Leaving `PUBLIC_GATEWAY_URL` blank allows startup auto-detection; setting it explicitly is more reliable on PCs with VPN or virtual network adapters. If the PC address changes, update this value and restart the gateway. The player URL is derived from it and ends in `/player/`.
+Leaving `PUBLIC_GATEWAY_URL` blank allows startup auto-detection, which prefers the physical Wi-Fi/Ethernet adapter over WSL, Hyper-V, VirtualBox, Docker, and VPN interfaces. Setting it explicitly is useful when a PC has several physical adapters. If the configured address belongs to no current interface (for example after a DHCP change), the gateway logs a warning and falls back to the detected LAN address. The player URL is derived from the resolved address and ends in `/player/`.
 
 The full configuration template is in [.env.example](.env.example). Common settings include:
 

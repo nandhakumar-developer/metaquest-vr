@@ -50,3 +50,39 @@ const zPagination = z.object({
 export function clientIp(request: FastifyRequest): string {
   return request.ip || request.socket.remoteAddress || 'unknown';
 }
+
+function isLoopbackHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '::1' || hostname.startsWith('127.');
+}
+
+/**
+ * Base URL the browser should use for the gateway.
+ *
+ * When the dashboard is opened on the PC itself (localhost / 127.0.0.1) we must
+ * not hand out a localhost player link, because the headset cannot resolve it.
+ * In that case the configured or auto-detected LAN URL is used. When the admin
+ * is already browsing through a LAN hostname or address, mirror that host so
+ * the generated link matches the interface the user is actually using.
+ */
+export function gatewayBaseUrlForRequest(
+  request: FastifyRequest,
+  ctx: GatewayContext,
+): string {
+  const rawHost = request.headers.host;
+  if (rawHost) {
+    try {
+      const hostname = new URL(`http://${rawHost}`).hostname.replace(/^\[|\]$/g, '');
+      if (hostname && !isLoopbackHostname(hostname)) {
+        const protocol = request.protocol === 'https' ? 'https' : 'http';
+        return `${protocol}://${rawHost}`.replace(/\/+$/, '');
+      }
+    } catch {
+      // Fall back to the configured URL below.
+    }
+  }
+  return ctx.urls.publicUrl.replace(/\/+$/, '');
+}
+
+export function playerUrlForRequest(request: FastifyRequest, ctx: GatewayContext): string {
+  return `${gatewayBaseUrlForRequest(request, ctx)}/player/`;
+}

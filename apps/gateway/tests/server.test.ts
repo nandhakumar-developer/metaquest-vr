@@ -65,6 +65,33 @@ describe('Gateway HTTP & API Integration', () => {
     expect(json.auth.needsBootstrap).toBe(true);
   });
 
+  it('uses the request LAN host for the player URL', async () => {
+    const bootstrapRes = await server.app.inject({
+      method: 'GET',
+      url: '/api/player/bootstrap',
+      headers: { host: '192.168.50.20:4000' },
+    });
+    expect(bootstrapRes.statusCode).toBe(200);
+    expect(JSON.parse(bootstrapRes.payload).playerUrl).toBe(
+      'http://192.168.50.20:4000/player/',
+    );
+
+    const configRes = await server.app.inject({
+      method: 'GET',
+      url: '/api/config',
+      headers: { host: '192.168.50.20:4000' },
+    });
+    expect(configRes.statusCode).toBe(200);
+    expect(JSON.parse(configRes.payload).playerUrl).toBe('http://192.168.50.20:4000/player/');
+  });
+
+  it('GET /player/ serves the browser player', async () => {
+    const res = await server.app.inject({ method: 'GET', url: '/player/' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.payload).toContain('Quest Browser Player');
+  });
+
   it('POST /api/auth/bootstrap creates the first administrator', async () => {
     const token = server.ctx.bootstrap.activeToken;
     expect(token).toBeTruthy();

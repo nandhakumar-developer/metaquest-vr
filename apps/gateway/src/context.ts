@@ -45,7 +45,13 @@ export interface GatewayContext {
   offlineMonitor: OfflineMonitor;
   maintenance: MaintenanceService;
   wsServer: GatewayWebSocketServer;
-  urls: { publicUrl: string; wsUrl: string; lanAddresses: string[]; secure: boolean };
+  urls: {
+    publicUrl: string;
+    wsUrl: string;
+    lanAddresses: string[];
+    secure: boolean;
+    warnings: string[];
+  };
   close(): void;
 }
 

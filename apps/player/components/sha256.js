@@ -84,7 +84,7 @@ export function createSha256() {
     h7 = (h7 + h) >>> 0;
   };
 
-  return {
+  const hasher = {
     update(data) {
       const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
       bytesHashed += bytes.length;
@@ -110,6 +110,8 @@ export function createSha256() {
         block.set(bytes.subarray(offset), 0);
         blockLength = bytes.length - offset;
       }
+
+      return hasher;
     },
 
     digestHex() {
@@ -131,6 +133,8 @@ export function createSha256() {
         .join('');
     },
   };
+
+  return hasher;
 }
 
 export function sha256Hex(text) {
