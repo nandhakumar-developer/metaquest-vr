@@ -13,6 +13,13 @@ class TestGeometry {
     this.rotations.push(angle);
   }
 
+  clone(): TestGeometry {
+    const cloned = new TestGeometry();
+    cloned.scales = [...this.scales];
+    cloned.rotations = [...this.rotations];
+    return cloned;
+  }
+
   dispose(): void {}
 }
 

@@ -21,24 +21,24 @@ SUPABASE_SERVICE_ROLE_KEY=
 CLOUD_SYNC_ENABLED=false
 ```
 
-Because `SUPABASE_SERVICE_ROLE_KEY` is empty:
+The project URL and publishable key enable Supabase Auth. Enter the Supabase user's email
+and password in the login form; do not store a user's credentials in `.env`.
 
-- the gateway cannot query `profiles` with service-role privileges,
-- `roleVerification` is false in `GET /api/config`,
-- the admin login page keeps the **Supabase** tab hidden,
+The service-role key is optional for login and is only used by privileged server-side
+integrations such as cloud metadata sync.
+
+Without a service-role key:
+
 - cloud sync is disabled,
-- local administrator sign-in works normally.
+- Supabase login still works when `profiles` has the own-row RLS policy below.
 
-No Supabase users or profiles were created for you. Use the local account or complete the
-steps below.
+No Supabase users or profiles were created for you. Create a user and profile as below.
 
-## Why a service-role key is required
+## Profile role verification
 
-Any browser can call Supabase Auth and obtain an access token. The gateway must then decide
-whether that account is an authorized VR Control Center administrator. It does this by
-looking up the user's role in `profiles`. That lookup uses the service-role key so row-level
-security cannot hide the role from the verification query and so the role cannot be forged
-by a client. The key stays on the gateway and is never sent to the admin bundle or headset.
+After Supabase Auth verifies the password, the gateway verifies the access token with
+Supabase and reads only that user's `profiles` row using the same token. Row-level security
+limits the query to `auth.uid() = profiles.id`; users cannot change their own role.
 
 ## Setup
 
@@ -57,9 +57,9 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles enable row level security;
+grant select on public.profiles to authenticated;
 
--- Users may read their own profile. The gateway uses the service role and
--- bypasses RLS for role verification.
+-- Users may read their own role; the gateway performs this query with their JWT.
 create policy "profiles_select_own"
   on public.profiles for select
   using (auth.uid() = id);
@@ -87,15 +87,18 @@ Roles:
 - `operator`: can control devices and start playback, but not viewer-only restrictions
 - `viewer`: read-only dashboard access
 
-### 3. Add the server-only key
+### 3. Configure the gateway
 
-In `.env` on the gateway PC:
+Keep the project URL and publishable/anon key in `.env` on the gateway PC:
 
 ```dotenv
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=<your-publishable-key>
 ```
 
-Restart the gateway. `GET /api/config` should now report:
+Do not put the Supabase user's email or password in `.env`. Restart the gateway.
+`GET /api/config` should report a non-null Supabase auth config when the URL and key are
+valid:
 
 ```json
 {
@@ -109,11 +112,11 @@ Restart the gateway. `GET /api/config` should now report:
 }
 ```
 
-The login page now shows **Local admin / Supabase**. Supabase sign-in uses
+The login page shows **Local admin / Supabase**. Supabase sign-in uses
 `signInWithPassword` in the browser, then sends the access token to
-`POST /api/auth/supabase`. The gateway verifies the token and resolves the role.
-
-Never commit the service-role key, put it in `VITE_*` variables, or expose it to the player.
+`POST /api/auth/supabase`. The gateway verifies the token and reads the caller's role under
+RLS. The `profiles` table must be exposed through the Data API; if it is not, expose `public`
+in the project's Data API settings. Keep RLS enabled and grant only the required `SELECT`.
 
 ## Optional metadata sync
 
@@ -143,6 +146,6 @@ Check sync state in the dashboard header/cloud status or `GET /api/health` (`clo
 
 - Keep RLS enabled on `profiles`.
 - Do not grant anon/authenticated users write access to `profiles.role`.
-- Rotate the service-role key if it is ever exposed.
-- The publishable key is safe in the browser; the service-role key is not.
+- The publishable key is safe in the browser; service-role keys are not.
+- Never let users update their own `profiles.role`; assign roles through trusted administration.
 - Local admin auth continues to work if Supabase is unreachable.

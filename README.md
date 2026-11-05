@@ -450,7 +450,7 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - Admin sessions use an HttpOnly cookie and CSRF token. Local passwords are stored as password hashes, not plaintext.
 - The headset's device secret is used to authenticate player requests. Media URLs are signed and expire; range streaming does not expose the device secret.
 - HTTPS is optional for LAN control and flat video playback, but required by the browser for WebXR on a remote headset. Configure a certificate trusted by the headset.
-- Supabase is optional. The dashboard sign-in form uses the local administrator account, and local SQLite-backed operation does not require Supabase. The gateway's Supabase sign-in API requires server-side credentials and configured profile-role data; see [docs/supabase.md](docs/supabase.md).
+- Supabase is optional. The dashboard supports local administrator sign-in and Supabase Auth with an RLS-protected `profiles` role; local SQLite-backed operation does not require Supabase. See [docs/supabase.md](docs/supabase.md).
 
 ## Known limitations
 

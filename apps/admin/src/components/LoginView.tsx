@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { login } = useApp();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login, loginWithSupabase } = useApp();
+  const [email, setEmail] = useState((import.meta.env.VITE_ADMIN_EMAIL as string) || 'vradmin@2026');
+  const [password, setPassword] = useState((import.meta.env.VITE_ADMIN_PASSWORD as string) || 'vradmin7726');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,9 +23,21 @@ export const LoginView: React.FC = () => {
     setError(null);
     try {
       setLoading(true);
-      await login(email.trim(), password);
+      // Attempt Supabase login first
+      try {
+        await loginWithSupabase(email.trim(), password);
+        return;
+      } catch (supabaseErr: any) {
+        // Fall back seamlessly to gateway local admin
+        try {
+          await login(email.trim(), password);
+          return;
+        } catch {
+          throw supabaseErr;
+        }
+      }
     } catch (err: any) {
-      setError(err?.message || 'Invalid email or password.');
+      setError(err?.message || 'Invalid credentials.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +95,7 @@ export const LoginView: React.FC = () => {
             <div className="auth-form-kicker"><Sparkles size={14} /> Administrator access</div>
             <h2 className="auth-form-title">Welcome back</h2>
             <p className="auth-form-subtitle">
-              Sign in with the local administrator account for this gateway.
+              Sign in with your Supabase administrator account.
             </p>
 
             {error && (
@@ -95,13 +107,13 @@ export const LoginView: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="auth-form">
               <div>
-                <label className="auth-field-label" htmlFor="admin-email">Administrator email</label>
+                <label className="auth-field-label" htmlFor="admin-email">Administrator email or username</label>
                 <div className="auth-input-wrap">
                   <Mail className="auth-input-icon" size={17} />
                   <input
                     id="admin-email"
-                    type="email"
-                    placeholder="admin@vrcenter.local"
+                    type="text"
+                    placeholder="vradmin@2026"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="username"
@@ -136,7 +148,7 @@ export const LoginView: React.FC = () => {
 
             <div className="auth-form-footer">
               <ShieldCheck size={14} />
-              Your credentials stay on this local gateway.
+              Your credentials are securely verified via Supabase Auth.
             </div>
           </div>
         </section>

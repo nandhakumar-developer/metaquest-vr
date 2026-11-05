@@ -17,6 +17,7 @@ const gatewayWsTarget = `${hasTls ? 'wss' : 'ws'}://localhost:4000`;
 const proxySecure = hasTls ? false : undefined;
 
 export default defineConfig({
+  envDir: repoRoot,
   plugins: [react(), tailwindcss()],
   server: {
     host: '127.0.0.1',

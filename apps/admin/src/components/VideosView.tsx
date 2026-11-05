@@ -13,7 +13,6 @@ import {
   Clock,
   Layers,
   Users,
-  Info,
   X,
   Sparkles,
 } from 'lucide-react';
@@ -66,16 +65,6 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
           <Plus className="h-4 w-4" />
           Upload video
         </button>
-      </div>
-
-      <div className="alert alert-info">
-        <Info className="h-4 w-4" />
-        <span>
-          Use <strong className="font-semibold">Send to headsets</strong> for a verified offline copy on
-          each device — browser player downloads appear under Downloads on the headset. Use{' '}
-          <strong className="font-semibold">Group play</strong> for synchronized playback across several
-          headsets.
-        </span>
       </div>
 
       {videos.length > 0 ? (

@@ -66,8 +66,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_wXb9MCrLiSXMlSdpA38RGQ_SZSuWeel
 CLOUD_SYNC_ENABLED=false
 ```
 
-No `SUPABASE_SERVICE_ROLE_KEY` is present, so Supabase admin login stays disabled and the
-local administrator is used.
+The publishable key enables Supabase Auth login. Add a `profiles` row with an `admin` or
+`operator` role for each Supabase user; see [Supabase setup](supabase.md). User passwords
+are entered on the login form and do not belong in `.env`.
 
 ## 3. Create the administrator
 

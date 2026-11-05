@@ -328,10 +328,7 @@ export interface GatewayConfigResponse {
   auth: {
     local: boolean;
     needsBootstrap: boolean;
-    /**
-     * Browser-safe Supabase project values. `roleVerification` is only true
-     * when the gateway also has a service-role key and can resolve `profiles`.
-     */
+    /** Browser-safe values for Supabase Auth and RLS-protected profile lookup. */
     supabase: { url: string; anonKey: string; roleVerification: boolean } | null;
   };
   gateway: GatewayInfo;

@@ -47,19 +47,20 @@ export async function registerSystemRoutes(
   });
 
   app.get('/api/config', async (): Promise<GatewayConfigResponse> => {
+    const hasSupabase =
+      ctx.config.supabase.configured &&
+      Boolean(ctx.config.supabase.url) &&
+      Boolean(ctx.config.supabase.anonKey);
     const needsBootstrap = ctx.bootstrap.status().needsBootstrap;
     return {
       auth: {
-        local: true,
+        local: !hasSupabase,
         needsBootstrap,
         supabase:
-          ctx.config.supabase.configured &&
-          ctx.config.supabase.url &&
-          ctx.config.supabase.anonKey &&
-          ctx.auth.supabase.roleVerificationAvailable
+          hasSupabase && ctx.auth.supabase.roleVerificationAvailable
             ? {
-                url: ctx.config.supabase.url,
-                anonKey: ctx.config.supabase.anonKey,
+                url: ctx.config.supabase.url!,
+                anonKey: ctx.config.supabase.anonKey!,
                 roleVerification: true,
               }
             : null,
