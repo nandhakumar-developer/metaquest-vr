@@ -597,11 +597,8 @@
   font-size: 9.5px;
 }
 
-/* Dashboard surfaces use a soft lifted edge and a small hover rise. */
+/* Dashboard surfaces transition */
 .dashboard .hero {
-  background: #EEEAFE;
-  border-color: #E1E1E1;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   transition:
     transform 200ms ease,
     box-shadow 200ms ease;
@@ -609,13 +606,9 @@
 
 .dashboard .hero:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
 }
 
 .dashboard .stat-card {
-  border-color: #E1E1E1;
-  background: #FFFFFF;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -624,38 +617,10 @@
 
 .dashboard .stat-card:hover {
   transform: translateY(-2px);
-  border-color: #E1E1E1;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
-}
-
-.dashboard .panel {
-  border-color: #E1E1E1;
-  background: #FFFFFF;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard .panel-hover:hover {
   transform: translateY(-2px);
-  border-color: #E1E1E1;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
-}
-
-.dashboard .toolbar {
-  border-color: #E1E1E1;
-  background: #FFFFFF;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-
-.dashboard .device-playback {
-  border-color: #E1E1E1;
-  background: #F5F5F5;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.dashboard .empty-state {
-  border-color: #E1E1E1;
-  background: #FFFFFF;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard .alert {
@@ -710,15 +675,15 @@
 }
 
 .btn-primary {
-  border-color: #462FF6;
-  background: #462FF6;
-  box-shadow: 0 4px 12px rgba(70, 47, 246, 0.16);
+  border-color: #d96808;
+  background: linear-gradient(135deg, #ff9c2e, #ed7109);
+  box-shadow: 0 4px 14px rgba(237, 113, 9, 0.28);
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #3F329D;
-  box-shadow: 0 6px 16px rgba(70, 47, 246, 0.2);
+  background: linear-gradient(135deg, #ffad4c, #f17b12);
+  box-shadow: 0 6px 18px rgba(237, 113, 9, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1626,10 +1591,10 @@
   justify-content: center;
   gap: 9px;
   margin-top: 3px;
-  border: 1px solid #462FF6;
+  border: 1px solid #d96808;
   border-radius: 999px;
-  background: #462FF6;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ff9c2e, #ed7109);
+  box-shadow: 0 4px 20px rgba(237, 113, 9, 0.28);
   color: #fff;
   font-size: 12.5px;
   font-weight: 700;
@@ -1641,8 +1606,8 @@
 }
 
 .auth-submit:hover:not(:disabled) {
-  background: #3F329D;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #ffad4c, #f17b12);
+  box-shadow: 0 6px 22px rgba(237, 113, 9, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1952,56 +1917,110 @@ input[type="checkbox"] {
 }
 
 /* ------------------------------------------------------------------
- * Dashboard glass system
- * Keep the busy image in the content layer, with opaque warm surfaces for
- * data-heavy cards. Reserve stronger blur for floating controls/navigation.
- * Scoped to the authenticated dashboard so login and first-run setup retain
- * their existing presentation.
+ *  Apple / iPhone Glassmorphism System
+ *  - Removed dark/black background filters to let /background.png shine through cleanly
+ *  - Authentic iOS frosted glass for the "Explore new worlds 💙" Hero card
+ *  - iPhone glassmorphism styling across all cards, panels, stats, navigation & modals
  * ------------------------------------------------------------------ */
 
 .dashboard-screen {
-  --dashboard-accent: #9a4700;
+  --dashboard-accent: #f17b12;
   --dashboard-accent-fill: #f17b12;
-  --dashboard-border: rgba(255, 255, 255, 0.74);
-  --color-ink-soft: #4f4132;
-  --color-ink-muted: #655744;
+  --dashboard-accent-gradient: linear-gradient(135deg, #ff9c2e 0%, #ed7109 100%);
+  --dashboard-border: rgba(255, 255, 255, 0.82);
+  --color-ink: #0F172A;
+  --color-ink-soft: #334155;
+  --color-ink-muted: #64748B;
   min-height: 100svh;
   isolation: isolate;
-  color: #241a10;
-  background-color: #986127;
-  background-image:
-    linear-gradient(125deg, rgba(38, 27, 17, 0.32), rgba(54, 35, 16, 0.22) 52%, rgba(38, 27, 17, 0.3)),
-    url("/background.png");
+  color: #0F172A;
+  background-color: #EEF2F6;
+  background-image: url("/background.png");
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
+/* Floating iOS Topbar */
 .dashboard-screen .topbar-inner {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(38, 31, 25, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.52);
   box-shadow:
-    0 16px 42px rgba(34, 23, 14, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(28px) saturate(1.35);
-  -webkit-backdrop-filter: blur(28px) saturate(1.35);
+    0 12px 36px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+}
+
+.dashboard-screen .topbar-inner .brand-name {
+  color: #0F172A;
+}
+
+.dashboard-screen .topbar-inner .brand-caption {
+  color: #64748B;
+}
+
+.dashboard-screen .tab {
+  color: #334155;
+  border-radius: 9999px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-screen .tab svg {
+  color: #64748B;
+}
+
+.dashboard-screen .tab:hover {
+  background: rgba(255, 255, 255, 0.45);
+  color: #0F172A;
 }
 
 .dashboard-screen .tab.is-active {
-  border-color: rgba(255, 255, 255, 0.26);
-  background: var(--dashboard-accent-fill);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.88);
   box-shadow:
-    0 5px 16px rgba(38, 24, 10, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  color: #26180d;
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px #FFFFFF;
+  color: #ed7109;
 }
 
 .dashboard-screen .tab.is-active:hover {
-  color: #26180d;
+  color: #ed7109;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .dashboard-screen .tab.is-active svg {
-  color: #542700 !important;
+  color: #ed7109 !important;
+}
+
+.dashboard-screen .tab-badge {
+  background: rgba(241, 123, 18, 0.14);
+  color: #ed7109;
+}
+
+.dashboard-screen .tab.is-active .tab-badge {
+  background: #ed7109;
+  color: #FFFFFF;
+}
+
+.dashboard-screen .chip {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  color: #334155;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dashboard-screen .chip svg {
+  color: #ed7109;
+}
+
+.dashboard-screen .avatar {
+  background: linear-gradient(135deg, #ff9c2e, #ed7109);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(237, 113, 9, 0.28);
 }
 
 .dashboard-screen .page {
@@ -2009,236 +2028,380 @@ input[type="checkbox"] {
 }
 
 .dashboard-screen .page-title {
-  color: #21170d;
+  color: #0F172A;
+  font-weight: 800;
+  letter-spacing: -0.04em;
 }
 
 .dashboard-screen .page-desc {
-  color: #423629;
+  color: #334155;
 }
 
 .dashboard-screen .eyebrow {
-  color: #70420f;
+  color: #c85a04;
 }
 
 .dashboard-screen .eyebrow::before {
-  background: var(--dashboard-accent-fill);
+  background: #ed7109;
 }
 
 .dashboard-screen .section-head {
-  padding: 18px 22px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 22px;
-  background: rgba(255, 250, 241, 0.75);
+  padding: 18px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.48);
   box-shadow:
-    0 12px 32px rgba(48, 31, 14, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(20px) saturate(1.22);
-  -webkit-backdrop-filter: blur(20px) saturate(1.22);
+    0 12px 36px rgba(0, 0, 0, 0.07),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
 }
 
 .dashboard-screen [class~="text-[#462FF6]"] {
-  color: var(--dashboard-accent) !important;
+  color: #ed7109 !important;
 }
 
 .dashboard-screen [class~="text-[#2A1B92]"] {
-  color: #783900 !important;
+  color: #c85a04 !important;
 }
 
 .dashboard-screen [class~="text-[#8A8A8A]"] {
-  color: #655744 !important;
+  color: #64748B !important;
 }
 
 .dashboard-screen [class~="bg-[#EEEAFE]"] {
-  background-color: rgba(241, 123, 18, 0.13) !important;
+  background-color: rgba(241, 123, 18, 0.14) !important;
 }
 
 .dashboard-screen [class~="bg-[#F5F5F5]"],
 .dashboard-screen [class~="bg-[#F1F1F1]"] {
-  background-color: rgba(119, 79, 31, 0.065) !important;
+  background-color: rgba(255, 255, 255, 0.35) !important;
 }
 
-.dashboard-screen .hero,
-.dashboard-screen .panel,
-.dashboard-screen .stat-card,
-.dashboard-screen .table-wrap,
-.dashboard-screen .empty-state {
-  border-color: var(--dashboard-border);
-  background: rgba(255, 251, 244, 0.92);
-  box-shadow:
-    0 14px 38px rgba(42, 28, 13, 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
-}
+/* ------------------------------------------------------------------ *
+ *  iPhone Glass Hero ("Explore new worlds 💙")
+ * ------------------------------------------------------------------ */
 
 .dashboard-screen .hero {
-  background: rgba(255, 246, 227, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.46);
+  box-shadow:
+    0 20px 48px -10px rgba(0, 0, 0, 0.09),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease;
+}
+
+.dashboard-screen .hero:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 26px 56px -8px rgba(0, 0, 0, 0.13),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.98);
+}
+
+.dashboard-screen .hero-title {
+  color: #0F172A;
+  font-weight: 800;
+  letter-spacing: -0.045em;
 }
 
 .dashboard-screen .hero-title .serif-accent {
-  color: var(--dashboard-accent);
+  background: linear-gradient(135deg, #ff9c2e 0%, #ed7109 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .dashboard-screen .hero-eyebrow {
-  border-color: rgba(154, 71, 0, 0.18);
-  background: rgba(255, 255, 255, 0.78);
-  color: #783900;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 4px 14px rgba(241, 123, 18, 0.14);
+  color: #c85a04;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.dashboard-screen .hero-eyebrow svg {
+  color: #ed7109;
 }
 
 .dashboard-screen .hero-desc {
-  color: #514332;
+  color: #334155;
+  font-size: 13.5px;
 }
 
+/* ------------------------------------------------------------------ *
+ *  iPhone Glass Stat Cards
+ * ------------------------------------------------------------------ */
+
 .dashboard-screen .stat-card {
-  border-color: rgba(135, 94, 42, 0.14);
-  background: rgba(255, 255, 255, 0.87);
-  box-shadow: 0 6px 18px rgba(69, 44, 16, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1.2px 1.2px rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.dashboard-screen .stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.09),
+    inset 0 1.2px 1.2px #FFFFFF;
+}
+
+.dashboard-screen .stat-label {
+  color: #475569;
+}
+
+.dashboard-screen .stat-value {
+  color: #0F172A;
+  font-weight: 800;
+}
+
+.dashboard-screen .stat-hint {
+  color: #64748B;
+}
+
+.dashboard-screen .stat-icon.tint-neutral {
+  background: rgba(241, 123, 18, 0.14);
+  color: #ed7109;
+}
+
+/* ------------------------------------------------------------------ *
+ *  iPhone Glass Panels, Device Cards & Tables
+ * ------------------------------------------------------------------ */
+
+.dashboard-screen .panel,
+.dashboard-screen .table-wrap,
+.dashboard-screen .empty-state {
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.07),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+}
+
+.dashboard-screen .panel-hover {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.dashboard-screen .panel-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, 0.1),
+    inset 0 1.5px 1.5px #FFFFFF;
 }
 
 .dashboard-screen .panel-inset,
 .dashboard-screen .device-playback {
-  border-color: rgba(117, 78, 30, 0.14);
-  background: rgba(119, 79, 31, 0.065);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .dashboard-screen .toolbar,
 .dashboard-screen .search-field,
 .dashboard-screen .pill-group {
-  border-color: rgba(255, 255, 255, 0.72);
-  background: rgba(255, 250, 241, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.48);
   box-shadow:
-    0 12px 32px rgba(48, 31, 14, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(20px) saturate(1.22);
-  -webkit-backdrop-filter: blur(20px) saturate(1.22);
+    0 10px 30px rgba(0, 0, 0, 0.06),
+    inset 0 1.2px 1.2px rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+}
+
+.dashboard-screen .pill {
+  border-radius: 9999px;
+  color: #475569;
+  transition: all 160ms ease;
+}
+
+.dashboard-screen .pill:hover {
+  background: rgba(255, 255, 255, 0.45);
+  color: #0F172A;
 }
 
 .dashboard-screen .pill.is-active {
-  border-color: rgba(154, 71, 0, 0.18);
-  background: rgba(241, 123, 18, 0.17);
-  color: #703500;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
+  color: #ed7109;
+  font-weight: 700;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px #FFFFFF;
+}
+
+/* ------------------------------------------------------------------ *
+ *  iPhone Glass Buttons & Controls
+ * ------------------------------------------------------------------ */
+
+.dashboard-screen .btn {
+  border-radius: 9999px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dashboard-screen .btn-primary {
-  border-color: #d96808;
-  background: linear-gradient(135deg, #ff9c2e, #ed7109);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(135deg, #ff9c2e 0%, #ed7109 100%);
   box-shadow:
-    0 7px 16px rgba(193, 84, 4, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34);
-  color: #29190b;
+    0 8px 22px rgba(237, 113, 9, 0.32),
+    inset 0 1px 1.2px rgba(255, 255, 255, 0.6);
+  color: #FFFFFF;
 }
 
 .dashboard-screen .btn-primary:hover:not(:disabled) {
-  border-color: #c85a04;
-  background: linear-gradient(135deg, #ffad4c, #f17b12);
-  box-shadow: 0 9px 20px rgba(193, 84, 4, 0.24);
+  background: linear-gradient(135deg, #ffad4c 0%, #f17b12 100%);
+  box-shadow:
+    0 10px 28px rgba(237, 113, 9, 0.4),
+    inset 0 1px 1.2px rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
 }
 
 .dashboard-screen .btn-secondary,
 .dashboard-screen .btn-dark {
-  border-color: rgba(54, 43, 31, 0.72);
-  background: rgba(54, 43, 31, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.65);
   box-shadow:
-    0 6px 14px rgba(34, 25, 16, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  color: #fffaf2;
+    0 4px 14px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  color: #0F172A;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .dashboard-screen .btn-secondary:hover:not(:disabled),
 .dashboard-screen .btn-dark:hover:not(:disabled) {
-  border-color: #241a10;
-  background: #34271b;
+  border-color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.09),
+    inset 0 1px 1px #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .dashboard-screen .btn-ghost {
-  border-color: rgba(110, 78, 39, 0.12);
-  background: rgba(119, 79, 31, 0.07);
-  color: #423326;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.35);
+  color: #334155;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .dashboard-screen .btn-ghost:hover:not(:disabled) {
-  border-color: rgba(110, 78, 39, 0.2);
-  background: rgba(119, 79, 31, 0.13);
-  color: #241a10;
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.65);
+  color: #0F172A;
 }
 
 .dashboard-screen .topbar-inner .btn-ghost {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fffaf2;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.45);
+  color: #334155;
 }
 
 .dashboard-screen .topbar-inner .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.24);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.75);
+  color: #0F172A;
 }
+
+/* ------------------------------------------------------------------ *
+ *  Inputs, Tables & Dividers
+ * ------------------------------------------------------------------ */
 
 .dashboard-screen .input,
 .dashboard-screen .select,
 .dashboard-screen .textarea {
-  border-color: rgba(117, 78, 30, 0.2);
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: inset 0 1px 2px rgba(74, 48, 19, 0.045);
-  color: #241a10;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  color: #0F172A;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .dashboard-screen .input:hover,
 .dashboard-screen .select:hover,
 .dashboard-screen .textarea:hover {
-  border-color: rgba(154, 71, 0, 0.38);
-  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(237, 113, 9, 0.45);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .dashboard-screen .input:focus,
 .dashboard-screen .select:focus,
 .dashboard-screen .textarea:focus {
-  border-color: rgba(194, 83, 0, 0.7);
-  box-shadow: 0 0 0 3px rgba(241, 123, 18, 0.16);
+  border-color: #ed7109;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(237, 113, 9, 0.22);
 }
 
 .dashboard-screen .data-table thead th {
-  border-color: rgba(117, 78, 30, 0.13);
-  background: rgba(119, 79, 31, 0.07);
-  color: #675541;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.35);
+  color: #475569;
 }
 
 .dashboard-screen .data-table tbody td {
-  border-color: rgba(117, 78, 30, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .dashboard-screen .data-table tbody tr:hover {
-  background: rgba(241, 123, 18, 0.07);
+  background: rgba(241, 123, 18, 0.08);
 }
 
 .dashboard-screen .divider {
-  background: rgba(117, 78, 30, 0.16);
+  background: rgba(255, 255, 255, 0.5);
 }
 
+/* ------------------------------------------------------------------ *
+ *  iPhone Glass Modals
+ * ------------------------------------------------------------------ */
+
 .dashboard-screen .modal-backdrop {
-  background: rgba(31, 23, 16, 0.4);
+  background: rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .dashboard-screen .modal {
-  border-color: rgba(255, 255, 255, 0.76);
-  background: rgba(255, 251, 244, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.72);
   box-shadow:
-    0 28px 90px rgba(25, 18, 12, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(24px) saturate(1.15);
-  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+    0 32px 84px rgba(0, 0, 0, 0.16),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
 }
 
 .dashboard-screen .modal-head,
 .dashboard-screen .modal-foot {
-  border-color: rgba(117, 78, 30, 0.14);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .dashboard-screen .modal-foot {
-  background: rgba(119, 79, 31, 0.055);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .dashboard-screen :focus-visible {
-  outline-color: #9a4700;
+  outline-color: #ed7109;
 }
 
 @media (max-width: 720px) {
@@ -2249,7 +2412,7 @@ input[type="checkbox"] {
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   .dashboard-screen .topbar-inner {
-    background: #30271f;
+    background: #FFFFFF;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -2259,7 +2422,7 @@ input[type="checkbox"] {
   .dashboard-screen .pill-group,
   .dashboard-screen .section-head,
   .dashboard-screen .modal {
-    background: #fffaf2;
+    background: #FFFFFF;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -2269,8 +2432,8 @@ input[type="checkbox"] {
   .dashboard-screen .stat-card,
   .dashboard-screen .table-wrap,
   .dashboard-screen .empty-state {
-    background: #fffaf2;
-    border-color: rgba(74, 48, 19, 0.34);
+    background: #FFFFFF;
+    border-color: rgba(0, 0, 0, 0.12);
   }
 }
 

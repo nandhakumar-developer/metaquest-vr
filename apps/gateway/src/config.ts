@@ -69,7 +69,7 @@ const previewFpsFromEnv = () =>
         // PREVIEW_MAX_FPS=1 was the old sample default, not a useful target.
         return parsed === 1 ? DEFAULT_PREVIEW_MAX_FPS : parsed;
       },
-      z.number().int().min(5).max(15),
+      z.number().int().min(1).max(30),
     )
     .default(DEFAULT_PREVIEW_MAX_FPS);
 

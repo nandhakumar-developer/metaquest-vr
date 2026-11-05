@@ -74,7 +74,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
             Live VR Video Experience
           </span>
           <h1 className="hero-title">
-            Explore new worlds 💙
+            Explore new worlds 🤍
           </h1>
           <div className="hero-actions">
             <button onClick={onOpenPairing} className="btn btn-primary">

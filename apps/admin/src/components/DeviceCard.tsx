@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext.js';
 import {
   Play,
   Pause,
-  Square,
   RotateCcw,
   RotateCw,
   Volume2,
@@ -13,7 +12,6 @@ import {
   BatteryCharging,
   Eye,
   Film,
-  HardDrive,
   MoreVertical,
   Wifi,
   WifiOff,
@@ -29,12 +27,6 @@ function formatTime(seconds: number | null | undefined): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-function formatBytes(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined) return '--';
-  const gb = bytes / (1024 * 1024 * 1024);
-  return `${gb.toFixed(1)} GB`;
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview }) => {
@@ -66,13 +58,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
 
   const handlePlayPause = () => {
     if (!isOnline) return;
-    if (isPlaying || isBuffering) runCommand('PAUSE');
-    else runCommand('PLAY');
-  };
-
-  const handleStop = () => {
-    if (!isOnline) return;
-    runCommand('STOP');
+    if (isPlaying || isBuffering) {
+      runCommand('PAUSE');
+    } else {
+      if (!device.playback.videoId) {
+        setControlError('Choose a video first.');
+        return;
+      }
+      runCommand('PLAY');
+    }
   };
 
   const handleSeekDelta = (deltaSeconds: number) => {
@@ -308,26 +302,17 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
 
             <button
               onClick={handlePlayPause}
-              disabled={!isOnline}
-              title={isPlaying || isBuffering ? 'Pause' : 'Play'}
+              disabled={!isOnline || (!device.playback.videoId && !isPlaying)}
+              title={isPlaying || isBuffering ? 'Pause playback' : 'Resume playback'}
               className={`btn btn-icon-round ${
                 isPlaying || isBuffering ? 'btn-dark' : 'btn-primary'
               } h-10 w-10`}
             >
               {isPlaying || isBuffering ? (
-                <Pause className="h-4 w-4" />
+                <Pause className="h-4 w-4 fill-current" />
               ) : (
-                <Play className="h-4 w-4 translate-x-[1px]" />
+                <Play className="h-4 w-4 translate-x-[1px] fill-current" />
               )}
-            </button>
-
-            <button
-              onClick={handleStop}
-              disabled={!isOnline || !device.playback.videoId}
-              title="Stop"
-              className="btn btn-secondary btn-icon btn-icon-round"
-            >
-              <Square className="h-3 w-3" />
             </button>
 
             <button
@@ -389,12 +374,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
       </div>
 
       {/* Footer */}
-      <div className="mt-auto flex items-center justify-between border-t border-[#E1E1E1] bg-[#F5F5F5] px-4 py-2.5">
-        <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-[#8A8A8A]">
-          <HardDrive className="h-3.5 w-3.5 text-[#8A8A8A]" />
-          <span>Free {formatBytes(device.storage.freeBytes)}</span>
-        </div>
-
+      <div className="mt-auto flex items-center justify-end border-t border-[#E1E1E1] bg-[#F5F5F5] px-4 py-2.5">
         <button
           onClick={() => onOpenPreview(device.id)}
           disabled={!isOnline}
