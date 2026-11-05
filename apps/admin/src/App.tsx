@@ -44,7 +44,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${currentTab === 'devices' ? 'dashboard-screen' : ''}`}>
+    <div className="dashboard-screen min-h-screen">
       <Header currentTab={currentTab} onSelectTab={setCurrentTab} />
 
       <main className="page">
