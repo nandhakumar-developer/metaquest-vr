@@ -5,7 +5,7 @@ import type { GatewayContext } from '../context.js';
 import { unauthorized } from '../utils/errors.js';
 import { clientIp, parseBody, requireSession } from './helpers.js';
 
-const emailSchema = z.string().trim().email().max(254);
+const emailSchema = z.string().trim().min(3).max(254);
 const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(256);
 
 const loginSchema = z.object({

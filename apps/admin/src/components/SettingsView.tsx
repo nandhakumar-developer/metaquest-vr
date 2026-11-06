@@ -83,7 +83,7 @@ export const SettingsView: React.FC = () => {
         <div>
           <span className="eyebrow">Configuration</span>
           <h1 className="page-title">
-            System <span className="serif-accent text-[#462FF6]">settings</span>
+            System <span className="serif-accent text-[#ED7109]">settings</span>
           </h1>
           <p className="page-desc">
             Network endpoints, hardware acceleration status, and the operational thresholds that keep

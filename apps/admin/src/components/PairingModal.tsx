@@ -138,7 +138,7 @@ export const PairingModal: React.FC<PairingModalProps> = ({ isOpen, onClose }) =
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#111111]">
-                    <Smartphone className="h-3.5 w-3.5 text-[#462FF6]" />
+                    <Smartphone className="h-3.5 w-3.5 text-[#ED7109]" />
                     Open the player on each headset
                   </div>
                   <div className="flex items-center gap-2">

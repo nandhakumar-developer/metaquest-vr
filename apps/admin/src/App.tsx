@@ -12,7 +12,7 @@ import { LoginView } from './components/LoginView.js';
 import { Activity } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { isAuthenticated, needsBootstrap, loading, startPreview } = useApp();
+  const { isAuthenticated, needsBootstrap, loading, startPreview, gatewayConfig } = useApp();
   const [currentTab, setCurrentTab] = useState<TabKey>('devices');
   const [pairingModalOpen, setPairingModalOpen] = useState(false);
   const [groupVideoId, setGroupVideoId] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export const App: React.FC = () => {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-[#555555]">
         <div className="grid h-14 w-14 place-items-center rounded-2xl border border-[#E1E1E1] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
-          <Activity className="h-6 w-6 animate-spin text-[#462FF6]" />
+          <Activity className="h-6 w-6 animate-spin text-[#ED7109]" />
         </div>
         <span className="font-mono text-[11px] tracking-[0.14em] uppercase text-[#8A8A8A]">
           Initializing control center
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
     );
   }
 
-  if (needsBootstrap) {
+  if (needsBootstrap && !gatewayConfig?.auth.supabase) {
     return <BootstrapView />;
   }
 

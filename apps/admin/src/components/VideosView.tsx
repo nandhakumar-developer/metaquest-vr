@@ -53,7 +53,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
         <div>
           <span className="eyebrow">Content library</span>
           <h1 className="page-title">
-          Video media <span className="serif-accent text-[#462FF6]">library</span>
+          Video media <span className="serif-accent text-[#ED7109]">library</span>
           </h1>
           <p className="page-desc">
             {videos.length > 0
@@ -82,7 +82,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {videos.map((video) => (
             <article key={video.id} className="panel panel-hover flex flex-col overflow-hidden">
-              <div className="relative aspect-video overflow-hidden border-b border-[#E1E1E1] bg-[linear-gradient(140deg,#F5F5F5,#F5F5F5_45%,#EEEAFE)]">
+              <div className="relative aspect-video overflow-hidden border-b border-[#E1E1E1] bg-[linear-gradient(140deg,#F5F5F5,#F5F5F5_45%,#FFF4EC)]">
                 {video.thumbnailPath ? (
                   <img
                     src={`/api/videos/${video.id}/thumbnail`}

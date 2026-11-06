@@ -213,7 +213,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
         <div>
           <span className="eyebrow">Synchronized playback</span>
           <h1 className="page-title">
-            Group <span className="serif-accent text-[#462FF6]">playback</span>
+            Group <span className="serif-accent text-[#ED7109]">playback</span>
           </h1>
           <p className="page-desc">
             Load each selected headset, wait for a confirmed ready report, then start every player on
@@ -267,7 +267,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="font-semibold text-[#462FF6] transition hover:text-[#B91C1C]"
+                className="font-semibold text-[#ED7109] transition hover:text-[#B91C1C]"
               >
                 Select online
               </button>
@@ -296,7 +296,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                     className={`rounded-xl border px-3 py-2.5 transition ${
                       device.online
                         ? checked
-                          ? 'border-[#462FF6]/30 bg-[#EEEAFE]'
+                          ? 'border-[#ED7109]/30 bg-[#FFF4EC]'
                           : 'border-[#E1E1E1] bg-[#F5F5F5] hover:border-[#E1E1E1]'
                         : 'border-[#E1E1E1] bg-[#F5F5F5] opacity-60'
                     }`}
@@ -543,7 +543,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               </div>
 
               <div className="flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3.5 py-2.5 text-[10.5px] leading-relaxed text-[#8A8A8A]">
-                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#462FF6]" />
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#ED7109]" />
                 <span>
                   Drift is measured from confirmed player reports, so values update at the heartbeat
                   interval. Sync is coordinated over the local network and is not frame-perfect; use

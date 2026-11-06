@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext.js';
 import {
   ArrowRight,
+  Eye,
+  EyeOff,
   KeyRound,
   LockKeyhole,
   Mail,
@@ -12,9 +14,10 @@ import {
 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { login } = useApp();
+  const { login, loginWithSupabase } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,9 +26,23 @@ export const LoginView: React.FC = () => {
     setError(null);
     try {
       setLoading(true);
-      await login(email.trim(), password);
+      // Try local gateway login first (supports non-email usernames like vradmin@2026)
+      try {
+        await login(email.trim(), password);
+        return;
+      } catch (localErr: any) {
+        // Fall back to Supabase if local login fails and credentials look like a real email
+        const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+        if (!looksLikeEmail) throw localErr;
+        try {
+          await loginWithSupabase(email.trim(), password);
+          return;
+        } catch {
+          throw localErr;
+        }
+      }
     } catch (err: any) {
-      setError(err?.message || 'Invalid email or password.');
+      setError(err?.message || 'Invalid username or password.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +100,7 @@ export const LoginView: React.FC = () => {
             <div className="auth-form-kicker"><Sparkles size={14} /> Administrator access</div>
             <h2 className="auth-form-title">Welcome back</h2>
             <p className="auth-form-subtitle">
-              Sign in with the local administrator account for this gateway.
+              Sign in to your control center dashboard.
             </p>
 
             {error && (
@@ -95,16 +112,16 @@ export const LoginView: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="auth-form">
               <div>
-                <label className="auth-field-label" htmlFor="admin-email">Administrator email</label>
+                <label className="auth-field-label" htmlFor="admin-email">Administrator email or username</label>
                 <div className="auth-input-wrap">
                   <Mail className="auth-input-icon" size={17} />
                   <input
                     id="admin-email"
-                    type="email"
-                    placeholder="admin@vrcenter.local"
+                    type="text"
+                    placeholder="Enter email or username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="username"
+                    autoComplete="off"
                     required
                     className="auth-input"
                   />
@@ -117,14 +134,23 @@ export const LoginView: React.FC = () => {
                   <LockKeyhole className="auth-input-icon" size={17} />
                   <input
                     id="admin-password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
+                    autoComplete="off"
                     required
-                    className="auth-input"
+                    className="auth-input auth-input-password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="auth-password-toggle"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
@@ -136,7 +162,7 @@ export const LoginView: React.FC = () => {
 
             <div className="auth-form-footer">
               <ShieldCheck size={14} />
-              Your credentials stay on this local gateway.
+              Secure administrator authentication.
             </div>
           </div>
         </section>

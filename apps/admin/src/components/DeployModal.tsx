@@ -223,7 +223,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="font-semibold text-[#462FF6] hover:text-[#B91C1C]"
+                className="font-semibold text-[#ED7109] hover:text-[#B91C1C]"
               >
                 Online ({onlineDevices.length})
               </button>
@@ -262,7 +262,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                     !selectable
                       ? 'cursor-not-allowed border-[#E1E1E1] bg-[#F5F5F5] text-[#8A8A8A]'
                       : checked
-                        ? 'cursor-pointer border-[#462FF6]/30 bg-[#EEEAFE]'
+                        ? 'cursor-pointer border-[#ED7109]/30 bg-[#FFF4EC]'
                         : 'cursor-pointer border-[#E1E1E1] bg-[#F5F5F5] hover:border-[#E1E1E1]'
                   }`}
                 >
@@ -294,7 +294,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       </div>
                     </div>
                   </div>
-                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#462FF6]" />}
+                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#ED7109]" />}
                 </div>
               );
             })}

@@ -150,7 +150,7 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className="group cursor-pointer rounded-2xl border-[1.5px] border-dashed border-[#8A8A8A]/45 bg-[#F5F5F5] px-6 py-7 text-center transition hover:border-[#462FF6]/55 hover:bg-[#EEEAFE]"
+              className="group cursor-pointer rounded-2xl border-[1.5px] border-dashed border-[#8A8A8A]/45 bg-[#F5F5F5] px-6 py-7 text-center transition hover:border-[#ED7109]/55 hover:bg-[#FFF4EC]"
             >
               <input
                 type="file"
@@ -176,7 +176,7 @@ export const VideoUploadModal: React.FC<VideoUploadModalProps> = ({
                   </span>
                   <div className="text-[12px] font-medium text-[#555555]">
                     Drag and drop a video, or{' '}
-                    <span className="font-semibold text-[#462FF6]">browse</span>
+                    <span className="font-semibold text-[#ED7109]">browse</span>
                   </div>
                   <div className="mt-1 text-[10.5px] text-[#8A8A8A]">
                     Direct upload to local gateway storage

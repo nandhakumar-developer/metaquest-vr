@@ -16,7 +16,7 @@ describe('Quest WebSocket Protocol & Device Lifecycle', () => {
 
   beforeAll(async () => {
     testDir = mkdtempSync(path.join(tmpdir(), 'vrcc-ws-test-'));
-    serverPort = 4455;
+    serverPort = 4500 + Math.floor(Math.random() * 1000);
     server = await buildServer({
       config: {
         port: serverPort,

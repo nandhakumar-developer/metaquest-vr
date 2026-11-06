@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
@@ -8,10 +8,14 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..', '..');
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, rootDir, '');
+  const certPath = env.TLS_CERT_PATH?.trim();
+  const keyPath = env.TLS_KEY_PATH?.trim();
   const hasTls =
-    fs.existsSync(path.join(rootDir, 'certs', 'gateway.crt')) &&
-    fs.existsSync(path.join(rootDir, 'certs', 'gateway.key'));
+    Boolean(certPath && keyPath) &&
+    fs.existsSync(path.resolve(rootDir, certPath!)) &&
+    fs.existsSync(path.resolve(rootDir, keyPath!));
 
   const protocol = hasTls ? 'https' : 'http';
   const wsProtocol = hasTls ? 'wss' : 'ws';
@@ -19,6 +23,7 @@ export default defineConfig(() => {
   const wsTarget = `${wsProtocol}://127.0.0.1:4000`;
 
   return {
+    envDir: rootDir,
     plugins: [react(), tailwindcss()],
     server: {
       host: '127.0.0.1',

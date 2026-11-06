@@ -24,7 +24,7 @@ export const DeploymentsView: React.FC = () => {
         <div>
           <span className="eyebrow">Transfers</span>
           <h1 className="page-title">
-            Deployments <span className="serif-accent text-[#462FF6]">&amp; transfers</span>
+            Deployments <span className="serif-accent text-[#ED7109]">&amp; transfers</span>
           </h1>
           <p className="page-desc">
             Local headset download progress and checksum verification. Shared library playback remains

@@ -94,7 +94,7 @@ export const PreviewModal: React.FC = () => {
               />
             ) : (
               <div className="p-6 text-center text-[#8A8A8A]">
-                <Activity className="mx-auto mb-2 h-8 w-8 animate-spin text-[#462FF6]" />
+                <Activity className="mx-auto mb-2 h-8 w-8 animate-spin text-[#ED7109]" />
                 <p className="text-[12px]">Waiting for the first headset snapshot…</p>
               </div>
             )}
@@ -106,7 +106,7 @@ export const PreviewModal: React.FC = () => {
 
           <div className="panel-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-[#462FF6]" />
+              <Compass className="h-4 w-4 text-[#ED7109]" />
               <span className="text-[11.5px] font-semibold text-[#111111]">Headset orientation</span>
             </div>
             <div className="flex items-center gap-5 font-mono text-[11px]">

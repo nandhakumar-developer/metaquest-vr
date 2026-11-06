@@ -121,7 +121,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({
                 <Play className="h-4 w-4" />
               </span>
             </div>
-            <div className="stat-value" style={{ color: '#462FF6' }}>
+            <div className="stat-value" style={{ color: '#ED7109' }}>
               {playingDevices.length}
             </div>
             <div className="stat-hint">Inside a VR experience</div>

@@ -44,7 +44,7 @@ export const SessionsView: React.FC = () => {
         <div>
           <span className="eyebrow">Analytics</span>
           <h1 className="page-title">
-            Playback <span className="serif-accent text-[#462FF6]">history</span>
+            Playback <span className="serif-accent text-[#ED7109]">history</span>
           </h1>
           <p className="page-desc">
             A log of viewing sessions, durations watched, and completion statuses across every paired

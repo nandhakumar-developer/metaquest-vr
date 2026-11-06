@@ -132,7 +132,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
                   className="input h-8 min-h-8 w-40 px-2 text-[12px]"
                   autoFocus
                 />
-                <button type="submit" className="text-[11px] font-semibold text-[#462FF6]">
+                <button type="submit" className="text-[11px] font-semibold text-[#ED7109]">
                   Save
                 </button>
                 <button
@@ -255,7 +255,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
         <div className="device-playback rounded-2xl border border-[#E1E1E1] bg-[#F5F5F5] px-3.5 py-3">
           <div className="flex items-center justify-between gap-3 text-[11px]">
             <div className="flex min-w-0 items-center gap-1.5 font-medium text-[#555555]">
-              <Film className="h-3.5 w-3.5 shrink-0 text-[#462FF6]" />
+              <Film className="h-3.5 w-3.5 shrink-0 text-[#ED7109]" />
               <span className="truncate">
                 {device.playback.videoName || 'No video loaded'}
               </span>
