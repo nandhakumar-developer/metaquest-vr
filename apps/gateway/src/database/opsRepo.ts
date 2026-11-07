@@ -18,7 +18,6 @@ import type {
   AuditLogRecord,
   CommandRecord,
   DeviceLogRecord,
-  OutboxRecord,
   PageResult,
   PlaybackSessionRecord,
 } from './types.js';
@@ -377,62 +376,6 @@ export class OpsRepository {
          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
       )
       .run(key, JSON.stringify(value), nowIso());
-  }
-
-  /* -------------------------------- Outbox -------------------------------- */
-
-  enqueue(entity: string, operation: 'upsert' | 'delete', payload: Record<string, unknown>): void {
-    this.db
-      .prepare(
-        `INSERT INTO cloud_outbox (id,entity,operation,payload,created_at,attempts,last_error,synced_at)
-         VALUES (?,?,?,?,?,0,NULL,NULL)`,
-      )
-      .run(newId(), entity, operation, JSON.stringify(payload), nowIso());
-  }
-
-  listOutbox(limit = 50): OutboxRecord[] {
-    const rows = this.db
-      .prepare(
-        `SELECT * FROM cloud_outbox WHERE synced_at IS NULL ORDER BY created_at ASC LIMIT ?`,
-      )
-      .all(limit) as Row[];
-    return rows.map((row) => ({
-      id: asString(row.id),
-      entity: asString(row.entity),
-      operation: asString(row.operation, 'upsert') as OutboxRecord['operation'],
-      payload: parseJson<Record<string, unknown>>(row.payload, {}),
-      createdAt: asString(row.created_at),
-      attempts: Math.round(asNumber(row.attempts)),
-      lastError: row.last_error ? asString(row.last_error) : null,
-      syncedAt: row.synced_at ? asString(row.synced_at) : null,
-    }));
-  }
-
-  markOutboxSynced(id: string): void {
-    this.db
-      .prepare('UPDATE cloud_outbox SET synced_at = ?, last_error = NULL WHERE id = ?')
-      .run(nowIso(), id);
-  }
-
-  markOutboxFailed(id: string, error: string): void {
-    this.db
-      .prepare(
-        'UPDATE cloud_outbox SET attempts = attempts + 1, last_error = ? WHERE id = ?',
-      )
-      .run(error.slice(0, 2000), id);
-  }
-
-  pendingOutboxCount(): number {
-    const row = this.db
-      .prepare('SELECT COUNT(*) AS count FROM cloud_outbox WHERE synced_at IS NULL')
-      .get() as Row;
-    return Math.round(asNumber(row.count));
-  }
-
-  pruneOutbox(cutoffIso: string): void {
-    this.db
-      .prepare('DELETE FROM cloud_outbox WHERE synced_at IS NOT NULL AND synced_at < ?')
-      .run(cutoffIso);
   }
 
   /** Exposed for maintenance scripts/tests. */

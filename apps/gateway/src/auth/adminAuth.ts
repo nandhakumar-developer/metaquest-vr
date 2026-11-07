@@ -12,7 +12,6 @@ import {
   verifyPassword,
 } from './password.js';
 import { AdminSessionService, type AuthenticatedAdmin, type SessionCreation } from './sessions.js';
-import { SupabaseAuthService } from './supabaseAuth.js';
 import { WsTicketService } from './wsTickets.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +27,6 @@ export interface LoginResult extends SessionCreation {
 
 export class AdminAuthService {
   readonly sessions: AdminSessionService;
-  readonly supabase: SupabaseAuthService;
   readonly tickets: WsTicketService;
   private readonly attempts = new Map<string, AuthAttemptWindow>();
 
@@ -40,7 +38,6 @@ export class AdminAuthService {
     secureCookies: boolean,
   ) {
     this.sessions = new AdminSessionService(admins, config.adminSessionTtlHours, secureCookies);
-    this.supabase = new SupabaseAuthService(config.supabase);
     this.tickets = new WsTicketService();
   }
 
@@ -95,7 +92,7 @@ export class AdminAuthService {
       entityId: admin.id,
       payload: { ip: input.ip },
     });
-    return this.finishLogin(admin, 'local', input.ip);
+    return this.finishLogin(admin, input.ip);
   }
 
   async login(input: { email: string; password: string; ip: string }): Promise<LoginResult> {
@@ -126,37 +123,17 @@ export class AdminAuthService {
     if (verification.needsRehash) {
       this.admins.updatePassword(admin.id, await hashPassword(input.password));
     }
-    return this.finishLogin(admin, 'local', input.ip);
+    return this.finishLogin(admin, input.ip);
   }
 
-  async exchangeSupabaseToken(accessToken: string, ip: string): Promise<LoginResult> {
-    const verified = await this.supabase.verifyAccessToken(accessToken);
-    if (verified.role !== 'admin' && verified.role !== 'operator') {
-      throw forbidden('Viewer accounts cannot control devices');
-    }
-    let admin = this.admins.getAdminByEmail(verified.email);
-    if (!admin) {
-      admin = this.admins.createAdmin({
-        email: verified.email,
-        displayName: verified.displayName,
-        // Deliberately unusable local password; this identity is Supabase-only.
-        passwordHash: '!supabase-only!',
-        role: verified.role,
-      });
-    } else if (admin.displayName !== verified.displayName) {
-      this.admins.updateProfile(admin.id, verified.displayName);
-    }
-    return this.finishLogin(admin, 'supabase', ip);
-  }
-
-  private finishLogin(admin: AdminRecord, source: 'local' | 'supabase', ip: string): LoginResult {
-    const session = this.sessions.createSession(admin, source);
+  private finishLogin(admin: AdminRecord, ip: string): LoginResult {
+    const session = this.sessions.createSession(admin, 'local');
     this.ops.addAudit({
       actor: admin.email,
       action: 'admin.login',
       entityType: 'admin',
       entityId: admin.id,
-      payload: { ip, source },
+      payload: { ip, source: 'local' },
     });
     return { ...session, identity: session.identity };
   }

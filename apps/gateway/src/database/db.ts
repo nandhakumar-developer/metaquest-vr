@@ -25,7 +25,7 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         admin_id TEXT NOT NULL REFERENCES local_admins(id) ON DELETE CASCADE,
         token_hash TEXT NOT NULL UNIQUE,
         csrf_token TEXT NOT NULL,
-        auth_source TEXT NOT NULL CHECK (auth_source IN ('local','supabase')),
+        auth_source TEXT NOT NULL CHECK (auth_source IN ('local')),
         expires_at TEXT NOT NULL,
         created_at TEXT NOT NULL,
         last_seen_at TEXT NOT NULL
@@ -80,7 +80,7 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         name TEXT NOT NULL,
         original_filename TEXT NOT NULL,
         storage_path TEXT NOT NULL,
-        storage_backend TEXT NOT NULL DEFAULT 'local' CHECK (storage_backend IN ('local','supabase')),
+        storage_backend TEXT NOT NULL DEFAULT 'local' CHECK (storage_backend IN ('local')),
         size_bytes INTEGER NOT NULL,
         duration_seconds REAL,
         width INTEGER,
@@ -185,18 +185,6 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         value TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
-
-      CREATE TABLE IF NOT EXISTS cloud_outbox (
-        id TEXT PRIMARY KEY,
-        entity TEXT NOT NULL,
-        operation TEXT NOT NULL CHECK (operation IN ('upsert','delete')),
-        payload TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        attempts INTEGER NOT NULL DEFAULT 0,
-        last_error TEXT,
-        synced_at TEXT
-      );
-      CREATE INDEX IF NOT EXISTS idx_outbox_pending ON cloud_outbox(synced_at, created_at);
     `,
   },
 ];

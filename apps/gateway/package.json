@@ -19,7 +19,6 @@
     "@fastify/multipart": "10.1.6",
     "@fastify/rate-limit": "11.2.1",
     "@fastify/static": "10.1.8",
-    "@supabase/supabase-js": "2.118.0",
     "@vrcc/protocol": "1.0.0",
     "@vrcc/shared-types": "1.0.0",
     "dotenv": "18.0.9",

@@ -40,7 +40,6 @@ export class MaintenanceService {
       const commands = this.ops.pruneCommands(cutoff);
       const pairings = this.devices.prunePairings(cutoff);
       this.ops.pruneLogs(cutoff);
-      this.ops.pruneOutbox(cutoff);
       this.logger.info(
         { retentionDays: this.config.retentionDays, sessions, commands, pairings },
         'Retention pruning complete',

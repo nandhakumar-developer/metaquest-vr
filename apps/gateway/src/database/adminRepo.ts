@@ -115,7 +115,7 @@ export class AdminRepository {
     adminId: string;
     tokenHash: string;
     csrfToken: string;
-    authSource: 'local' | 'supabase';
+    authSource: 'local';
     expiresAt: string;
   }): AdminSessionRecord {
     const id = newId();

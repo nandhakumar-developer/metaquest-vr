@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
     "@vrcc/protocol": "1.0.0",
     "@vrcc/shared-types": "1.0.0",
     "clsx": "^2.1.1",

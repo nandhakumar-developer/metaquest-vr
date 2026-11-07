@@ -21,7 +21,6 @@ import { DeviceSocketHandler } from './websocket/deviceSocket.js';
 import { OfflineMonitor } from './devices/offlineMonitor.js';
 import { MaintenanceService } from './services/maintenance.js';
 import { GatewayWebSocketServer } from './websocket/server.js';
-import type { CloudAdapter } from './services/cloudAdapter.js';
 
 export interface GatewayContext {
   config: GatewayConfig;
@@ -55,14 +54,9 @@ export interface GatewayContext {
   close(): void;
 }
 
-export interface CreateContextOptions {
-  cloudAdapter?: CloudAdapter | null;
-}
-
 export async function createContext(
   config: GatewayConfig,
   logger: FastifyBaseLogger,
-  options: CreateContextOptions = {},
 ): Promise<GatewayContext> {
   ensureDirectories(config);
   const store = new Store(config.dataDir);
@@ -73,7 +67,7 @@ export async function createContext(
   const auth = new AdminAuthService(store.admins, store.ops, bootstrap, config, secure);
   const registry = new DeviceRegistry();
   const hub = new AdminHub();
-  const cloud = new CloudSyncService(config, store.ops, hub, options.cloudAdapter);
+  const cloud = new CloudSyncService(hub);
   const state = new DeviceStateService(
     store.devices,
     store.videos,

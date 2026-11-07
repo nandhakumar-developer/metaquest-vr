@@ -55,8 +55,9 @@ active sessions. It also clears the one-time bootstrap token file.
   number, and no leading/trailing spaces.
 - Repeated failures lock the account temporarily. Wait or reset the password with
   `npm run admin:create`.
-- If the page only shows local sign-in, Supabase role verification is not configured. See
-  [supabase.md](supabase.md).
+- In development, the dashboard on port `3000` proxies `/api` to the gateway. If login shows a
+  connection error, confirm `GATEWAY_PORT` in `.env` matches the port printed by the gateway;
+  the Vite proxy reads the same value.
 
 ## Headset cannot open the player
 

@@ -16,7 +16,7 @@ The setup guide walks through a two-headset Quest 2 installation. The gateway su
 - WebXR immersive playback when the player is opened in a secure context (HTTPS or localhost), with in-view controls where DOM overlay is supported.
 - Playback sessions, device state, configurable snapshot preview cadence, settings, and administrative audit history.
 - Dashboard session state is cleared when the gateway rejects an expired session, and headset command failures are shown on the affected device card.
-- Optional Supabase integration for deployments configured with the required project credentials and server-side role verification.
+- Fully local operation: no Supabase project, cloud service, or internet connection is required.
 
 ## How the system works
 
@@ -28,13 +28,12 @@ flowchart LR
   Quest --> Offline[(Quest browser IndexedDB)]
   Gateway --> DB[(SQLite database)]
   Gateway --> Files[(Local media files)]
-  Gateway -. optional .-> Supabase[Supabase services]
   Gateway -->|Production serves built dashboard and /player/| Browsers[Admin and Quest browsers]
 ```
 
 The Quest player is served by the gateway at `/player/`. When Meta Quest Browser opens the gateway root (`/` or `/index.html`), the gateway redirects it to `/player/`; other browsers continue to reach the admin dashboard. The player connects to the same gateway over HTTP(S) and WebSocket. After pairing, its device UUID and secret are kept in browser `localStorage`. Online playback streams from the PC through a time-limited signed URL. **Send to Headsets** saves a separate, checksum-verified copy in IndexedDB under the Quest browser's local site storage for offline playback.
 
-In development, Vite serves the admin dashboard on port `3000` and proxies API, WebSocket, and player requests to the gateway on port `4000`. In production, the gateway serves the built admin dashboard and Quest player from port `4000`.
+In development, Vite serves the admin dashboard on port `3000` and proxies API, WebSocket, and player requests to the gateway on the configured `GATEWAY_PORT` (default `4000`). In production, the gateway serves the built admin dashboard and Quest player from that same port.
 
 ### End-to-end application flow
 
@@ -99,7 +98,7 @@ sequenceDiagram
 
 The root npm workspace builds `shared-types` and `protocol` first, then the React dashboard and TypeScript gateway. The browser player is static HTML, CSS, and JavaScript under `apps/player`. At startup, the gateway loads `.env`, creates configured data and media directories, opens the SQLite store, detects optional FFmpeg tools, creates the auth/device/playback/media services, and starts HTTP and WebSocket listeners. Production serves the built dashboard and `/player/` from the gateway; development uses Vite on port `3000` and proxies requests to the gateway on port `4000`.
 
-If the database has no administrator, the gateway generates a one-time setup token and writes it under `DATA_DIR` while also printing it to the console. The first administrator can be created through the setup screen or `npm run admin:create`; the project has no shared default password. Later administrators sign in with a local password or, when configured, Supabase authentication with a server-verified role.
+If the database has no administrator, the gateway generates a one-time setup token and writes it under `DATA_DIR` while also printing it to the console. The first administrator can be created through the setup screen or `npm run admin:create`; the project has no shared default password. Later administrators sign in with a local password stored in SQLite.
 
 #### 2. Authenticate the dashboard and load live state
 
@@ -129,7 +128,7 @@ The video element fetches the signed stream URL directly over HTTP and can reque
 
 #### 7. Monitor, preview, and retain operational records
 
-Headset heartbeats and status reports drive the online/offline view. The optional **Live View** snapshot preview asks a connected player to capture JPEG frames and forwards them to the dashboard at the configured cadence; this is not a WebRTC camera stream. The gateway stores device logs, commands, playback sessions, transfer state, settings, and audit history in SQLite. Uploaded videos and thumbnails live under the configured local media directories. Optional Supabase services can add server-verified sign-in and configured cloud synchronization, but local accounts, SQLite, and local media keep working without Supabase.
+Headset heartbeats and status reports drive the online/offline view. The optional **Live View** snapshot preview asks a connected player to capture JPEG frames and forwards them to the dashboard at the configured cadence; this is not a WebRTC camera stream. The gateway stores device logs, commands, playback sessions, transfer state, settings, and audit history in SQLite. Uploaded videos and thumbnails live under the configured local media directories. All accounts, data, and media stay on this PC; nothing is synchronized to an external service.
 
 ## Technology stack
 
@@ -142,7 +141,6 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 | Quest player          | Browser-native HTML, CSS, and JavaScript; Three.js for immersive projection; WebXR APIs |
 | Data validation       | Zod schemas in the shared protocol package                                              |
 | Persistence           | Node `node:sqlite` database plus local media, thumbnail, temporary, and log directories |
-| Optional cloud        | Supabase JavaScript client for configured authentication, sync, or storage integrations |
 | Media inspection      | FFmpeg and FFprobe when installed; optional for upload and playback                     |
 | Developer tooling     | TypeScript, ESLint, Prettier, Vitest, Playwright dependency                             |
 
@@ -160,7 +158,7 @@ scripts/
   windows/               Windows install, start, and administrator setup helpers
   development/           Production launcher and generated-file cleanup
 storage/                 Runtime database and media directories (created/used locally)
-docs/                    Installation, usage, Quest, network, Supabase, and troubleshooting guides
+docs/                    Installation, usage, Quest, network, and troubleshooting guides
 ```
 
 The workspace build order is intentional: shared types and protocol are compiled first, then the admin app and gateway. The player is plain browser code and does not have its own npm build workspace.
@@ -229,7 +227,6 @@ The full configuration template is in [.env.example](.env.example). Common setti
 | `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Set both to enable HTTPS/WSS directly on the gateway                               |
 | `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–15 FPS; default: 12)                    |
 | `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                      |
-| `SUPABASE_*`, `VITE_SUPABASE_*`                                 | Optional cloud integration values; never expose a service-role key in browser code |
 
 Keep `.env` and administrator credentials local; do not commit secrets. The example file lists operational timeouts, upload limits, preview settings, and optional integration variables as well.
 
@@ -344,7 +341,7 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - Admin sessions use an HttpOnly cookie and CSRF token. Local passwords are stored as password hashes, not plaintext.
 - The headset's device secret is used to authenticate player requests. Media URLs are signed and expire; range streaming does not expose the device secret.
 - HTTPS is optional for LAN control and flat video playback, but required by the browser for WebXR on a remote headset. Configure a certificate trusted by the headset.
-- Supabase is optional. The dashboard sign-in form uses the local administrator account, and local SQLite-backed operation does not require Supabase. The gateway's Supabase sign-in API requires server-side credentials and configured profile-role data; see [docs/supabase.md](docs/supabase.md).
+- Everything runs locally. Administrators sign in with accounts stored in SQLite, and no credentials, media, or operational records leave this PC.
 
 ## Known limitations
 
@@ -361,5 +358,4 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - [Dashboard user guide](docs/user-guide.md)
 - [Quest setup and hardware checklist](docs/quest-setup.md)
 - [Network and HTTPS](docs/network-https.md)
-- [Supabase setup](docs/supabase.md)
 - [Troubleshooting](docs/troubleshooting.md)

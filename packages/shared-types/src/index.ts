@@ -152,7 +152,7 @@ export interface VideoDto {
   name: string;
   originalFilename: string;
   storagePath: string;
-  storageBackend: 'local' | 'supabase';
+  storageBackend: 'local';
   sizeBytes: number;
   durationSeconds: number | null;
   width: number | null;
@@ -271,7 +271,7 @@ export interface AdminIdentity {
   email: string;
   displayName: string;
   role: 'admin' | 'operator' | 'viewer';
-  authSource: 'local' | 'supabase';
+  authSource: 'local';
   sessionExpiresAt: string;
 }
 
@@ -297,7 +297,7 @@ export interface CloudStatus {
   lastSyncAt: string | null;
   lastError: string | null;
   pendingChanges: number;
-  storageBackend: 'local' | 'supabase';
+  storageBackend: 'local';
 }
 
 export interface GatewayInfo {
@@ -328,11 +328,6 @@ export interface GatewayConfigResponse {
   auth: {
     local: boolean;
     needsBootstrap: boolean;
-    /**
-     * Browser-safe Supabase project values. `roleVerification` is only true
-     * when the gateway also has a service-role key and can resolve `profiles`.
-     */
-    supabase: { url: string; anonKey: string; roleVerification: boolean } | null;
   };
   gateway: GatewayInfo;
   playerUrl: string;

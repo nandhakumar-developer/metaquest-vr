@@ -33,10 +33,7 @@ export class AdminSessionService {
     private readonly secureCookies: boolean,
   ) {}
 
-  createSession(
-    admin: AdminRecord,
-    authSource: 'local' | 'supabase',
-  ): SessionCreation {
+  createSession(admin: AdminRecord, authSource: 'local'): SessionCreation {
     const token = randomToken(32);
     const csrfToken = randomToken(24);
     const expiresAt = addSecondsIso(this.ttlHours * 3600);

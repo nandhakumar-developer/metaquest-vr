@@ -4,8 +4,8 @@
 
 Open the dashboard at `http://<gateway-ip>:4000` on the PC.
 
-- **Local admin** is the default. Use the account created with `npm run admin:create`.
-- **Supabase** only appears when the gateway can verify roles (see [supabase.md](supabase.md)).
+- Use the local administrator account created with `npm run admin:create` or the first-run
+  setup screen. Authentication always stays on this PC.
 
 The session uses an HttpOnly cookie. Mutating requests also send a CSRF token. Sessions
 expire after `ADMIN_SESSION_TTL_HOURS` (12 hours by default).

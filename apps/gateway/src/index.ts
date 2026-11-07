@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   process.stdout.write(`  Data Directory:   ${config.dataDir}\n`);
   process.stdout.write(`  Video Directory:  ${config.videoDir}\n`);
   process.stdout.write(`  FFmpeg/Probe:     ${ctx.media.available ? 'Available' : 'Not found (optional)'}\n`);
-  process.stdout.write(`  Supabase Sync:    ${config.supabase.configured ? 'Configured' : 'Disabled (local mode)'}\n`);
+  process.stdout.write(`  Mode:             Fully local (no cloud connection)\n`);
   process.stdout.write(`${separator}\n`);
 
   if (ctx.bootstrap.status().needsBootstrap) {

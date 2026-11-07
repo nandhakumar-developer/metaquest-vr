@@ -1,19 +1,9 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { homedir, networkInterfaces } from 'node:os';
+import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
 import { DEFAULT_PREVIEW_MAX_FPS } from '@vrcc/protocol';
-
-export interface SupabaseConfig {
-  url: string | null;
-  anonKey: string | null;
-  serviceRoleKey: string | null;
-  bucket: string;
-  configured: boolean;
-  syncEnabled: boolean;
-  syncIntervalMs: number;
-}
 
 export interface GatewayConfig {
   env: 'development' | 'test' | 'production';
@@ -47,7 +37,6 @@ export interface GatewayConfig {
   ffprobePath: string;
   ffmpegPath: string;
   ffprobeTimeoutMs: number;
-  supabase: SupabaseConfig;
   adminDistDir: string | null;
   quietLogs: boolean;
 }
@@ -112,15 +101,6 @@ const envSchema = z.object({
   FFPROBE_PATH: z.string().default('ffprobe'),
   FFMPEG_PATH: z.string().default('ffmpeg'),
   FFPROBE_TIMEOUT_MS: numberFromEnv(20_000, 1_000, 120_000),
-  VITE_SUPABASE_URL: z.string().default(''),
-  VITE_SUPABASE_ANON_KEY: z.string().default(''),
-  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().default(''),
-  SUPABASE_URL: z.string().default(''),
-  SUPABASE_ANON_KEY: z.string().default(''),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().default(''),
-  SUPABASE_VIDEO_BUCKET: z.string().default('vr-videos'),
-  CLOUD_SYNC_ENABLED: boolFromEnv(true),
-  CLOUD_SYNC_INTERVAL_MS: numberFromEnv(30_000, 5_000, 600_000),
 });
 
 export function findRepoRoot(start: string = process.cwd()): string {
@@ -187,33 +167,12 @@ export interface ConfigOverrides {
   offlineThresholdMs?: number;
   heartbeatIntervalMs?: number;
   pairingTtlSeconds?: number;
-  supabase?: Partial<SupabaseConfig>;
 }
 
 export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
   const repoRoot = findRepoRoot();
   loadEnvironmentFiles(repoRoot);
   const parsed = envSchema.parse(process.env);
-
-  const supabaseUrl = parsed.SUPABASE_URL || parsed.VITE_SUPABASE_URL || null;
-  const supabaseAnonKey =
-    parsed.SUPABASE_ANON_KEY ||
-    parsed.VITE_SUPABASE_ANON_KEY ||
-    parsed.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    null;
-  const supabaseServiceRoleKey = parsed.SUPABASE_SERVICE_ROLE_KEY || null;
-
-  const supabase: SupabaseConfig = {
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-    serviceRoleKey: supabaseServiceRoleKey,
-    bucket: parsed.SUPABASE_VIDEO_BUCKET,
-    configured: Boolean(supabaseUrl && supabaseAnonKey),
-    syncEnabled: parsed.CLOUD_SYNC_ENABLED,
-    syncIntervalMs: parsed.CLOUD_SYNC_INTERVAL_MS,
-    ...overrides.supabase,
-  };
-  supabase.configured = Boolean(supabase.url && supabase.anonKey);
 
   const config: GatewayConfig = {
     env: overrides.env ?? parsed.NODE_ENV,
@@ -259,7 +218,6 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
     ffprobePath: parsed.FFPROBE_PATH,
     ffmpegPath: parsed.FFMPEG_PATH,
     ffprobeTimeoutMs: parsed.FFPROBE_TIMEOUT_MS,
-    supabase,
     adminDistDir: overrides.adminDistDir ?? null,
     quietLogs: overrides.quietLogs ?? false,
   };
@@ -400,8 +358,4 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
 
   const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
   return { publicUrl, wsUrl, lanAddresses, secure, warnings };
-}
-
-export function defaultAdminEmail(): string {
-  return process.env.BOOTSTRAP_ADMIN_EMAIL || `admin@${homedir().split(path.sep).pop() ?? 'local'}.local`;
 }

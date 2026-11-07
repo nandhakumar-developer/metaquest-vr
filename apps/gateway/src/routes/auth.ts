@@ -20,10 +20,6 @@ const bootstrapSchema = z.object({
   token: z.string().min(10).max(200),
 });
 
-const supabaseSchema = z.object({
-  accessToken: z.string().min(20).max(8192),
-});
-
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1).max(256),
   newPassword: passwordSchema,
@@ -65,26 +61,6 @@ export async function registerAuthRoutes(app: FastifyInstance, ctx: GatewayConte
         password: body.password,
         ip: clientIp(request),
       });
-      ctx.auth.sessions.setSessionCookie(reply, result.token, result.expiresAt);
-      return reply.send({
-        identity: result.identity,
-        csrfToken: result.csrfToken,
-        expiresAt: result.expiresAt,
-      });
-    },
-  );
-
-  app.post(
-    '/api/auth/supabase',
-    {
-      config: { rateLimit: { max: 20, timeWindow: '5 minutes' } },
-    },
-    async (request, reply) => {
-      const body = parseBody(supabaseSchema, request.body);
-      const result = await ctx.auth.exchangeSupabaseToken(
-        body.accessToken,
-        clientIp(request),
-      );
       ctx.auth.sessions.setSessionCookie(reply, result.token, result.expiresAt);
       return reply.send({
         identity: result.identity,

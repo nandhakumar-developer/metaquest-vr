@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import type {
   AdminIdentity,
   AppSettings,
@@ -50,7 +49,6 @@ interface AppContextValue {
   group: GroupPlaybackState | null;
 
   login: (email: string, password: string) => Promise<void>;
-  loginWithSupabase: (email: string, password: string) => Promise<void>;
   bootstrap: (email: string, password: string, displayName: string, token: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshConfig: () => Promise<void>;
@@ -323,41 +321,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshConfig();
   };
 
-  const loginWithSupabase = async (email: string, password: string) => {
-    const supabaseUrl =
-      (import.meta.env.VITE_SUPABASE_URL as string | undefined) ||
-      gatewayConfig?.auth.supabase?.url ||
-      'https://jlmvpzugvwwglpkqtcly.supabase.co';
-    const supabaseAnonKey =
-      (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
-      (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-      gatewayConfig?.auth.supabase?.anonKey ||
-      'sb_publishable_wXb9MCrLiSXMlSdpA38RGQ_SZSuWeel';
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error('Supabase did not return a sign-in session.');
-
-    const res = await apiRequest<{
-      identity: AdminIdentity;
-      csrfToken: string;
-    }>('/api/auth/supabase', {
-      method: 'POST',
-      body: JSON.stringify({ accessToken }),
-    });
-    setIdentity(res.identity);
-    setCsrfToken(res.csrfToken);
-    await refreshConfig();
-  };
-
   const refreshVideos = useCallback(async () => {
     if (!identity) return;
     const list = await apiRequest<VideoDto[]>('/api/videos');
@@ -543,7 +506,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cloud,
         group,
         login,
-        loginWithSupabase,
         bootstrap,
         logout,
         refreshConfig,

@@ -32,7 +32,7 @@ export interface AdminSessionRecord {
   adminId: string;
   tokenHash: string;
   csrfToken: string;
-  authSource: 'local' | 'supabase';
+  authSource: 'local';
   expiresAt: string;
   createdAt: string;
   lastSeenAt: string;
@@ -141,17 +141,6 @@ export interface AuditLogRecord {
   createdAt: string;
 }
 
-export interface OutboxRecord {
-  id: string;
-  entity: string;
-  operation: 'upsert' | 'delete';
-  payload: Record<string, unknown>;
-  createdAt: string;
-  attempts: number;
-  lastError: string | null;
-  syncedAt: string | null;
-}
-
 export interface UpdateDeviceRuntimePatch {
   name?: string;
   model?: string;
@@ -210,7 +199,7 @@ export interface SettingsKeyValue {
 
 export function publicAdminIdentity(
   admin: AdminRecord,
-  authSource: 'local' | 'supabase',
+  authSource: 'local',
   sessionExpiresAt: string,
 ): AdminIdentity {
   return {

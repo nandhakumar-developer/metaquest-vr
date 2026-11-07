@@ -18,9 +18,8 @@ const BASE_CSP = [
 
 /**
  * Applies defensive response headers. CSP is applied to HTML responses only so
- * JSON API clients are unaffected. Supabase browser calls use connect-src from
- * the configured project; operators who enable Supabase should extend CSP via
- * a reverse proxy if they also use a separate Supabase origin.
+ * JSON API clients are unaffected. The dashboard, player, and gateway all share
+ * one local origin, so connect-src never needs to allow a remote service.
  */
 export function applySecurityHeaders(
   reply: FastifyReply,
@@ -39,18 +38,6 @@ export function applySecurityHeaders(
     reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   if (contentType?.includes('text/html')) {
-    const connectSources = ["'self'", 'ws:', 'wss:'];
-    if (config.supabase.url) {
-      try {
-        connectSources.push(new URL(config.supabase.url).origin);
-      } catch {
-        // Ignore malformed Supabase URL.
-      }
-    }
-    const csp = BASE_CSP.replace(
-      "connect-src 'self' ws: wss:",
-      `connect-src ${connectSources.join(' ')}`,
-    );
-    reply.header('Content-Security-Policy', csp);
+    reply.header('Content-Security-Policy', BASE_CSP);
   }
 }

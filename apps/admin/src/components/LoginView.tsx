@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { login, loginWithSupabase } = useApp();
+  const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,21 +26,7 @@ export const LoginView: React.FC = () => {
     setError(null);
     try {
       setLoading(true);
-      // Try local gateway login first (supports non-email usernames like vradmin@2026)
-      try {
-        await login(email.trim(), password);
-        return;
-      } catch (localErr: any) {
-        // Fall back to Supabase if local login fails and credentials look like a real email
-        const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-        if (!looksLikeEmail) throw localErr;
-        try {
-          await loginWithSupabase(email.trim(), password);
-          return;
-        } catch {
-          throw localErr;
-        }
-      }
+      await login(email.trim(), password);
     } catch (err: any) {
       setError(err?.message || 'Invalid username or password.');
     } finally {

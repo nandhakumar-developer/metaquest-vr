@@ -68,13 +68,10 @@ by the gateway. Add any extra LAN origins to `EXTRA_ALLOWED_ORIGINS`, comma sepa
 ```dotenv
 # Blank means auto-detect the current Wi-Fi/Ethernet LAN address.
 PUBLIC_GATEWAY_URL=
-VITE_SUPABASE_URL=https://jlmvpzugvwwglpkqtcly.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_wXb9MCrLiSXMlSdpA38RGQ_SZSuWeel
-CLOUD_SYNC_ENABLED=false
 ```
 
-No `SUPABASE_SERVICE_ROLE_KEY` is present, so Supabase admin login stays disabled and the
-local administrator is used.
+The workspace runs fully locally. There are no cloud credentials to configure, and the
+dashboard only accepts accounts stored in the local SQLite database.
 
 ## 3. Create the administrator
 
@@ -149,4 +146,3 @@ will be `false` if FFmpeg is not installed; that is not fatal.
 - [Pair both headsets](quest-setup.md)
 - [Learn the dashboard](user-guide.md)
 - [Enable HTTPS for WebXR](network-https.md)
-- [Optional Supabase setup](supabase.md)

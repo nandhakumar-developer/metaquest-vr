@@ -52,17 +52,6 @@ export async function registerSystemRoutes(
       auth: {
         local: true,
         needsBootstrap,
-        supabase:
-          ctx.config.supabase.configured &&
-          ctx.config.supabase.url &&
-          ctx.config.supabase.anonKey &&
-          ctx.auth.supabase.roleVerificationAvailable
-            ? {
-                url: ctx.config.supabase.url,
-                anonKey: ctx.config.supabase.anonKey,
-                roleVerification: true,
-              }
-            : null,
       },
       gateway: gatewayInfo(ctx),
       playerUrl: playerUrlForRequest(request, ctx),
@@ -70,7 +59,7 @@ export async function registerSystemRoutes(
       features: {
         previewSnapshot: true,
         previewWebrtc: false,
-        cloudStorage: Boolean(ctx.config.supabase.configured && ctx.config.supabase.serviceRoleKey),
+        cloudStorage: false,
         ffmpeg: ctx.media.available,
         browserPlayer: true,
         webxrRequiresSecureContext: !ctx.urls.secure,
@@ -83,10 +72,7 @@ export async function registerSystemRoutes(
     return {
       ...gatewayInfo(ctx),
       auth: {
-        supabaseConfigured: ctx.config.supabase.configured,
-        supabaseRoleVerification: ctx.auth.supabase.roleVerificationAvailable,
         cloudSyncEnabled: ctx.cloud.enabled,
-        cloudAdapterAvailable: ctx.cloud.adapterAvailable,
       },
       ffmpeg: { available: ctx.media.available, version: ctx.media.version },
       paths: {

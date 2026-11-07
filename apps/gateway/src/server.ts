@@ -11,7 +11,6 @@ import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { loadConfig, type ConfigOverrides } from './config.js';
 import { createContext, type GatewayContext } from './context.js';
-import type { CloudAdapter } from './services/cloudAdapter.js';
 import { AppError } from './utils/errors.js';
 import { allowedOrigins, assertAllowedOrigin, isOriginAllowed } from './security/origin.js';
 import { applySecurityHeaders } from './security/headers.js';
@@ -27,7 +26,6 @@ import { registerPlaybackRoutes } from './routes/playback.js';
 export interface BuildServerOptions {
   config?: ConfigOverrides;
   disableRateLimit?: boolean;
-  cloudAdapter?: CloudAdapter | null;
 }
 
 export interface BuiltServer {
@@ -57,9 +55,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
     requestTimeout: 30_000,
   });
 
-  const ctx = await createContext(config, app.log, {
-    cloudAdapter: options.cloudAdapter,
-  });
+  const ctx = await createContext(config, app.log);
   let closed = false;
 
   await app.register(cookie);
@@ -303,7 +299,6 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
       playerUrl: config.playerUrl,
       lanAddresses: ctx.urls.lanAddresses,
       urlWarnings: ctx.urls.warnings,
-      supabaseConfigured: config.supabase.configured,
       ffmpeg: ctx.media.available,
       adminDist: config.adminDistDir,
     },

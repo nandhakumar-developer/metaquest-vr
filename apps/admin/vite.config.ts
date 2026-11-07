@@ -19,8 +19,12 @@ export default defineConfig(({ mode }) => {
 
   const protocol = hasTls ? 'https' : 'http';
   const wsProtocol = hasTls ? 'wss' : 'ws';
-  const target = `${protocol}://127.0.0.1:4000`;
-  const wsTarget = `${wsProtocol}://127.0.0.1:4000`;
+  // Keep the dev proxy in sync with the gateway's configured port. They used
+  // to drift apart (proxy: 4000, gateway: 5000), which made every login fail
+  // with a proxy connection error.
+  const gatewayPort = Number(env.GATEWAY_PORT) || 4000;
+  const target = `${protocol}://127.0.0.1:${gatewayPort}`;
+  const wsTarget = `${wsProtocol}://127.0.0.1:${gatewayPort}`;
 
   return {
     envDir: rootDir,
