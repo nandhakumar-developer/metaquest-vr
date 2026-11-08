@@ -46,31 +46,12 @@ export async function registerSystemRoutes(
     return reply.code(database === 'ok' ? 200 : 503).send(health);
   });
 
-<<<<<<< HEAD
   app.get('/api/config', async (request): Promise<GatewayConfigResponse> => {
-=======
-  app.get('/api/config', async (): Promise<GatewayConfigResponse> => {
-    const hasSupabase =
-      ctx.config.supabase.configured &&
-      Boolean(ctx.config.supabase.url) &&
-      Boolean(ctx.config.supabase.anonKey);
->>>>>>> origin/main
     const needsBootstrap = ctx.bootstrap.status().needsBootstrap;
     return {
       auth: {
-        local: !hasSupabase,
+        local: true,
         needsBootstrap,
-<<<<<<< HEAD
-=======
-        supabase:
-          hasSupabase && ctx.auth.supabase.roleVerificationAvailable
-            ? {
-                url: ctx.config.supabase.url!,
-                anonKey: ctx.config.supabase.anonKey!,
-                roleVerification: true,
-              }
-            : null,
->>>>>>> origin/main
       },
       gateway: gatewayInfo(ctx),
       playerUrl: playerUrlForRequest(request, ctx),

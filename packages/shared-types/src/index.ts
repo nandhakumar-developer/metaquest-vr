@@ -327,8 +327,10 @@ export interface HealthResponse {
 }
 
 export interface GatewayConfigResponse {
-  local: boolean;
+  auth: {
+    local: boolean;
     needsBootstrap: boolean;
+  };
   gateway: GatewayInfo;
   playerUrl: string;
   settings: AppSettings;

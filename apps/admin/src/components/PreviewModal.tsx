@@ -74,13 +74,8 @@ export const PreviewModal: React.FC = () => {
                   Live preview
                 </span>
               </div>
-<<<<<<< HEAD
               <p className="mt-[3px] text-[11.5px] text-[#64748B]">
-                Target {settings?.previewMaxFps ?? 12} FPS · Actual {previewFps || 'waiting'} FPS
-=======
-              <p className="modal-sub">
                 Target {settings?.previewMaxFps ?? 30} FPS · Received {previewFps || 'waiting'} FPS
->>>>>>> origin/main
               </p>
             </div>
           </div>

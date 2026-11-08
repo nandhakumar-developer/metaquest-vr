@@ -59,11 +59,7 @@ const previewFpsFromEnv = () =>
         // PREVIEW_MAX_FPS=1 was the old sample default, not a useful target.
         return parsed === 1 ? DEFAULT_PREVIEW_MAX_FPS : parsed;
       },
-<<<<<<< HEAD
-      z.number().int().min(1).max(30),
-=======
       z.number().int().min(5).max(MAX_PREVIEW_FPS),
->>>>>>> origin/main
     )
     .default(DEFAULT_PREVIEW_MAX_FPS);
 
@@ -205,34 +201,13 @@ export interface ConfigOverrides {
   offlineThresholdMs?: number;
   heartbeatIntervalMs?: number;
   pairingTtlSeconds?: number;
+  previewMaxFps?: number;
 }
 
 export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
   const repoRoot = findRepoRoot();
   loadEnvironmentFiles(repoRoot);
   const parsed = envSchema.parse(process.env);
-
-<<<<<<< HEAD
-=======
-  const supabaseUrl = parsed.SUPABASE_URL || parsed.VITE_SUPABASE_URL || null;
-  const supabaseAnonKey =
-    parsed.SUPABASE_ANON_KEY ||
-    parsed.VITE_SUPABASE_ANON_KEY ||
-    parsed.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    null;
-  const supabaseServiceRoleKey = parsed.SUPABASE_SERVICE_ROLE_KEY || null;
-
-  const supabase: SupabaseConfig = {
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-    serviceRoleKey: supabaseServiceRoleKey,
-    bucket: parsed.SUPABASE_VIDEO_BUCKET,
-    configured: Boolean(supabaseUrl && supabaseAnonKey),
-    syncEnabled: parsed.CLOUD_SYNC_ENABLED,
-    syncIntervalMs: parsed.CLOUD_SYNC_INTERVAL_MS,
-    ...overrides.supabase,
-  };
-  supabase.configured = Boolean(supabase.url && supabase.anonKey);
 
   const tlsConfiguredExplicitly =
     overrides.tlsCertPath !== undefined ||
@@ -255,7 +230,6 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
         : null
     : (generatedTls?.key ?? null);
 
->>>>>>> origin/main
   const config: GatewayConfig = {
     env: overrides.env ?? parsed.NODE_ENV,
     host: overrides.host ?? parsed.GATEWAY_HOST,
@@ -283,7 +257,7 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
     pairingMaxAttempts: parsed.PAIRING_MAX_ATTEMPTS,
     adminSessionTtlHours: parsed.ADMIN_SESSION_TTL_HOURS,
     retentionDays: parsed.RETENTION_DAYS,
-    previewMaxFps: parsed.PREVIEW_MAX_FPS,
+    previewMaxFps: overrides.previewMaxFps ?? parsed.PREVIEW_MAX_FPS,
     previewMaxJpegBytes: parsed.PREVIEW_MAX_JPEG_BYTES,
     maxVideoUploadBytes: parsed.MAX_VIDEO_UPLOAD_BYTES,
     maxConcurrentDownloadsPerDevice: parsed.MAX_CONCURRENT_DOWNLOADS_PER_DEVICE,
@@ -372,7 +346,6 @@ export function listRankedLanAddresses(): LanAddress[] {
   return [...listLanAddresses()].sort((a, b) => lanAddressScore(b) - lanAddressScore(a));
 }
 
-<<<<<<< HEAD
 function isIpv4Literal(host: string): boolean {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 }
@@ -399,9 +372,6 @@ function isStaleConfiguredUrl(configured: string, lanAddresses: string[]): boole
 }
 
 export interface ResolvedGatewayUrls {
-=======
-export function resolveGatewayUrls(config: GatewayConfig): {
->>>>>>> origin/main
   publicUrl: string;
   wsUrl: string;
   lanAddresses: string[];
@@ -415,7 +385,6 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
   const protocol = secure ? 'https' : 'http';
   const wsProtocol = secure ? 'wss' : 'ws';
   const lanAddresses = listRankedLanAddresses().map((entry) => entry.address);
-<<<<<<< HEAD
   const detectedUrl = `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
   const warnings: string[] = [];
 
@@ -435,12 +404,6 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
 
   const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
   return { publicUrl, wsUrl, lanAddresses, secure, warnings };
-=======
-  const publicUrl =
-    config.publicGatewayUrl?.replace(/\/+$/, '') ??
-    `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
-  const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
-  return { publicUrl, wsUrl, lanAddresses, secure };
 }
 
 /**
@@ -464,9 +427,4 @@ export function tlsCertificateCoversHost(certPath: string, host: string): boolea
     return false;
   }
   return false;
-}
-
-export function defaultAdminEmail(): string {
-  return process.env.BOOTSTRAP_ADMIN_EMAIL || `admin@${homedir().split(path.sep).pop() ?? 'local'}.local`;
->>>>>>> origin/main
 }

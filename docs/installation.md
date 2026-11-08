@@ -70,14 +70,8 @@ by the gateway. Add any extra LAN origins to `EXTRA_ALLOWED_ORIGINS`, comma sepa
 PUBLIC_GATEWAY_URL=
 ```
 
-<<<<<<< HEAD
 The workspace runs fully locally. There are no cloud credentials to configure, and the
 dashboard only accepts accounts stored in the local SQLite database.
-=======
-The publishable key enables Supabase Auth login. Add a `profiles` row with an `admin` or
-`operator` role for each Supabase user; see [Supabase setup](supabase.md). User passwords
-are entered on the login form and do not belong in `.env`.
->>>>>>> origin/main
 
 ## 3. Create the administrator
 

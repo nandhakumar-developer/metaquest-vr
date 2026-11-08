@@ -44,10 +44,6 @@ storage/bootstrap-admin.txt
 *.sqlite-wal
 *.sqlite-shm
 
-# Supabase local development
-supabase/.branches
-supabase/.temp
-
 # Unity
 apps/quest/UnityProject/[Ll]ibrary/
 apps/quest/UnityProject/[Tt]emp/

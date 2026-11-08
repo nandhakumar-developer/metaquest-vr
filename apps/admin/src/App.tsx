@@ -13,7 +13,7 @@ import { LoginView } from './components/LoginView.js';
 import { Activity } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { isAuthenticated, needsBootstrap, loading, startPreview, gatewayConfig } = useApp();
+  const { isAuthenticated, needsBootstrap, loading, startPreview } = useApp();
   const [currentTab, setCurrentTab] = useState<TabKey>('devices');
   const [pairingModalOpen, setPairingModalOpen] = useState(false);
   const [groupVideoId, setGroupVideoId] = useState<string | null>(null);
@@ -36,9 +36,7 @@ export const App: React.FC = () => {
     );
   }
 
-  if (needsBootstrap && !gatewayConfig?.auth.supabase) {
-    return <BootstrapView />;
-  }
+  if (needsBootstrap) return <BootstrapView />;
 
   if (!isAuthenticated) {
     return <LoginView />;

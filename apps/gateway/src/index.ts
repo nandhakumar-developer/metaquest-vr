@@ -24,15 +24,13 @@ async function main(): Promise<void> {
   if (ctx.urls.lanAddresses.length > 0) {
     process.stdout.write(`  LAN Addresses:    ${ctx.urls.lanAddresses.join(', ')}\n`);
   }
-<<<<<<< HEAD
   for (const warning of ctx.urls.warnings) {
     process.stdout.write(`  WARNING:          ${warning}\n`);
-=======
+  }
   if (ctx.urls.secure) {
     process.stdout.write(
       '  TLS:              Enabled (accept the certificate warning on the headset once)\n',
     );
->>>>>>> origin/main
   }
   process.stdout.write(`  Dashboard Origin: ${config.adminOrigin}\n`);
   process.stdout.write(`  Data Directory:   ${config.dataDir}\n`);
@@ -83,4 +81,3 @@ main().catch((err) => {
   process.stderr.write(`[VRCC FATAL] Failed to start gateway: ${String(err?.stack || err)}\n`);
   process.exit(1);
 });
-

@@ -236,11 +236,7 @@ export const SettingsView: React.FC = () => {
             </div>
 
             <div>
-<<<<<<< HEAD
-              <label className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]">Preview snapshot max FPS (5–15)</label>
-=======
-              <label className="field-label">Preview snapshot max FPS (5–30)</label>
->>>>>>> origin/main
+              <label className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]">Preview snapshot max FPS (5–30)</label>
               <input
                 type="number"
                 min={5}
@@ -251,15 +247,9 @@ export const SettingsView: React.FC = () => {
                 }
                 className="min-h-[42px] w-full rounded-[14px] border border-transparent bg-white/60 px-[14px] text-[12.5px] text-[#0F172A] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none backdrop-blur-[16px] transition focus:border-[#004CE4] focus:bg-white/95 focus:ring-[3px] focus:ring-[#004CE4]/20 hover:border-[#004CE4]/45"
               />
-<<<<<<< HEAD
               <span className="mt-1.5 block text-[10.5px] leading-[1.55] text-[#64748B]">
-                Defaults to 12 FPS. Higher values look smoother but use more headset and network
-                capacity; snapshots may slow down on a busy device or Wi-Fi connection.
-=======
-              <span className="field-hint">
                 Defaults to 30 FPS on a capable headset and network. Actual FPS may be lower if
                 capture, encoding, or Wi-Fi cannot keep up.
->>>>>>> origin/main
               </span>
             </div>
 

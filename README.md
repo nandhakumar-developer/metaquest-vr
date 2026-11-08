@@ -16,7 +16,7 @@ The setup guide walks through a two-headset Quest 2 installation. The gateway su
 - WebXR immersive playback when the player is opened in a secure context (HTTPS or localhost), with in-view controls where DOM overlay is supported.
 - Playback sessions, device state, configurable snapshot preview cadence, settings, and administrative audit history.
 - Dashboard session state is cleared when the gateway rejects an expired session, and headset command failures are shown on the affected device card.
-- Fully local operation: no Supabase project, cloud service, or internet connection is required.
+- Fully local operation: no cloud service or internet connection is required.
 
 ## How the system works
 
@@ -147,20 +147,6 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 ## Repository and runtime folder layout
 
 ```text
-<<<<<<< HEAD
-apps/
-  admin/                 React dashboard, API client, views, and Vite configuration
-  gateway/               Fastify API, WebSocket hub, auth, device, media, and playback services
-  player/                Browser player served directly at /player/
-packages/
-  shared-types/          Domain types and DTOs shared across the workspace
-  protocol/              Zod schemas and WebSocket protocol definitions
-scripts/
-  windows/               Windows install, start, and administrator setup helpers
-  development/           Production launcher and generated-file cleanup
-storage/                 Runtime database and media directories (created/used locally)
-docs/                    Installation, usage, Quest, network, and troubleshooting guides
-=======
 .
 ├── apps/
 │   ├── admin/                         React dashboard (Vite)
@@ -178,7 +164,7 @@ docs/                    Installation, usage, Quest, network, and troubleshootin
 │   │   └── vite.config.ts              Dev server and gateway proxies
 │   ├── gateway/                       Fastify REST, WebSocket, and static-file server
 │   │   ├── src/
-│   │   │   ├── auth/                  Local auth, sessions, bootstrap, and Supabase auth
+│   │   │   ├── auth/                  Local auth, sessions, and administrator bootstrap
 │   │   │   ├── cli/                   Local administrator command
 │   │   │   ├── commands/              Device command dispatch and acknowledgements
 │   │   │   ├── database/              SQLite setup, repositories, mappers, and row types
@@ -217,7 +203,7 @@ docs/                    Installation, usage, Quest, network, and troubleshootin
 ├── scripts/
 │   ├── development/                   Production launcher, HTTPS certificate, and cleanup scripts
 │   └── windows/                       Install, start, and administrator setup scripts
-├── docs/                              Install, user, Quest, network, Supabase, and troubleshooting guides
+├── docs/                              Install, user, Quest, network, and troubleshooting guides
 ├── storage/                           Local runtime data; generated directories are git-ignored
 │   ├── data/                          SQLite database and bootstrap token
 │   ├── logs/                          Gateway logs
@@ -225,8 +211,7 @@ docs/                    Installation, usage, Quest, network, and troubleshootin
 │   ├── thumbnails/                    Generated video thumbnails
 │   └── videos/                        Uploaded source videos, grouped by video ID
 ├── certs/                             Optional generated/local gateway TLS certificate and key
-├── .agents/skills/                    Repository-local agent reference material; not runtime code
-├── .env.example                       Gateway and optional integration configuration template
+├── .env.example                       Gateway and local administrator configuration template
 ├── .gitignore                         Generated files, local data, secrets, and build output exclusions
 ├── .gitattributes                     Git text and line-ending settings
 ├── package.json                       npm workspace commands and package orchestration
@@ -236,7 +221,6 @@ docs/                    Installation, usage, Quest, network, and troubleshootin
 ├── eslint.config.js                   Repository lint configuration
 ├── skills-lock.json                   Project skill dependency lock
 └── README.md
->>>>>>> origin/main
 ```
 
 `storage/` and `certs/` contain local runtime/generated files and may be empty in a clean checkout. `.env` is created from `.env.example` for a local installation and is ignored by Git. Build output (`dist/`), dependencies (`node_modules/`), SQLite files, uploaded media, and private TLS keys are also ignored. The `apps/player` browser files are served directly by the gateway; they are not a separate npm workspace or compiled build.
@@ -462,11 +446,7 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - Admin sessions use an HttpOnly cookie and CSRF token. Local passwords are stored as password hashes, not plaintext.
 - The headset's device secret is used to authenticate player requests. Media URLs are signed and expire; range streaming does not expose the device secret.
 - HTTPS is optional for LAN control and flat video playback, but required by the browser for WebXR on a remote headset. Configure a certificate trusted by the headset.
-<<<<<<< HEAD
 - Everything runs locally. Administrators sign in with accounts stored in SQLite, and no credentials, media, or operational records leave this PC.
-=======
-- Supabase is optional. The dashboard supports local administrator sign-in and Supabase Auth with an RLS-protected `profiles` role; local SQLite-backed operation does not require Supabase. See [docs/supabase.md](docs/supabase.md).
->>>>>>> origin/main
 
 ## Known limitations
 

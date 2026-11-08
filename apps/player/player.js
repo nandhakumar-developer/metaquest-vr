@@ -1877,11 +1877,8 @@ async function loadVideo(videoId) {
       el.video.pause();
       state.intent = 'idle';
       showVideoSurface();
-<<<<<<< HEAD
-=======
       updateNowPlaying();
       updateProjectionSurface();
->>>>>>> origin/main
       hideLoading();
       // Emit a confirmed ready event even when the file is already buffered so a
       // scheduled group LOAD_VIDEO command can complete without waiting for the
@@ -1936,13 +1933,9 @@ async function loadVideo(videoId) {
     setPlaybackState('ready', { force: true, clearError: true });
     if (state.immersive) state.immersive.setMedia(video);
     updateTransportUi();
-<<<<<<< HEAD
     prewarmImmersive();
-    void applyProjectionMode(video);
-=======
     updateNowPlaying();
     updateProjectionSurface();
->>>>>>> origin/main
     showToast(
       `Loaded ${video.name}${localUrl ? ' (offline copy)' : ''}`,
       'success',
@@ -1955,39 +1948,6 @@ async function loadVideo(videoId) {
     throw error;
   } finally {
     state.intent = 'idle';
-  }
-}
-
-/**
- * 180/360 videos are more than a wider picture: the equirectangular frame has
- * to be projected onto a sphere. Render that projection in the normal player
- * (drag to look around) so spherical playback works even before entering VR.
- */
-async function applyProjectionMode(video) {
-  console.info('[projection] start', video.id, video.projectionType, video.stereoLayout);
-  if (!state.current || state.current.id !== video.id) return;
-  if (video.projectionType === 'flat') {
-    state.immersive?.stopPreview();
-    return;
-  }
-  try {
-    const immersive = await ensureImmersive();
-    if (!state.current || state.current.id !== video.id) return;
-    const shown = await immersive.showPreview(video);
-    if (shown && !state.isImmersive) {
-      showToast(
-        `Drag to look around this ${video.projectionType}° video. Enter VR for head-tracked playback.`,
-        'success',
-        4200,
-      );
-    }
-  } catch (error) {
-    // Keep the plain video visible if WebGL or Three.js is unavailable.
-    showToast(
-      `Could not start ${video.projectionType}° preview: ${errorMessage(error)}`,
-      'error',
-      6000,
-    );
   }
 }
 
@@ -2255,18 +2215,10 @@ function stopPreview() {
 }
 
 async function captureFrame() {
-<<<<<<< HEAD
-  const useCanvas = state.isImmersive || Boolean(state.immersive?.isPreviewActive?.());
-  const source = useCanvas ? el.xrCanvas : el.video;
-  const width = useCanvas ? el.xrCanvas.width : el.video.videoWidth;
-  const height = useCanvas ? el.xrCanvas.height : el.video.videoHeight;
-  if (!width || !height || (!useCanvas && el.video.readyState < 2)) return null;
-=======
   const source = el.video;
   const width = el.video.videoWidth;
   const height = el.video.videoHeight;
   if (!width || !height || el.video.readyState < 2) return null;
->>>>>>> origin/main
   const canvas = state.previewCanvas || document.createElement('canvas');
   state.previewCanvas = canvas;
 

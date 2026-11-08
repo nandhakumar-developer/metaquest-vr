@@ -19,6 +19,7 @@ describe('Gateway HTTP & API Integration', () => {
         thumbnailDir: path.join(testDir, 'thumbs'),
         tempDir: path.join(testDir, 'temp'),
         logDir: path.join(testDir, 'logs'),
+        previewMaxFps: 30,
         quietLogs: true,
       },
       disableRateLimit: true,

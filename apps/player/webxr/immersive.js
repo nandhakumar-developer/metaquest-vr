@@ -51,18 +51,12 @@ export class ImmersivePlayer {
     this.media = null;
     this.session = null;
     this.active = false;
-<<<<<<< HEAD
     this.stereo = false;
-=======
     this.inlineActive = false;
     this.inlineLoopRunning = false;
->>>>>>> origin/main
     this.resizeHandler = null;
     this.pointerCleanup = null;
     this.poseTick = 0;
-<<<<<<< HEAD
-
-    // Non-XR preview state.
     this.previewActive = false;
     this.previewMedia = null;
     this.lookBound = false;
@@ -70,13 +64,10 @@ export class ImmersivePlayer {
     this.pointerLast = null;
     this.lookYaw = 0;
     this.lookPitch = 0;
+    this.yaw = 0;
+    this.pitch = 0;
   }
 
-  /**
-   * Load Three.js and cache XR support. Safe to call before a click so the
-   * network import does not consume the user activation required by
-   * requestSession(). Also used by the non-XR spherical preview.
-   */
   prepare() {
     if (this.three) return Promise.resolve(this.three);
     if (this.preparePromise) return this.preparePromise;
@@ -104,13 +95,14 @@ export class ImmersivePlayer {
     return this.preparePromise;
   }
 
-  async ensureThreeForXr() {
-    if (!isSecureContextForXr()) {
+  async ensureThree(requireXrSession = true) {
+    if (requireXrSession && !isSecureContextForXr()) {
+      const secureUrl = `https://${location.host}${location.pathname}`;
       throw new Error(
-        'Immersive WebXR needs a secure context. Open the player over HTTPS (accept the local certificate once) or use localhost; flat 2D playback still works.',
+        `Immersive VR needs HTTPS. Open ${secureUrl} on the headset, accept the certificate warning, then tap Enter VR again. If HTTPS is not enabled yet, run "npm run https:setup" on the gateway PC and restart it. Flat playback still works here.`,
       );
     }
-    if (!navigator.xr) {
+    if (requireXrSession && !navigator.xr) {
       throw new Error('This browser does not expose WebXR. Use Meta Quest Browser over HTTPS.');
     }
     let three;
@@ -126,31 +118,14 @@ export class ImmersivePlayer {
         'Could not load the immersive renderer. Check the gateway connection and try again.',
       );
     }
-    if (this.xrSupported === false) {
+    if (requireXrSession && this.xrSupported === false) {
       throw new Error('Immersive VR is not available in this browser session.');
-=======
-    this.yaw = 0;
-    this.pitch = 0;
-  }
-
-  async ensureThree(requireXrSession = true) {
-    if (requireXrSession) {
-      if (!isSecureContextForXr()) {
-        const secureUrl = `https://${location.host}${location.pathname}`;
-        throw new Error(
-          `Immersive VR needs HTTPS. Open ${secureUrl} on the headset, accept the certificate warning, then tap Enter VR again. If HTTPS is not enabled yet, run "npm run https:setup" on the gateway PC and restart it. Flat playback still works here.`,
-        );
-      }
-      if (!navigator.xr) {
-        throw new Error('This browser does not expose WebXR. Use Meta Quest Browser over HTTPS.');
-      }
-      const supported = await navigator.xr.isSessionSupported('immersive-vr');
-      if (!supported) {
-        throw new Error('Immersive VR is not available in this browser session.');
-      }
->>>>>>> origin/main
     }
     return three;
+  }
+
+  async ensureThreeForXr() {
+    return this.ensureThree(true);
   }
 
   buildRenderer() {
@@ -174,7 +149,6 @@ export class ImmersivePlayer {
     }
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x02040a);
-<<<<<<< HEAD
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -182,10 +156,7 @@ export class ImmersivePlayer {
       1000,
     );
     this.camera.rotation.order = 'YXZ';
-=======
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 1000);
     this.camera.position.set(0, 0, 0);
->>>>>>> origin/main
     this.resizeHandler = () => this.resize();
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -318,14 +289,7 @@ export class ImmersivePlayer {
     this.stereo = stereo;
 
     if (projection === '360') {
-<<<<<<< HEAD
-      // Start the equirectangular texture at -Z (in front of the default
-      // camera) instead of at the seam, so the centre of the video is the
-      // initial view.
-      geometry = new THREE.SphereGeometry(12, 64, 40, Math.PI / 2, Math.PI * 2);
-=======
-      const geometry = new THREE.SphereGeometry(60, 64, 40);
->>>>>>> origin/main
+      const geometry = new THREE.SphereGeometry(12, 64, 40, Math.PI / 2, Math.PI * 2);
       geometry.scale(-1, 1, 1);
       geometry.rotateY(-Math.PI / 2);
 
@@ -366,17 +330,10 @@ export class ImmersivePlayer {
         this.content.add(mesh);
       }
     } else {
-<<<<<<< HEAD
       const aspect =
         this.video.videoWidth && this.video.videoHeight
           ? this.video.videoWidth / this.video.videoHeight
           : 16 / 9;
-=======
-      // Flat video: cinema screen in front of the viewer.
-      const aspect = this.video.videoWidth && this.video.videoHeight
-        ? this.video.videoWidth / this.video.videoHeight
-        : 16 / 9;
->>>>>>> origin/main
       const height = 2.7;
       const width = height * aspect;
       const geometry = new THREE.PlaneGeometry(width, height);
@@ -513,34 +470,25 @@ export class ImmersivePlayer {
 
   setMedia(media) {
     this.media = media;
-<<<<<<< HEAD
-    if (!this.active && !this.previewActive) return;
-    try {
-      this.buildContent(media);
-      if (this.previewActive && !this.active) this.previewMedia = media;
-    } catch (error) {
-      this.onError(error instanceof Error ? error.message : 'Unable to build the immersive scene.');
-=======
-    if (this.active) {
+    if (this.active || this.previewActive) {
       try {
         this.buildContent(media);
+        if (this.previewActive && !this.active) this.previewMedia = media;
       } catch (error) {
         this.onError(error instanceof Error ? error.message : 'Unable to build the immersive scene.');
       }
+      return;
+    }
+    const isSphere = media?.projectionType === '360' || media?.projectionType === '180';
+    if (isSphere) {
+      void this.startInline(media);
     } else {
-      const isSphere = media?.projectionType === '360' || media?.projectionType === '180';
-      if (isSphere) {
-        void this.startInline(media);
-      } else {
-        this.stopInline();
-      }
->>>>>>> origin/main
+      this.stopInline();
     }
   }
 
   /** Render a 180/360 video on the canvas without entering WebXR. */
   async showPreview(media) {
-    console.info('[projection] showPreview', media?.projectionType, media?.stereoLayout);
     if (!media || media.projectionType === 'flat') {
       this.stopPreview();
       return false;
@@ -549,42 +497,26 @@ export class ImmersivePlayer {
       this.setMedia(media);
       return true;
     }
-    const three = await this.prepare();
-    if (!three) return false;
-    this.buildRenderer();
-    this.buildContent(media);
-    this.previewMedia = media;
-    this.previewActive = true;
-    this.canvas.hidden = false;
-    this.video.style.opacity = '0';
-    this.video.style.pointerEvents = 'none';
-    this.bindLookControls();
-    this.applyLook();
-    this.renderer.setAnimationLoop(() => this.renderPreviewFrame());
-    return true;
+    await this.startInline(media);
+    return this.isPreviewActive();
   }
 
   stopPreview() {
     this.previewActive = false;
     this.previewMedia = null;
     if (this.active) return;
-    this.renderer?.setAnimationLoop(null);
-    this.canvas.hidden = true;
-    this.video.style.opacity = '';
-    this.video.style.pointerEvents = '';
-    this.clearContent();
+    this.stopInline();
   }
 
   isPreviewActive() {
-    return this.previewActive && !this.active;
+    return (this.previewActive || this.inlineActive) && !this.active;
   }
 
   bindLookControls() {
     if (this.lookBound) return;
     this.lookBound = true;
-
     this.handlePointerDown = (event) => {
-      if (this.active) return;
+      if (this.active || !this.previewActive) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       this.pointerId = event.pointerId;
       this.pointerLast = { x: event.clientX, y: event.clientY };
@@ -595,9 +527,8 @@ export class ImmersivePlayer {
       }
       event.preventDefault();
     };
-
     this.handlePointerMove = (event) => {
-      if (this.active || this.pointerId === null) return;
+      if (this.active || !this.previewActive || this.pointerId === null) return;
       if (event.pointerId !== this.pointerId || !this.pointerLast) return;
       const dx = event.clientX - this.pointerLast.x;
       const dy = event.clientY - this.pointerLast.y;
@@ -606,13 +537,11 @@ export class ImmersivePlayer {
       this.lookPitch = clamp(this.lookPitch - dy * LOOK_SPEED, MIN_PITCH, MAX_PITCH);
       event.preventDefault();
     };
-
     this.handlePointerEnd = (event) => {
       if (event.pointerId !== this.pointerId) return;
       this.pointerId = null;
       this.pointerLast = null;
     };
-
     this.canvas.addEventListener('pointerdown', this.handlePointerDown);
     window.addEventListener('pointermove', this.handlePointerMove, { passive: false });
     window.addEventListener('pointerup', this.handlePointerEnd);
@@ -643,44 +572,36 @@ export class ImmersivePlayer {
     this.active = false;
     this.session = null;
     this.renderer?.setAnimationLoop(null);
+    this.video.style.opacity = '';
+    this.video.style.pointerEvents = '';
     if (this.previewActive && this.previewMedia) {
       this.canvas.hidden = false;
       this.video.style.opacity = '0';
       this.video.style.pointerEvents = 'none';
       this.renderer?.setAnimationLoop(() => this.renderPreviewFrame());
+    } else if (this.media?.projectionType === '360' || this.media?.projectionType === '180') {
+      void this.startInline(this.media);
     } else {
       this.canvas.hidden = true;
-      this.video.style.opacity = '';
-      this.video.style.pointerEvents = '';
     }
     this.onSessionChange(false);
   }
 
   async enter(media) {
     if (this.active) return;
-<<<<<<< HEAD
-    await this.ensureThreeForXr();
-=======
+    this.stopPreview();
     this.stopInline();
-    await this.ensureThree(true);
->>>>>>> origin/main
+    await this.ensureThreeForXr();
     this.buildRenderer();
     if (this.video.readyState < 2) {
       throw new Error('The video is still loading. Wait for the first frame, then try again.');
     }
     if (this.camera) {
-      // Reset the camera layers to the default state for WebXR.
-      // Layer 0 is the default; layers 1 and 2 are force-added by
-      // Three.js WebXRManager to cameraL and cameraR respectively.
-      // Disabling layer 1 on the parent camera is fine because the XR
-      // sub-cameras bitwise-OR the parent mask with their eye-specific layer.
       this.camera.layers.disable(1);
       this.camera.rotation.set(0, 0, 0);
     }
     this.buildContent(media);
 
-    // Ensure the video is actively playing before entering VR to prevent
-    // black frames from a paused / stalled video element.
     if (this.video.paused && this.video.readyState >= 2) {
       try {
         await this.video.play();
@@ -696,34 +617,14 @@ export class ImmersivePlayer {
     this.session = session;
     this.active = true;
     this.canvas.hidden = false;
-<<<<<<< HEAD
-    // Keep the video in the DOM and decoding; WebXR samples it as a texture.
-    // display:none can make mobile browsers stop producing frames.
     this.video.style.opacity = '0';
     this.video.style.pointerEvents = 'none';
-=======
->>>>>>> origin/main
 
     if (!session.domOverlayState) {
       session.addEventListener('select', () => this.onControllerSelect());
     }
 
-<<<<<<< HEAD
     session.addEventListener('end', () => this.handleSessionEnd());
-=======
-    session.addEventListener('end', () => {
-      this.active = false;
-      this.session = null;
-      this.renderer?.setAnimationLoop(null);
-      this.onSessionChange(false);
-      const isSphere = this.media?.projectionType === '360' || this.media?.projectionType === '180';
-      if (isSphere) {
-        void this.startInline(this.media);
-      } else {
-        this.canvas.hidden = true;
-      }
-    });
->>>>>>> origin/main
 
     await this.renderer.xr.setSession(session);
     this.renderer.setAnimationLoop(() => this.renderFrame());
@@ -732,13 +633,10 @@ export class ImmersivePlayer {
 
   renderFrame() {
     if (!this.renderer || !this.scene || !this.camera) return;
-<<<<<<< HEAD
     if (this.stereo) this.configureStereoLayers();
-=======
     if (this.texture && this.video && this.video.readyState >= 2) {
       this.texture.needsUpdate = true;
     }
->>>>>>> origin/main
     this.renderer.render(this.scene, this.camera);
     this.poseTick += 1;
     if (this.poseTick % 12 === 0) {
@@ -772,15 +670,10 @@ export class ImmersivePlayer {
   }
 
   dispose() {
-<<<<<<< HEAD
     this.stopPreview();
-=======
     this.stopInline();
-    if (this.pointerCleanup) {
-      this.pointerCleanup();
-    }
+    this.pointerCleanup?.();
     this.clearContent();
->>>>>>> origin/main
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
       this.resizeHandler = null;
@@ -801,6 +694,5 @@ export class ImmersivePlayer {
 }
 
 export async function createImmersivePlayer(options) {
-  const player = new ImmersivePlayer(options);
-  return player;
+  return new ImmersivePlayer(options);
 }
