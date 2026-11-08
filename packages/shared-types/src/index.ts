@@ -327,15 +327,8 @@ export interface HealthResponse {
 }
 
 export interface GatewayConfigResponse {
-  auth: {
-    local: boolean;
+  local: boolean;
     needsBootstrap: boolean;
-<<<<<<< HEAD
-=======
-    /** Browser-safe values for Supabase Auth and RLS-protected profile lookup. */
-    supabase: { url: string; anonKey: string; roleVerification: boolean } | null;
->>>>>>> origin/main
-  };
   gateway: GatewayInfo;
   playerUrl: string;
   settings: AppSettings;
