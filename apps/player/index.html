@@ -29,7 +29,7 @@
             <div class="brand-name">VR Control Center</div>
             <div class="brand-caption">Quest Browser Player</div>
           </div>
-          <span id="secure-badge" class="badge badge--warn" title="WebXR needs HTTPS or localhost">Local network</span>
+          <span id="secure-badge" class="badge badge--ok" hidden></span>
         </header>
 
         <main class="pairing-card" role="main">
@@ -91,8 +91,16 @@
           <summary>Network &amp; WebXR notes</summary>
           <p>
             Open this page from the Quest Browser using the same LAN address shown in the
-            dashboard. Flat 2D playback works over HTTP. Immersive 180/360 WebXR playback
-            requires HTTPS (a self-signed certificate trusted by the headset) or localhost.
+            dashboard. Flat 2D and drag-to-look 180/360 playback work over HTTP. Immersive
+            WebXR playback requires HTTPS (a local certificate trusted by the headset) or
+            localhost.
+          </p>
+          <p>
+            If the headset shows a certificate warning, choose
+            <strong>Advanced &rarr; Proceed</strong> once, or
+            <a href="/api/player/ca-cert" download="vrcc-local-ca.crt">download the local CA
+            certificate</a> and install it under Settings &rarr; Security &rarr; Install CA
+            certificate. Trusting the certificate removes the warning permanently.
           </p>
         </details>
       </section>
@@ -147,20 +155,9 @@
             <p id="loading-message">Preparing video…</p>
           </div>
 
-          <div id="error-overlay" class="stage-overlay stage-overlay--error" hidden>
-            <div class="panel-note panel-note--error" id="error-message"></div>
-            <button id="dismiss-error" class="button button--ghost" type="button">Dismiss</button>
-          </div>
-
           <div id="tap-banner" class="tap-banner" hidden>
             <span>Playback started muted because the browser blocked audio.</span>
             <button id="enable-audio" class="button button--small button--primary" type="button">Enable audio</button>
-          </div>
-
-          <div id="title-overlay" class="title-overlay" hidden>
-            <div id="now-playing-label" class="now-playing-label">Now playing</div>
-            <div id="now-playing-title" class="now-playing-title"></div>
-            <div id="now-playing-meta" class="now-playing-meta"></div>
           </div>
 
           <aside id="library-panel" class="library-panel" aria-label="Video library" hidden>
@@ -211,17 +208,22 @@
             <div class="controls-row">
               <div class="transport">
                 <button id="btn-back" class="control-button" type="button" title="Back 10 seconds">−10</button>
-                <button id="btn-play" class="control-button control-button--primary" type="button" title="Play">Play</button>
-                <button id="btn-pause" class="control-button" type="button" title="Pause">Pause</button>
-                <button id="btn-stop" class="control-button" type="button" title="Stop">Stop</button>
+                <button id="btn-play" class="control-button control-button--primary" type="button" title="Play" aria-label="Play">
+                  <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+                  <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" /></svg>
+                  <span id="play-toggle-label">Play</span>
+                </button>
+                <button id="btn-replay" class="control-button" type="button" title="Replay" aria-label="Replay">
+                  <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7.5 6.5 12 11V8a6 6 0 1 1-5.65 4H3.2A9 9 0 1 0 12 5z" fill="currentColor" /></svg>
+                  <span>Replay</span>
+                </button>
                 <button id="btn-forward" class="control-button" type="button" title="Forward 10 seconds">+10</button>
               </div>
               <div class="control-tools">
+                <button id="btn-enter-vr" class="control-button control-button--vr control-button--utility" type="button" aria-label="Enter VR" aria-pressed="false">Enter VR</button>
+                <button id="btn-fullscreen" class="control-button control-button--utility" type="button" title="Enter fullscreen" aria-label="Enter fullscreen" aria-pressed="false">Fullscreen</button>
                 <button id="btn-mute" class="control-button" type="button" title="Mute">Mute</button>
                 <input id="volume" class="volume" type="range" min="0" max="1" step="0.05" value="0.9" aria-label="Volume" />
-                <button id="btn-fullscreen" class="control-button" type="button" title="Toggle fullscreen">Fullscreen</button>
-                <button id="btn-enter-vr" class="control-button control-button--vr" type="button">Enter VR</button>
-                <button id="btn-exit-vr" class="control-button" type="button" hidden>Exit VR</button>
               </div>
             </div>
             <div id="status-line" class="status-line">Idle</div>
@@ -229,7 +231,6 @@
         </main>
       </section>
 
-      <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
     </div>
     <script type="module" src="/player/player.js"></script>
   </body>

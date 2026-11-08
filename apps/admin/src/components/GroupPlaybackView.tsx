@@ -5,8 +5,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
-  Gauge,
-  Glasses,
   Play,
   RefreshCw,
   Square,
@@ -62,7 +60,7 @@ function healthStyle(health: 'good' | 'fair' | 'poor' | 'unknown'): string {
     case 'good':
       return 'text-[#08785D]';
     case 'fair':
-      return 'text-[#8A4B00]';
+      return 'text-[#003BB5]';
     case 'poor':
       return 'text-[#B91C1C]';
     default:
@@ -208,25 +206,25 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
   const statusTone = GROUP_STATUS_TONE[group?.status ?? 'idle'] || 'badge-neutral';
 
   return (
-    <div className="page-stack">
-      <div className="section-head">
+    <div className="flex flex-col gap-[22px]">
+      <div className="mx-auto w-full max-w-[1120px] flex flex-wrap items-end justify-between gap-[18px] rounded-[26px] border border-transparent bg-white/50 px-6 py-[18px] shadow-[0_12px_36px_rgba(0,0,0,0.07)] backdrop-blur-[32px]">
         <div>
-          <span className="eyebrow">Synchronized playback</span>
-          <h1 className="page-title">
-            Group <span className="serif-accent text-[#ED7109]">playback</span>
+          <span className="inline-flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#003BB5] before:mr-0 before:inline-block before:h-[1.5px] before:w-4 before:rounded-full before:bg-[#004CE4] before:content-['']">Synchronized playback</span>
+          <h1 className="mt-2 font-display text-[clamp(24px,2.6vw,30px)] font-extrabold leading-[1.15] tracking-[-0.04em] text-[#0F172A]">
+            Group <span className="font-display font-semibold not-italic tracking-[-0.01em] text-[#004CE4]">playback</span>
           </h1>
-          <p className="page-desc">
+          <p className="mt-1.5 max-w-[680px] text-[12.5px] leading-[1.65] text-[#334155]">
             Load each selected headset, wait for a confirmed ready report, then start every player on
             a shared future timestamp. Drift is monitored and corrected with controlled seeks.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`badge ${statusTone} h-7 px-3 uppercase`}>
+          <span className={`inline-flex h-[22px] items-center gap-[5px] whitespace-nowrap rounded-full border border-transparent px-[9px] text-[10.5px] font-semibold tracking-[0.005em] ${statusTone} h-7 px-3 uppercase`}>
             {group?.status === 'idle' || !group ? 'Idle' : group.status}
           </span>
           {group && group.status !== 'idle' && group.status !== 'stopped' && (
-            <button onClick={() => void handleStop()} disabled={busy} className="btn btn-danger btn-sm">
+            <button onClick={() => void handleStop()} disabled={busy} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-[#FF2525] text-white shadow-[0_4px_12px_rgba(255,37,37,0.14)] hover:brightness-105 h-8 gap-1.5 px-[13px] text-[11.5px]">
               <Square className="h-3 w-3" />
               Stop group
             </button>
@@ -235,30 +233,27 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
       </div>
 
       {error && (
-        <div className="alert alert-danger">
+        <div className="flex items-start gap-[11px] rounded-2xl border p-[13px] px-4 text-[12px] leading-[1.6] [&_svg]:mt-px [&_svg]:shrink-0 border-[#FF2525]/25 bg-[#FF2525]/10 text-[#B91C1C]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {notice && (
-        <div className="alert alert-success">
+        <div className="flex items-start gap-[11px] rounded-2xl border p-[13px] px-4 text-[12px] leading-[1.6] [&_svg]:mt-px [&_svg]:shrink-0 border-[#20D9A5]/25 bg-[#20D9A5]/10 text-[#08785D]">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
-        <section className="panel panel-pad space-y-4 xl:col-span-2">
+        <section className="relative rounded-[24px] border border-transparent bg-white/50 shadow-[0_14px_40px_rgba(0,0,0,0.07)] backdrop-blur-[32px] p-4 px-[18px] space-y-3 xl:col-span-2">
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
-              <span className="grid h-7 w-7 place-items-center rounded-lg tint-mint">
-                <Glasses className="h-3.5 w-3.5" />
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#20D9A5]/15 text-[#08785D]">
+                <img src="/meta.png" alt="" className="h-6 w-6 object-contain" />
               </span>
               Headsets
             </h3>
-            <span className="font-mono text-[10px] text-[#8A8A8A]">
-              {selectedDevices.length}/{devices.length} selected
-            </span>
           </div>
 
           <div className="flex items-center justify-between text-[11px]">
@@ -267,7 +262,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="font-semibold text-[#ED7109] transition hover:text-[#B91C1C]"
+                className="font-semibold text-[#004CE4] transition hover:text-[#B91C1C]"
               >
                 Select online
               </button>
@@ -293,10 +288,10 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 return (
                   <div
                     key={device.id}
-                    className={`rounded-xl border px-3 py-2.5 transition ${
+                    className={`rounded-xl border px-3 py-2 transition ${
                       device.online
                         ? checked
-                          ? 'border-[#ED7109]/30 bg-[#FFF4EC]'
+                          ? 'border-[#004CE4]/30 bg-[#EAF0FF]'
                           : 'border-[#E1E1E1] bg-[#F5F5F5] hover:border-[#E1E1E1]'
                         : 'border-[#E1E1E1] bg-[#F5F5F5] opacity-60'
                     }`}
@@ -304,10 +299,10 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                     <label className="flex cursor-pointer items-start gap-2.5">
                       <input
                         type="checkbox"
+                        className="mt-0.5 h-[15px] w-[15px] cursor-pointer rounded-[5px] accent-[#004CE4]"
                         checked={checked}
                         disabled={!device.online}
                         onChange={() => toggleDevice(device.id)}
-                        className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
@@ -316,7 +311,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                           </span>
                           {device.online ? (
                             <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wide text-[#08785D]">
-                              <span className="status-dot is-live !h-1.5 !w-1.5" />
+                              <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#8A8A8A] bg-[#20D9A5] shadow-[0_0_0_3px_rgba(32,217,165,0.16)] animate-pulse !h-1.5 !w-1.5" />
                               Online
                             </span>
                           ) : (
@@ -326,14 +321,17 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                           )}
                         </div>
                         <div className="mt-0.5 truncate text-[10.5px] text-[#8A8A8A]">
-                          {device.model} · {device.ipAddress || 'No LAN IP'}
+                          {!device.model.toLowerCase().includes('meta quest browser') && (
+                            <>{device.model} · </>
+                          )}
+                          {device.ipAddress || 'No LAN IP'}
                         </div>
 
                         {mode === 'mixed' && checked && device.online && (
                           <select
                             value={perDeviceVideo[device.id] || sharedVideoId}
                             onChange={(event) => setDeviceVideo(device.id, event.target.value)}
-                            className="select select-sm mt-2"
+                            className="min-h-[42px] w-full appearance-none rounded-[14px] border border-transparent bg-white/60 bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%2712%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%238A8A8A%27%20stroke-width=%272.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E)] bg-[position:right_13px_center] bg-no-repeat px-[14px] pr-[34px] text-[12.5px] text-[#0F172A] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none backdrop-blur-[16px] transition focus:border-[#004CE4] focus:ring-[3px] focus:ring-[#004CE4]/20 hover:border-[#004CE4]/45 min-h-[34px] rounded-[10px] py-0 pl-[11px] pr-8 text-[11.5px] mt-2"
                           >
                             <option value="">Choose video…</option>
                             {videos.map((video) => (
@@ -353,19 +351,19 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
 
           <div className="space-y-3 border-t border-[#E1E1E1] pt-4">
             <div>
-              <div className="field-label">Content mode</div>
-              <div className="pill-group w-full">
+              <div className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]">Content mode</div>
+              <div className="inline-flex items-center gap-0.5 rounded-[22px] border border-transparent bg-white/50 p-[3px] shadow-[0_10px_30px_rgba(0,0,0,0.06)] backdrop-blur-[28px] w-full">
                 <button
                   type="button"
                   onClick={() => setMode('same')}
-                  className={`pill flex-1 justify-center ${mode === 'same' ? 'is-active' : ''}`}
+                  className={`inline-flex h-[30px] items-center gap-[5px] whitespace-nowrap rounded-full px-[13px] text-[11.5px] font-semibold text-[#475569] transition-all hover:bg-white/45 hover:text-[#0F172A] flex-1 justify-center ${mode === 'same' ? 'border-transparent bg-white/90 text-[#004CE4] shadow-[0_4px_16px_rgba(0,0,0,0.08)]' : ''}`}
                 >
                   Same video
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('mixed')}
-                  className={`pill flex-1 justify-center ${mode === 'mixed' ? 'is-active' : ''}`}
+                  className={`inline-flex h-[30px] items-center gap-[5px] whitespace-nowrap rounded-full px-[13px] text-[11.5px] font-semibold text-[#475569] transition-all hover:bg-white/45 hover:text-[#0F172A] flex-1 justify-center ${mode === 'mixed' ? 'border-transparent bg-white/90 text-[#004CE4] shadow-[0_4px_16px_rgba(0,0,0,0.08)]' : ''}`}
                 >
                   Per headset
                 </button>
@@ -374,11 +372,11 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
 
             {mode === 'same' && (
               <div>
-                <label className="field-label">Video for the group</label>
+                <label className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]">Video for the group</label>
                 <select
                   value={sharedVideoId}
                   onChange={(event) => setSharedVideoId(event.target.value)}
-                  className="select"
+                  className="min-h-[42px] w-full appearance-none rounded-[14px] border border-transparent bg-white/60 bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%2712%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%238A8A8A%27%20stroke-width=%272.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E)] bg-[position:right_13px_center] bg-no-repeat px-[14px] pr-[34px] text-[12.5px] text-[#0F172A] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none backdrop-blur-[16px] transition focus:border-[#004CE4] focus:ring-[3px] focus:ring-[#004CE4]/20 hover:border-[#004CE4]/45"
                 >
                   <option value="">Choose video…</option>
                   {videos.map((video) => (
@@ -392,11 +390,11 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
             )}
 
             <div>
-              <label className="field-label">Start lead time</label>
+              <label className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]">Start lead time</label>
               <select
                 value={leadMs}
                 onChange={(event) => setLeadMs(Number(event.target.value))}
-                className="select"
+                className="min-h-[42px] w-full appearance-none rounded-[14px] border border-transparent bg-white/60 bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%2712%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%238A8A8A%27%20stroke-width=%272.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E)] bg-[position:right_13px_center] bg-no-repeat px-[14px] pr-[34px] text-[12.5px] text-[#0F172A] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none backdrop-blur-[16px] transition focus:border-[#004CE4] focus:ring-[3px] focus:ring-[#004CE4]/20 hover:border-[#004CE4]/45"
               >
                 <option value={3000}>3 seconds</option>
                 <option value={4000}>4 seconds</option>
@@ -404,7 +402,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                 <option value={8000}>8 seconds</option>
                 <option value={10000}>10 seconds</option>
               </select>
-              <p className="field-hint">
+              <p className="mt-1.5 block text-[10.5px] leading-[1.55] text-[#64748B]">
                 Longer lead time gives every headset time to finish buffering before the shared start
                 timestamp.
               </p>
@@ -414,7 +412,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               type="button"
               onClick={() => void handleStart()}
               disabled={busy || videos.length === 0}
-              className="btn btn-primary w-full"
+              className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] w-full"
             >
               {busy ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -424,19 +422,16 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               <span>{busy ? 'Working…' : 'Load and schedule group start'}</span>
             </button>
             {videos.length === 0 && (
-              <p className="text-[10.5px] text-[#8A4B00]">
+              <p className="text-[10.5px] text-[#003BB5]">
                 Upload a video to the library before starting group playback.
               </p>
             )}
           </div>
         </section>
 
-        <section className="panel panel-pad space-y-4 xl:col-span-3">
+        <section className="relative rounded-[24px] border border-transparent bg-white/50 shadow-[0_14px_40px_rgba(0,0,0,0.07)] backdrop-blur-[32px] p-4 px-[18px] space-y-3 xl:col-span-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#111111]">
-              <span className="grid h-7 w-7 place-items-center tint-lilac">
-                <Gauge className="h-3.5 w-3.5" />
-              </span>
               Run feedback
             </h3>
             {group?.scheduledStartAt && (
@@ -451,11 +446,11 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
 
           {!group || group.status === 'idle' ? (
             <div className="rounded-2xl border border-dashed border-[#E1E1E1] bg-[#F5F5F5] px-6 py-12 text-center">
-              <div className="empty-icon">
+              <div className="mx-auto mb-4 grid h-[54px] w-[54px] place-items-center rounded-[17px] border border-[#004CE4]/20 bg-[#004CE4]/20 text-[#004CE4]">
                 <Users className="h-6 w-6" />
               </div>
-              <h4 className="empty-title">No group run yet</h4>
-              <p className="empty-desc">
+              <h4 className="font-display text-[15px] font-bold tracking-[-0.02em]">No group run yet</h4>
+              <p className="mx-auto mt-1.5 max-w-[380px] text-[12px] leading-[1.6] text-[#64748B]">
                 Select headsets, choose a video, and start a scheduled group run. Independent
                 per-headset controls remain available on the Headsets page at all times.
               </p>
@@ -463,26 +458,26 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <div className="panel-inset px-3 py-2.5">
+                <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3 py-2.5">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-[#8A8A8A]">Mode</div>
                   <div className="mt-1 text-[12px] font-semibold capitalize text-[#111111]">
                     {group.mode === 'same' ? 'Same video' : 'Per headset'}
                   </div>
                 </div>
-                <div className="panel-inset px-3 py-2.5">
+                <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3 py-2.5">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-[#8A8A8A]">Position</div>
                   <div className="mt-1 font-mono text-[12px] font-semibold text-[#111111]">
                     {formatTime(group.positionSeconds)}
                   </div>
                 </div>
-                <div className="panel-inset px-3 py-2.5">
+                <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3 py-2.5">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-[#8A8A8A]">Headsets</div>
                   <div className="mt-1 text-[12px] font-semibold text-[#111111]">
                     {group.devices.filter((device) => device.phase !== 'offline').length}/
                     {group.devices.length}
                   </div>
                 </div>
-                <div className="panel-inset px-3 py-2.5">
+                <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3 py-2.5">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-[#8A8A8A]">Lead time</div>
                   <div className="mt-1 text-[12px] font-semibold text-[#111111]">
                     {(group.leadMs / 1000).toFixed(1)}s
@@ -491,14 +486,14 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               </div>
 
               {group.message && (
-                <div className="panel-inset px-3.5 py-2.5 text-[11.5px] text-[#555555]">
+                <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3.5 py-2.5 text-[11.5px] text-[#555555]">
                   {group.message}
                 </div>
               )}
 
-              <div className="table-wrap">
+              <div className="overflow-hidden rounded-[26px] border border-transparent bg-white/50 shadow-[0_14px_40px_rgba(0,0,0,0.07)] backdrop-blur-[32px]">
                 <div className="overflow-x-auto">
-                  <table className="data-table">
+                  <table className="w-full border-collapse text-left text-[12px] [&_thead_th]:whitespace-nowrap [&_thead_th]:border-b [&_thead_th]:border-white/50 [&_thead_th]:bg-white/35 [&_thead_th]:px-[18px] [&_thead_th]:py-3 [&_thead_th]:text-[9.5px] [&_thead_th]:font-bold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.14em] [&_thead_th]:text-[#475569] [&_tbody_td]:border-b [&_tbody_td]:border-white/40 [&_tbody_td]:px-[18px] [&_tbody_td]:py-[14px] [&_tbody_td]:align-middle [&_tbody_td]:text-[#334155] [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-[#004CE4]/20 [&_tbody_tr:last-child_td]:border-b-0">
                     <thead>
                       <tr>
                         <th>Headset</th>
@@ -526,7 +521,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
                               '—'}
                           </td>
                           <td>
-                            <span className={`badge ${phaseTone(device.phase)}`}>
+                            <span className={`inline-flex h-[22px] items-center gap-[5px] whitespace-nowrap rounded-full border border-transparent px-[9px] text-[10.5px] font-semibold tracking-[0.005em] ${phaseTone(device.phase)}`}>
                               {PHASE_LABELS[device.phase]}
                             </span>
                           </td>
@@ -543,7 +538,7 @@ export const GroupPlaybackView: React.FC<GroupPlaybackViewProps> = ({ initialVid
               </div>
 
               <div className="flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3.5 py-2.5 text-[10.5px] leading-relaxed text-[#8A8A8A]">
-                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#ED7109]" />
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-[#004CE4]" />
                 <span>
                   Drift is measured from confirmed player reports, so values update at the heartbeat
                   interval. Sync is coordinated over the local network and is not frame-perfect; use

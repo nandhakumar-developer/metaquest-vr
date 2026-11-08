@@ -175,6 +175,8 @@ export const requestPreviewPayloadSchema = z
 export const stopPreviewPayloadSchema = emptyPayload;
 export const reloadPlayerPayloadSchema = emptyPayload;
 export const enterImmersivePayloadSchema = emptyPayload;
+export const exitImmersivePayloadSchema = emptyPayload;
+export const exitFullscreenPayloadSchema = emptyPayload;
 export const pingPayloadSchema = emptyPayload;
 
 /* -------------------------------------------------------------------------- */
@@ -363,6 +365,8 @@ export const adminCommandSchema = z.discriminatedUnion("type", [
   message("STOP_PREVIEW", stopPreviewPayloadSchema),
   message("RELOAD_PLAYER", reloadPlayerPayloadSchema),
   message("ENTER_IMMERSIVE", enterImmersivePayloadSchema),
+  message("EXIT_IMMERSIVE", exitImmersivePayloadSchema),
+  message("EXIT_FULLSCREEN", exitFullscreenPayloadSchema),
   message("PING", pingPayloadSchema),
 ]);
 
@@ -442,6 +446,8 @@ export const deviceCommandMessageSchema = z.discriminatedUnion("type", [
   message("STOP_PREVIEW", stopPreviewPayloadSchema),
   message("RELOAD_PLAYER", reloadPlayerPayloadSchema),
   message("ENTER_IMMERSIVE", enterImmersivePayloadSchema),
+  message("EXIT_IMMERSIVE", exitImmersivePayloadSchema),
+  message("EXIT_FULLSCREEN", exitFullscreenPayloadSchema),
   message("PING", pingPayloadSchema),
   message("PONG", questPongPayloadSchema),
   message("STATUS_REQUEST", emptyPayload),

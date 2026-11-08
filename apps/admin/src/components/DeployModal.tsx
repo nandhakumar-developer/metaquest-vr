@@ -121,32 +121,32 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal max-w-lg">
-        <div className="modal-head">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/25 p-5 backdrop-blur-2xl">
+      <div className="flex max-h-[calc(100svh-40px)] w-full flex-col overflow-hidden rounded-[28px] border border-transparent bg-white/75 shadow-[0_32px_84px_rgba(0,0,0,0.16)] backdrop-blur-[40px] max-w-lg">
+        <div className="flex items-start justify-between gap-4 border-b border-white/60 px-[22px] py-5">
           <div className="flex items-center gap-3">
-            <div className="modal-icon tint-lilac">
+            <div className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[13px] bg-[#004CE4]/20 text-[#004CE4]">
               <DownloadCloud className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="modal-title">Send video to headsets</h3>
-              <p className="modal-sub max-w-[320px] truncate">“{video.name}”</p>
+              <h3 className="font-display text-[15.5px] font-bold tracking-[-0.025em]">Send video to headsets</h3>
+              <p className="mt-[3px] text-[11.5px] text-[#64748B] max-w-[320px] truncate">“{video.name}”</p>
             </div>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-icon-sm" aria-label="Close">
+          <button onClick={onClose} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="modal-body space-y-4">
+        <div className="overflow-y-auto p-[22px] space-y-4">
           {error && (
-            <div className="alert alert-danger">
+            <div className="flex items-start gap-[11px] rounded-2xl border p-[13px] px-4 text-[12px] leading-[1.6] [&_svg]:mt-px [&_svg]:shrink-0 border-[#FF2525]/25 bg-[#FF2525]/10 text-[#B91C1C]">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="alert alert-info text-[11px]">
+          <div className="flex items-start gap-[11px] rounded-2xl border p-[13px] px-4 text-[12px] leading-[1.6] [&_svg]:mt-px [&_svg]:shrink-0 border-[#004CE4]/25 bg-[#004CE4]/20 text-[#004CE4] text-[11px]">
             <DownloadCloud className="h-4 w-4 shrink-0" />
             <span>
               <strong className="font-semibold">Download to Quest storage:</strong> the selected player
@@ -177,7 +177,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                               ? 'Download cancelled'
                               : 'Starting download';
                 return (
-                  <div key={deployment.id} className="panel-inset px-3.5 py-3">
+                  <div key={deployment.id} className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] px-3.5 py-3">
                     <div className="flex items-center justify-between gap-3 text-[11.5px]">
                       <span className="font-semibold text-[#111111]">{deployment.deviceName}</span>
                       <span
@@ -195,13 +195,13 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                         {statusLabel}
                       </span>
                     </div>
-                    <div className="progress mt-2">
+                    <div className="h-[5px] overflow-hidden rounded-full bg-[#F1F1F1] mt-2">
                       <div
-                        className={`progress-fill ${
+                        className={`h-full rounded-full bg-gradient-to-r from-[#4E7EFF] to-[#004CE4] transition-[width] duration-300 ${
                           deployment.status === 'ready'
-                            ? 'is-success'
+                            ? 'from-[#20D9A5] to-[#20D9A5]'
                             : deployment.status === 'failed'
-                              ? 'is-danger'
+                              ? 'from-[#FF2525] to-[#FF2525]'
                               : ''
                         } ${transferActive ? 'animate-pulse' : ''}`}
                         style={{
@@ -218,12 +218,12 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
           )}
 
           <div hidden={submittedDeploymentIds.length > 0} className="flex items-center justify-between">
-            <span className="field-label !mb-0">Choose target headsets</span>
+            <span className="mb-[7px] block text-[11.5px] font-semibold text-[#334155] !mb-0">Choose target headsets</span>
             <div className="flex items-center gap-2 text-[10.5px]">
               <button
                 type="button"
                 onClick={selectAllOnline}
-                className="font-semibold text-[#ED7109] hover:text-[#B91C1C]"
+                className="font-semibold text-[#004CE4] hover:text-[#B91C1C]"
               >
                 Online ({onlineDevices.length})
               </button>
@@ -239,7 +239,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
           </div>
 
           {selectableDevices.length === 0 && submittedDeploymentIds.length === 0 && (
-            <div className="alert alert-warning text-[11px]">
+            <div className="flex items-start gap-[11px] rounded-2xl border p-[13px] px-4 text-[12px] leading-[1.6] [&_svg]:mt-px [&_svg]:shrink-0 border-[#004CE4]/25 bg-[#004CE4]/10 text-[#003BB5] text-[11px]">
               No headsets are selectable right now. Open the player page on a browser headset so it
               comes online, then try again.
             </div>
@@ -262,13 +262,14 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                     !selectable
                       ? 'cursor-not-allowed border-[#E1E1E1] bg-[#F5F5F5] text-[#8A8A8A]'
                       : checked
-                        ? 'cursor-pointer border-[#ED7109]/30 bg-[#FFF4EC]'
+                        ? 'cursor-pointer border-[#004CE4]/30 bg-[#EAF0FF]'
                         : 'cursor-pointer border-[#E1E1E1] bg-[#F5F5F5] hover:border-[#E1E1E1]'
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <input
                       type="checkbox"
+                      className="h-[15px] w-[15px] cursor-pointer rounded-[5px] accent-[#004CE4]"
                       checked={checked}
                       disabled={!selectable}
                       onChange={() => {}}
@@ -278,8 +279,12 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                         {device.name}
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#8A8A8A]">
-                        <span>{device.model}</span>
-                        <span className="text-[#E1E1E1]">·</span>
+                        {!device.model.toLowerCase().includes('meta quest browser') && (
+                          <>
+                            <span>{device.model}</span>
+                            <span className="text-[#E1E1E1]">·</span>
+                          </>
+                        )}
                         <span className={device.online ? 'text-[#08785D]' : 'text-[#8A8A8A]'}>
                           {device.online ? 'Online' : 'Offline'}
                         </span>
@@ -294,7 +299,7 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
                       </div>
                     </div>
                   </div>
-                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#ED7109]" />}
+                  {checked && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#004CE4]" />}
                 </div>
               );
             })}
@@ -308,20 +313,20 @@ export const DeployModal: React.FC<DeployModalProps> = ({ video, isOpen, onClose
           </p>
         </div>
 
-        <div className="modal-foot">
+        <div className="flex items-center justify-between gap-[14px] border-t border-white/60 bg-white/40 px-[22px] py-4">
           <span className="flex items-center gap-1.5 text-[10px] text-[#8A8A8A]">
             <Clock className="h-3 w-3" />
             Keep the headset player open until its download finishes.
           </span>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+            <button type="button" onClick={onClose} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-8 gap-1.5 px-[13px] text-[11.5px]">
               {submittedDeploymentIds.length > 0 ? 'Close' : 'Cancel'}
             </button>
             <button
               type="button"
               onClick={handleDeploy}
               disabled={loading || selectedDevices.length === 0 || submittedDeploymentIds.length > 0}
-              className="btn btn-primary btn-sm"
+              className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] h-8 gap-1.5 px-[13px] text-[11.5px]"
             >
               {loading ? (
                 'Sending…'

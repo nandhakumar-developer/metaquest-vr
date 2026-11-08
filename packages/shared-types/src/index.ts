@@ -36,6 +36,8 @@ export const COMMAND_TYPES = [
   'STOP_PREVIEW',
   'RELOAD_PLAYER',
   'ENTER_IMMERSIVE',
+  'EXIT_IMMERSIVE',
+  'EXIT_FULLSCREEN',
   'PING',
 ] as const;
 export type CommandType = (typeof COMMAND_TYPES)[number];

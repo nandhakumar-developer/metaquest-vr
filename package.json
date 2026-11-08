@@ -28,6 +28,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "tls:setup": "node scripts/development/setup-tls.mjs",
     "admin:create": "npm run admin:create -w @vrcc/gateway --",
     "quest:simulate": "npm run simulate -w @vrcc/gateway --",
     "clean": "node scripts/development/clean.mjs"
@@ -38,6 +39,7 @@
     "concurrently": "10.0.6",
     "eslint": "10.13.0",
     "prettier": "3.9.10",
+    "selfsigned": "^5.5.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1",
     "vitest": "5.0.5"

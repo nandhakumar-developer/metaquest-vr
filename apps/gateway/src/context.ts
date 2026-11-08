@@ -61,10 +61,14 @@ export async function createContext(
   ensureDirectories(config);
   const store = new Store(config.dataDir);
   const urls = resolveGatewayUrls(config);
-  const secure = Boolean(config.tlsCertPath && config.tlsKeyPath);
+  const secureTransport = Boolean(config.tlsCertPath && config.tlsKeyPath);
+  // The Vite dev server proxies the admin app over http://localhost:3000. A
+  // Secure cookie would be dropped by that http origin even though the proxy
+  // talks to the HTTPS gateway, so only mark cookies Secure outside dev.
+  const secureCookies = secureTransport && config.env !== 'development';
 
   const bootstrap = new BootstrapService(store.admins, config.dataDir);
-  const auth = new AdminAuthService(store.admins, store.ops, bootstrap, config, secure);
+  const auth = new AdminAuthService(store.admins, store.ops, bootstrap, config, secureCookies);
   const registry = new DeviceRegistry();
   const hub = new AdminHub();
   const cloud = new CloudSyncService(hub);

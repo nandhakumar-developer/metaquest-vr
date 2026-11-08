@@ -1,10 +1,12 @@
-import { createReadStream, promises as fs } from 'node:fs';
+import { createReadStream, existsSync, promises as fs } from 'node:fs';
+import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { toDataURL } from 'qrcode';
 import { z } from 'zod';
 import { uuidSchema } from '@vrcc/protocol';
 import type { GatewayContext } from '../context.js';
-import { notFound } from '../utils/errors.js';import { contentTypeForFilename, parseRangeHeader } from '../utils/httpRange.js';
+import { notFound } from '../utils/errors.js';
+import { contentTypeForFilename, parseRangeHeader } from '../utils/httpRange.js';
 import { clientIp, parseBody, playerUrlForRequest, requireSession } from './helpers.js';
 
 const secretSchema = z.string().regex(/^[0-9a-f]{64}$/i, 'A 64-character hex secret is required');
@@ -31,6 +33,17 @@ export async function registerPlayerRoutes(
     serverTime: new Date().toISOString(),
     secureContextRequiredForWebXr: true,
   }));
+
+  // Public so a headset can install the local root before the browser trusts
+  // the HTTPS player. The CA private key is never exposed.
+  app.get('/api/player/ca-cert', async (_request, reply) => {
+    if (!ctx.config.tlsCertPath) throw notFound('HTTPS is not enabled on this gateway.');
+    const caPath = path.join(path.dirname(ctx.config.tlsCertPath), 'local-ca.crt');
+    if (!existsSync(caPath)) throw notFound('The local CA certificate is not available.');
+    reply.header('Content-Type', 'application/x-x509-ca-cert');
+    reply.header('Content-Disposition', 'attachment; filename="vrcc-local-ca.crt"');
+    return reply.send(createReadStream(caPath));
+  });
 
   app.post(
     '/api/player/pair/start',

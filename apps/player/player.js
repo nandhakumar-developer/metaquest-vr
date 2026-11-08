@@ -56,15 +56,8 @@ const el = {
   emptyOpenLibrary: $('#empty-open-library'),
   loadingOverlay: $('#loading-overlay'),
   loadingMessage: $('#loading-message'),
-  errorOverlay: $('#error-overlay'),
-  errorMessage: $('#error-message'),
-  dismissError: $('#dismiss-error'),
   tapBanner: $('#tap-banner'),
   enableAudio: $('#enable-audio'),
-  titleOverlay: $('#title-overlay'),
-  nowPlayingTitle: $('#now-playing-title'),
-  nowPlayingMeta: $('#now-playing-meta'),
-
   libraryPanel: $('#library-panel'),
   closeLibrary: $('#close-library'),
   libraryList: $('#library-list'),
@@ -78,15 +71,14 @@ const el = {
   timeCurrent: $('#time-current'),
   timeTotal: $('#time-total'),
   btnPlay: $('#btn-play'),
-  btnPause: $('#btn-pause'),
-  btnStop: $('#btn-stop'),
+  playToggleLabel: $('#play-toggle-label'),
+  btnReplay: $('#btn-replay'),
   btnBack: $('#btn-back'),
   btnForward: $('#btn-forward'),
   btnMute: $('#btn-mute'),
   volume: $('#volume'),
   btnFullscreen: $('#btn-fullscreen'),
   btnEnterVr: $('#btn-enter-vr'),
-  btnExitVr: $('#btn-exit-vr'),
   statusLine: $('#status-line'),
 };
 
@@ -866,43 +858,41 @@ function errorMessage(error) {
   return String(error);
 }
 
-function withTimeout(promise, ms, message) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(message)), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
 function waitForMedia(video, eventName, timeoutMs) {
-  return withTimeout(
-    new Promise((resolve, reject) => {
-      const onEvent = () => {
-        cleanup();
-        resolve();
-      };
-      const onError = () => {
-        cleanup();
-        reject(new Error(mediaErrorMessage(video)));
-      };
-      const cleanup = () => {
-        video.removeEventListener(eventName, onEvent);
-        video.removeEventListener('error', onError);
-      };
-      video.addEventListener(eventName, onEvent, { once: true });
-      video.addEventListener('error', onError, { once: true });
-    }),
-    timeoutMs,
-    'Timed out while loading the video. Check that the gateway is still running.',
-  );
+  const readyState =
+    eventName === 'loadedmetadata' ? 1 : eventName === 'loadeddata' ? 2 : 3;
+  return new Promise((resolve, reject) => {
+    let timer;
+    const cleanup = () => {
+      clearTimeout(timer);
+      video.removeEventListener(eventName, onEvent);
+      video.removeEventListener('error', onError);
+    };
+    const onEvent = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error(mediaErrorMessage(video)));
+    };
+
+    if (video.error) {
+      reject(new Error(mediaErrorMessage(video)));
+      return;
+    }
+    if (video.readyState >= readyState) {
+      resolve();
+      return;
+    }
+
+    video.addEventListener(eventName, onEvent);
+    video.addEventListener('error', onError);
+    timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Video loading timed out. Check the headset connection and gateway, then try again.'));
+    }, timeoutMs);
+  });
 }
 
 function mediaErrorMessage(video) {
@@ -919,6 +909,25 @@ function mediaErrorMessage(video) {
       return 'The browser does not support this video codec.';
     default:
       return 'The browser could not play this video.';
+  }
+}
+
+/**
+ * The gateway builds absolute stream URLs from PUBLIC_GATEWAY_URL. That URL can
+ * differ from the origin the headset is actually using (localhost, HTTPS, or a
+ * different LAN address), which makes the browser reject media as mixed
+ * content. Resolve player media against the current page origin instead.
+ */
+function playerMediaUrl(raw) {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw, window.location.href);
+    if (url.pathname.startsWith('/api/player/')) {
+      return `${url.pathname}${url.search}`;
+    }
+    return url.href;
+  } catch {
+    return raw;
   }
 }
 
@@ -1051,18 +1060,41 @@ function showPlayer() {
   el.pairingScreen.hidden = true;
   el.playerScreen.hidden = false;
   updatePlayerIdentity();
+  prewarmImmersive();
+}
+
+function prewarmImmersive() {
+  if (!state.current) return;
+  // Load Three.js and check XR support before the user presses Enter VR.
+  // Requesting an immersive session must happen inside the click gesture, so
+  // doing the network import here avoids losing that activation.
+  void ensureImmersive()
+    .then((immersive) => immersive.prepare?.())
+    .catch(() => {});
+}
+
+function securePlayerUrl() {
+  const host = location.hostname || 'localhost';
+  const port = location.port ? `:${location.port}` : '';
+  return `https://${host}${port}/player/`;
 }
 
 function updatePairingMeta() {
   el.gatewayAddress.textContent = `${location.host}`;
   el.playerVersion.textContent = `player ${PLAYER_VERSION}`;
   const secure = Boolean(window.isSecureContext);
-  el.secureBadge.textContent = secure ? 'WebXR ready' : 'HTTP · flat only';
+  el.secureBadge.textContent = secure ? 'WebXR ready' : '';
+  el.secureBadge.hidden = !secure;
   el.secureBadge.classList.toggle('badge--ok', secure);
   el.secureBadge.classList.toggle('badge--warn', !secure);
   el.secureBadge.title = secure
     ? 'This page is a secure context; immersive WebXR can be requested.'
     : 'WebXR requires HTTPS or localhost. Flat 2D playback still works over HTTP.';
+  if (el.btnEnterVr) {
+    el.btnEnterVr.title = secure
+      ? 'Enter immersive VR'
+      : `VR requires HTTPS. Open ${securePlayerUrl()} and accept the local certificate.`;
+  }
 }
 
 async function startPairing() {
@@ -1152,7 +1184,6 @@ async function pollPairing() {
         pairedAt: new Date().toISOString(),
       };
       saveCredentials(credentials);
-      showToast('Headset paired successfully.', 'success');
       showPlayer();
       await resumeWithCredentials(credentials);
       return;
@@ -1271,14 +1302,12 @@ async function loadSession(credentials) {
     if (!refreshed) {
       if (state.downloads[state.current.id]?.status === 'downloaded') {
         state.current = downloadRecordToMedia(state.downloads[state.current.id]);
-        updateNowPlaying();
       } else {
         resetPlaybackUi();
         showToast('The video that was playing was removed from the library.', 'warn');
       }
     } else {
       state.current = refreshed;
-      updateNowPlaying();
       if (state.immersive) state.immersive.setMedia(refreshed);
     }
   }
@@ -1605,6 +1634,24 @@ async function handleGatewayMessage(message) {
       }
       break;
     }
+    case 'EXIT_IMMERSIVE': {
+      try {
+        await exitImmersive();
+        ack(message.messageId, true);
+      } catch (error) {
+        ack(message.messageId, false, errorMessage(error));
+      }
+      break;
+    }
+    case 'EXIT_FULLSCREEN': {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        ack(message.messageId, true);
+      } catch (error) {
+        ack(message.messageId, false, errorMessage(error));
+      }
+      break;
+    }
     case 'LIBRARY_UPDATED': {
       void refreshSession(false);
       break;
@@ -1799,7 +1846,6 @@ function setPlaybackState(next, options = {}) {
 function playbackError(message) {
   state.playbackError = message || 'Playback error';
   setPlaybackState('error');
-  showVideoError(state.playbackError);
   sendPlaybackEvent('error');
 }
 
@@ -1831,9 +1877,7 @@ async function loadVideo(videoId) {
       el.video.pause();
       state.intent = 'idle';
       showVideoSurface();
-      updateNowPlaying();
       hideLoading();
-      hideVideoError();
       // Emit a confirmed ready event even when the file is already buffered so a
       // scheduled group LOAD_VIDEO command can complete without waiting for the
       // 15-second ready timeout.
@@ -1846,7 +1890,6 @@ async function loadVideo(videoId) {
   state.current = video;
   state.playbackError = null;
   showVideoSurface();
-  updateNowPlaying();
   updateLibrarySelection();
   showLoading('Preparing video…');
   setPlaybackState('loading', { force: true, clearError: true });
@@ -1857,7 +1900,7 @@ async function loadVideo(videoId) {
     el.video.volume = clamp(state.volume, 0, 1);
     localUrl = localUrl || (await getLocalVideoUrl(video.id));
     if (!state.current || state.current.id !== video.id) return;
-    const sourceUrl = localUrl || (localCopyExpected ? null : video.streamUrl);
+    const sourceUrl = localUrl || (localCopyExpected ? null : playerMediaUrl(video.streamUrl));
     if (!sourceUrl) {
       throw new Error(
         localCopyExpected
@@ -1865,17 +1908,31 @@ async function loadVideo(videoId) {
           : 'This video is not downloaded and the headset is offline.',
       );
     }
+    // Drop the previous source before attaching the next one. A media element
+    // keeps its last MediaError until load() is called again, so a failed
+    // codec/network load would otherwise make every later video fail too.
+    el.video.removeAttribute('src');
+    el.video.load();
+    const metadataReady = waitForMedia(el.video, 'loadedmetadata', 25000);
+    const firstFrameReady = waitForMedia(el.video, 'loadeddata', 25000);
     el.video.src = sourceUrl;
     el.video.load();
-    await waitForMedia(el.video, 'loadedmetadata', 25000);
+    await metadataReady;
     if (!state.current || state.current.id !== video.id) return;
     el.video.currentTime = 0;
+    // WebXR needs a decoded frame to use as a texture. Wait for loadeddata so
+    // pressing Enter VR immediately after loading a video still works. Keep a
+    // timeout non-fatal so slow decoders do not block flat playback.
+    await firstFrameReady.catch((error) => {
+      if (el.video.error) throw error;
+    });
+    if (!state.current || state.current.id !== video.id) return;
     hideLoading();
-    hideVideoError();
     setPlaybackState('ready', { force: true, clearError: true });
     if (state.immersive) state.immersive.setMedia(video);
     updateTransportUi();
-    updateNowPlaying();
+    prewarmImmersive();
+    void applyProjectionMode(video);
     showToast(
       `Loaded ${video.name}${localUrl ? ' (offline copy)' : ''}`,
       'success',
@@ -1888,6 +1945,39 @@ async function loadVideo(videoId) {
     throw error;
   } finally {
     state.intent = 'idle';
+  }
+}
+
+/**
+ * 180/360 videos are more than a wider picture: the equirectangular frame has
+ * to be projected onto a sphere. Render that projection in the normal player
+ * (drag to look around) so spherical playback works even before entering VR.
+ */
+async function applyProjectionMode(video) {
+  console.info('[projection] start', video.id, video.projectionType, video.stereoLayout);
+  if (!state.current || state.current.id !== video.id) return;
+  if (video.projectionType === 'flat') {
+    state.immersive?.stopPreview();
+    return;
+  }
+  try {
+    const immersive = await ensureImmersive();
+    if (!state.current || state.current.id !== video.id) return;
+    const shown = await immersive.showPreview(video);
+    if (shown && !state.isImmersive) {
+      showToast(
+        `Drag to look around this ${video.projectionType}° video. Enter VR for head-tracked playback.`,
+        'success',
+        4200,
+      );
+    }
+  } catch (error) {
+    // Keep the plain video visible if WebGL or Three.js is unavailable.
+    showToast(
+      `Could not start ${video.projectionType}° preview: ${errorMessage(error)}`,
+      'error',
+      6000,
+    );
   }
 }
 
@@ -1914,7 +2004,9 @@ async function playVideo(positionSeconds, scheduledAt) {
     state.scheduleTimer = setTimeout(() => {
       const lateSeconds = Math.max(0, (serverNow() - startAt) / 1000);
       void startPlayback(basePosition + lateSeconds).catch((error) => {
-        playbackError(errorMessage(error));
+        const message = errorMessage(error);
+        playbackError(message);
+        showToast(message, 'error', 7000);
       });
     }, Math.max(0, delay));
     return { scheduled: true };
@@ -1961,7 +2053,6 @@ async function startPlayback(positionSeconds) {
     if (!state.scheduledStartAt || serverNow() >= state.scheduledStartAt) {
       state.scheduledStartAt = null;
     }
-    hideVideoError();
     setPlaybackState('playing');
     updatePlaybackButtons();
     updateTransportUi();
@@ -2080,9 +2171,7 @@ async function ensureImmersive() {
     },
     onSessionChange: (active, hasDomOverlay = false) => {
       state.isImmersive = active;
-      el.btnEnterVr.hidden = active;
-      el.btnExitVr.hidden = !active;
-      el.titleOverlay.hidden = active || !state.current;
+      updateImmersiveButton();
       showControls();
       if (active) {
         showToast(
@@ -2155,10 +2244,11 @@ function stopPreview() {
 }
 
 async function captureFrame() {
-  const source = state.isImmersive ? el.xrCanvas : el.video;
-  const width = state.isImmersive ? el.xrCanvas.width : el.video.videoWidth;
-  const height = state.isImmersive ? el.xrCanvas.height : el.video.videoHeight;
-  if (!width || !height || (!state.isImmersive && el.video.readyState < 2)) return null;
+  const useCanvas = state.isImmersive || Boolean(state.immersive?.isPreviewActive?.());
+  const source = useCanvas ? el.xrCanvas : el.video;
+  const width = useCanvas ? el.xrCanvas.width : el.video.videoWidth;
+  const height = useCanvas ? el.xrCanvas.height : el.video.videoHeight;
+  if (!width || !height || (!useCanvas && el.video.readyState < 2)) return null;
   const canvas = state.previewCanvas || document.createElement('canvas');
   state.previewCanvas = canvas;
   const scale = Math.min(1, 540 / width);
@@ -2253,7 +2343,7 @@ function renderLibrary() {
     thumb.className = 'library-thumb';
     if (video.thumbnailUrl) {
       const image = document.createElement('img');
-      image.src = video.thumbnailUrl;
+      image.src = playerMediaUrl(video.thumbnailUrl);
       image.alt = '';
       image.loading = 'lazy';
       image.addEventListener('error', () => image.remove(), { once: true });
@@ -2332,18 +2422,6 @@ function updateLibrarySelection() {
   }
 }
 
-function updateNowPlaying() {
-  if (!state.current) {
-    el.titleOverlay.hidden = true;
-    return;
-  }
-  el.titleOverlay.hidden = state.isImmersive;
-  el.nowPlayingTitle.textContent = state.current.name;
-  const projection = state.current.projectionType === 'flat' ? 'Flat 2D' : `${state.current.projectionType}° immersive`;
-  const stereo = state.current.stereoLayout === 'mono' ? 'mono' : state.current.stereoLayout.toUpperCase();
-  el.nowPlayingMeta.textContent = `${projection} · ${stereo} · ${formatTime(state.current.durationSeconds)}`;
-}
-
 function showVideoSurface() {
   el.stage.classList.add('video-active');
   el.stageEmpty.hidden = true;
@@ -2352,6 +2430,7 @@ function showVideoSurface() {
 function resetPlaybackUi() {
   clearSchedule();
   stopPreview();
+  state.immersive?.stopPreview();
   state.current = null;
   state.playbackState = 'idle';
   state.playbackError = null;
@@ -2364,12 +2443,9 @@ function resetPlaybackUi() {
   el.xrCanvas.hidden = true;
   el.stage.classList.remove('video-active');
   el.stageEmpty.hidden = false;
-  el.titleOverlay.hidden = true;
   el.tapBanner.hidden = true;
-  el.btnEnterVr.hidden = false;
-  el.btnExitVr.hidden = true;
+  updateImmersiveButton();
   hideLoading();
-  hideVideoError();
   updateLibrarySelection();
   updateTransportUi();
   updatePlaybackButtons();
@@ -2383,21 +2459,43 @@ function updateTransportUi() {
   el.timeCurrent.textContent = formatTime(el.video.currentTime);
   el.timeTotal.textContent = formatTime(duration);
   const active = Boolean(state.current);
-  el.btnPlay.disabled = !active || state.playbackState === 'playing' || state.playbackState === 'buffering';
-  el.btnPause.disabled = !active || !['playing', 'buffering', 'ready'].includes(state.playbackState);
-  el.btnStop.disabled = !active;
+  el.btnPlay.disabled = !active;
+  el.btnReplay.disabled = !active;
   el.btnBack.disabled = !active;
   el.btnForward.disabled = !active;
+  el.btnEnterVr.disabled = !active && !state.isImmersive;
   el.seek.disabled = !active;
   updatePlaybackButtons();
   updateStatusLine();
 }
 
+function updateImmersiveButton() {
+  const label = state.isImmersive ? 'Exit VR' : 'Enter VR';
+  el.btnEnterVr.textContent = label;
+  el.btnEnterVr.title = state.isImmersive ? 'Exit immersive VR' : 'Enter immersive VR';
+  el.btnEnterVr.setAttribute('aria-label', label);
+  el.btnEnterVr.setAttribute('aria-pressed', String(state.isImmersive));
+  el.btnEnterVr.classList.toggle('is-active', state.isImmersive);
+}
+
+function updateFullscreenButton() {
+  const active = Boolean(document.fullscreenElement);
+  const label = active ? 'Exit fullscreen' : 'Fullscreen';
+  el.btnFullscreen.textContent = label;
+  el.btnFullscreen.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
+  el.btnFullscreen.setAttribute('aria-label', label);
+  el.btnFullscreen.setAttribute('aria-pressed', String(active));
+  el.btnFullscreen.classList.toggle('is-active', active);
+}
+
 function updatePlaybackButtons() {
   const playing = state.playbackState === 'playing' || state.playbackState === 'buffering';
-  el.btnPlay.dataset.active = playing ? 'false' : 'true';
-  el.btnPlay.textContent = state.scheduledStartAt ? 'Scheduled' : 'Play';
-  el.btnPause.dataset.active = playing ? 'true' : 'false';
+  const [playIcon, pauseIcon] = el.btnPlay.querySelectorAll('.control-icon');
+  playIcon.hidden = playing;
+  pauseIcon.hidden = !playing;
+  el.playToggleLabel.textContent = playing ? 'Pause' : state.scheduledStartAt ? 'Scheduled' : 'Play';
+  el.btnPlay.title = playing ? 'Pause' : 'Play';
+  el.btnPlay.setAttribute('aria-label', el.btnPlay.title);
 }
 
 function updateStatusLine(message) {
@@ -2440,16 +2538,6 @@ function showLoading(message) {
 
 function hideLoading() {
   el.loadingOverlay.hidden = true;
-}
-
-function showVideoError(message) {
-  if (!message) return;
-  el.errorMessage.textContent = message;
-  el.errorOverlay.hidden = false;
-}
-
-function hideVideoError() {
-  el.errorOverlay.hidden = true;
 }
 
 function openLibrary() {
@@ -2510,10 +2598,6 @@ function bindUi() {
       clearPlayerCredential(true);
     }
   });
-  el.dismissError.addEventListener('click', () => {
-    hideVideoError();
-    if (state.playbackState === 'error') setPlaybackState(state.current ? 'ready' : 'idle');
-  });
   el.enableAudio.addEventListener('click', () => {
     state.userInteracted = true;
     state.autoMuted = false;
@@ -2526,10 +2610,16 @@ function bindUi() {
 
   el.btnPlay.addEventListener('click', () => {
     state.userInteracted = true;
+    if (state.playbackState === 'playing' || state.playbackState === 'buffering') {
+      pauseVideo();
+      return;
+    }
     void playVideo(undefined, undefined).catch((error) => showToast(errorMessage(error), 'error'));
   });
-  el.btnPause.addEventListener('click', pauseVideo);
-  el.btnStop.addEventListener('click', stopVideo);
+  el.btnReplay.addEventListener('click', () => {
+    state.userInteracted = true;
+    void playVideo(0, undefined).catch((error) => showToast(errorMessage(error), 'error'));
+  });
   el.btnBack.addEventListener('click', () => seekTo(el.video.currentTime - 10));
   el.btnForward.addEventListener('click', () => seekTo(el.video.currentTime + 10));
   el.btnMute.addEventListener('click', toggleMute);
@@ -2550,13 +2640,17 @@ function bindUi() {
       void document.exitFullscreen?.();
     }
   });
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+  updateFullscreenButton();
   el.btnEnterVr.addEventListener('click', () => {
     state.userInteracted = true;
-    void enterImmersive()
-      .then(() => showToast('Entering immersive mode…', 'success'))
+    const entering = !state.isImmersive;
+    void (entering ? enterImmersive() : exitImmersive())
+      .then(() => {
+        if (entering) showToast('Entering immersive mode…', 'success');
+      })
       .catch((error) => showToast(errorMessage(error), 'error', 6000));
   });
-  el.btnExitVr.addEventListener('click', () => void exitImmersive());
 
   el.video.addEventListener('loadedmetadata', updateTransportUi);
   el.video.addEventListener('durationchange', updateTransportUi);
@@ -2599,7 +2693,9 @@ function bindUi() {
   });
   el.video.addEventListener('error', () => {
     if (!state.current || state.intent === 'load') return;
-    playbackError(mediaErrorMessage(el.video));
+    const message = mediaErrorMessage(el.video);
+    playbackError(message);
+    showToast(message, 'error', 7000);
   });
   el.video.addEventListener('volumechange', updateMuteUi);
 

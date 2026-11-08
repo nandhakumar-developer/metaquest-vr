@@ -3,13 +3,24 @@
  *
  * Three.js is loaded lazily from the gateway's local vendor route so the
  * player has no runtime dependency on a CDN. WebXR requires a secure context
- * (HTTPS or localhost); callers should present a clear error when unavailable.
+ * (HTTPS or localhost); the non-XR spherical preview works over plain HTTP.
  */
 
 const THREE_URL = '/player/vendor/three.module.js';
+const LOOK_SPEED = 0.0035;
+const MIN_PITCH = -Math.PI / 2 + 0.05;
+const MAX_PITCH = Math.PI / 2 - 0.05;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
 
 function isSecureContextForXr() {
-  return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  return (
+    window.isSecureContext ||
+    location.hostname === 'localhost' ||
+    location.hostname === '127.0.0.1'
+  );
 }
 
 export class ImmersivePlayer {
@@ -30,6 +41,8 @@ export class ImmersivePlayer {
     this.onControllerSelect = onControllerSelect ?? (() => {});
     this.onError = onError ?? (() => {});
     this.three = null;
+    this.preparePromise = null;
+    this.xrSupported = null;
     this.renderer = null;
     this.scene = null;
     this.camera = null;
@@ -38,27 +51,78 @@ export class ImmersivePlayer {
     this.media = null;
     this.session = null;
     this.active = false;
+    this.stereo = false;
     this.resizeHandler = null;
     this.poseTick = 0;
+
+    // Non-XR preview state.
+    this.previewActive = false;
+    this.previewMedia = null;
+    this.lookBound = false;
+    this.pointerId = null;
+    this.pointerLast = null;
+    this.lookYaw = 0;
+    this.lookPitch = 0;
   }
 
-  async ensureThree() {
+  /**
+   * Load Three.js and cache XR support. Safe to call before a click so the
+   * network import does not consume the user activation required by
+   * requestSession(). Also used by the non-XR spherical preview.
+   */
+  prepare() {
+    if (this.three) return Promise.resolve(this.three);
+    if (this.preparePromise) return this.preparePromise;
+    this.preparePromise = (async () => {
+      const three = await import(THREE_URL);
+      this.three = three;
+      if (
+        isSecureContextForXr() &&
+        navigator.xr &&
+        typeof navigator.xr.isSessionSupported === 'function'
+      ) {
+        try {
+          this.xrSupported = await navigator.xr.isSessionSupported('immersive-vr');
+        } catch {
+          this.xrSupported = false;
+        }
+      } else {
+        this.xrSupported = false;
+      }
+      return three;
+    })().catch((error) => {
+      this.preparePromise = null;
+      throw error;
+    });
+    return this.preparePromise;
+  }
+
+  async ensureThreeForXr() {
     if (!isSecureContextForXr()) {
       throw new Error(
-        'Immersive WebXR needs HTTPS or localhost. Open the player over HTTPS to use 180/360 VR; flat playback still works.',
+        'Immersive WebXR needs a secure context. Open the player over HTTPS (accept the local certificate once) or use localhost; flat 2D playback still works.',
       );
     }
     if (!navigator.xr) {
       throw new Error('This browser does not expose WebXR. Use Meta Quest Browser over HTTPS.');
     }
-    const supported = await navigator.xr.isSessionSupported('immersive-vr');
-    if (!supported) {
+    let three;
+    try {
+      three = await this.prepare();
+    } catch {
+      throw new Error(
+        'Could not load the immersive renderer. Check the gateway connection and try again.',
+      );
+    }
+    if (!three) {
+      throw new Error(
+        'Could not load the immersive renderer. Check the gateway connection and try again.',
+      );
+    }
+    if (this.xrSupported === false) {
       throw new Error('Immersive VR is not available in this browser session.');
     }
-    if (!this.three) {
-      this.three = await import(THREE_URL);
-    }
-    return this.three;
+    return three;
   }
 
   buildRenderer() {
@@ -82,7 +146,13 @@ export class ImmersivePlayer {
     }
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x02040a);
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 1000);
+    this.camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.05,
+      1000,
+    );
+    this.camera.rotation.order = 'YXZ';
     this.resizeHandler = () => this.resize();
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -172,21 +242,27 @@ export class ImmersivePlayer {
     this.texture.magFilter = THREE.LinearFilter;
     this.texture.generateMipmaps = false;
 
-    const projection = media?.projectionType === '180' ? '180' : media?.projectionType === '360' ? '360' : 'flat';
+    const projection =
+      media?.projectionType === '180' ? '180' : media?.projectionType === '360' ? '360' : 'flat';
     const layout = media?.stereoLayout ?? 'mono';
     const stereo = layout === 'sbs' || layout === 'ou';
+    this.stereo = stereo;
 
     let geometry;
     if (projection === '360') {
-      geometry = new THREE.SphereGeometry(12, 64, 40);
+      // Start the equirectangular texture at -Z (in front of the default
+      // camera) instead of at the seam, so the centre of the video is the
+      // initial view.
+      geometry = new THREE.SphereGeometry(12, 64, 40, Math.PI / 2, Math.PI * 2);
       geometry.scale(-1, 1, 1);
     } else if (projection === '180') {
       geometry = new THREE.SphereGeometry(12, 64, 40, Math.PI, Math.PI);
       geometry.scale(-1, 1, 1);
     } else {
-      const aspect = this.video.videoWidth && this.video.videoHeight
-        ? this.video.videoWidth / this.video.videoHeight
-        : 16 / 9;
+      const aspect =
+        this.video.videoWidth && this.video.videoHeight
+          ? this.video.videoWidth / this.video.videoHeight
+          : 16 / 9;
       const height = 2.7;
       const width = height * aspect;
       geometry = new THREE.PlaneGeometry(width, height);
@@ -214,20 +290,139 @@ export class ImmersivePlayer {
 
   setMedia(media) {
     this.media = media;
-    if (!this.active) return;
+    if (!this.active && !this.previewActive) return;
     try {
       this.buildContent(media);
+      if (this.previewActive && !this.active) this.previewMedia = media;
     } catch (error) {
       this.onError(error instanceof Error ? error.message : 'Unable to build the immersive scene.');
     }
   }
 
+  /** Render a 180/360 video on the canvas without entering WebXR. */
+  async showPreview(media) {
+    console.info('[projection] showPreview', media?.projectionType, media?.stereoLayout);
+    if (!media || media.projectionType === 'flat') {
+      this.stopPreview();
+      return false;
+    }
+    if (this.active) {
+      this.setMedia(media);
+      return true;
+    }
+    const three = await this.prepare();
+    if (!three) return false;
+    this.buildRenderer();
+    this.buildContent(media);
+    this.previewMedia = media;
+    this.previewActive = true;
+    this.canvas.hidden = false;
+    this.video.style.opacity = '0';
+    this.video.style.pointerEvents = 'none';
+    this.bindLookControls();
+    this.applyLook();
+    this.renderer.setAnimationLoop(() => this.renderPreviewFrame());
+    return true;
+  }
+
+  stopPreview() {
+    this.previewActive = false;
+    this.previewMedia = null;
+    if (this.active) return;
+    this.renderer?.setAnimationLoop(null);
+    this.canvas.hidden = true;
+    this.video.style.opacity = '';
+    this.video.style.pointerEvents = '';
+    this.clearContent();
+  }
+
+  isPreviewActive() {
+    return this.previewActive && !this.active;
+  }
+
+  bindLookControls() {
+    if (this.lookBound) return;
+    this.lookBound = true;
+
+    this.handlePointerDown = (event) => {
+      if (this.active) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      this.pointerId = event.pointerId;
+      this.pointerLast = { x: event.clientX, y: event.clientY };
+      try {
+        this.canvas.setPointerCapture?.(event.pointerId);
+      } catch {
+        // Ignore browsers that cannot capture this pointer.
+      }
+      event.preventDefault();
+    };
+
+    this.handlePointerMove = (event) => {
+      if (this.active || this.pointerId === null) return;
+      if (event.pointerId !== this.pointerId || !this.pointerLast) return;
+      const dx = event.clientX - this.pointerLast.x;
+      const dy = event.clientY - this.pointerLast.y;
+      this.pointerLast = { x: event.clientX, y: event.clientY };
+      this.lookYaw -= dx * LOOK_SPEED;
+      this.lookPitch = clamp(this.lookPitch - dy * LOOK_SPEED, MIN_PITCH, MAX_PITCH);
+      event.preventDefault();
+    };
+
+    this.handlePointerEnd = (event) => {
+      if (event.pointerId !== this.pointerId) return;
+      this.pointerId = null;
+      this.pointerLast = null;
+    };
+
+    this.canvas.addEventListener('pointerdown', this.handlePointerDown);
+    window.addEventListener('pointermove', this.handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', this.handlePointerEnd);
+    window.addEventListener('pointercancel', this.handlePointerEnd);
+  }
+
+  applyLook() {
+    if (!this.camera) return;
+    this.camera.rotation.order = 'YXZ';
+    this.camera.rotation.y = this.lookYaw;
+    this.camera.rotation.x = this.lookPitch;
+  }
+
+  renderPreviewFrame() {
+    if (!this.renderer || !this.scene || !this.camera || this.active) return;
+    this.applyLook();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  configureStereoLayers() {
+    const xrCamera = this.renderer?.xr?.getCamera?.();
+    if (!xrCamera || !Array.isArray(xrCamera.cameras) || xrCamera.cameras.length < 2) return;
+    xrCamera.cameras[0].layers.enable(1);
+    xrCamera.cameras[1].layers.enable(2);
+  }
+
+  handleSessionEnd() {
+    this.active = false;
+    this.session = null;
+    this.renderer?.setAnimationLoop(null);
+    if (this.previewActive && this.previewMedia) {
+      this.canvas.hidden = false;
+      this.video.style.opacity = '0';
+      this.video.style.pointerEvents = 'none';
+      this.renderer?.setAnimationLoop(() => this.renderPreviewFrame());
+    } else {
+      this.canvas.hidden = true;
+      this.video.style.opacity = '';
+      this.video.style.pointerEvents = '';
+    }
+    this.onSessionChange(false);
+  }
+
   async enter(media) {
     if (this.active) return;
-    await this.ensureThree();
+    await this.ensureThreeForXr();
     this.buildRenderer();
     if (this.video.readyState < 2) {
-      throw new Error('Load a video before entering immersive mode.');
+      throw new Error('The video is still loading. Wait for the first frame, then try again.');
     }
     this.buildContent(media);
 
@@ -238,20 +433,16 @@ export class ImmersivePlayer {
     this.session = session;
     this.active = true;
     this.canvas.hidden = false;
-    this.video.hidden = true;
+    // Keep the video in the DOM and decoding; WebXR samples it as a texture.
+    // display:none can make mobile browsers stop producing frames.
+    this.video.style.opacity = '0';
+    this.video.style.pointerEvents = 'none';
 
     if (!session.domOverlayState) {
       session.addEventListener('select', () => this.onControllerSelect());
     }
 
-    session.addEventListener('end', () => {
-      this.active = false;
-      this.session = null;
-      this.canvas.hidden = true;
-      this.video.hidden = false;
-      this.renderer?.setAnimationLoop(null);
-      this.onSessionChange(false);
-    });
+    session.addEventListener('end', () => this.handleSessionEnd());
 
     await this.renderer.xr.setSession(session);
     this.renderer.setAnimationLoop(() => this.renderFrame());
@@ -260,6 +451,7 @@ export class ImmersivePlayer {
 
   renderFrame() {
     if (!this.renderer || !this.scene || !this.camera) return;
+    if (this.stereo) this.configureStereoLayers();
     this.renderer.render(this.scene, this.camera);
     this.poseTick += 1;
     if (this.poseTick % 12 === 0) {
@@ -293,10 +485,17 @@ export class ImmersivePlayer {
   }
 
   dispose() {
-    this.clearContent();
+    this.stopPreview();
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
       this.resizeHandler = null;
+    }
+    if (this.lookBound) {
+      this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
+      window.removeEventListener('pointermove', this.handlePointerMove);
+      window.removeEventListener('pointerup', this.handlePointerEnd);
+      window.removeEventListener('pointercancel', this.handlePointerEnd);
+      this.lookBound = false;
     }
     this.renderer?.setAnimationLoop(null);
     this.renderer?.dispose();

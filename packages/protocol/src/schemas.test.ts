@@ -79,5 +79,11 @@ describe('Protocol Message Handling', () => {
     });
     const parsedLoad = parseDeviceCommandMessage(JSON.stringify(loadCmd));
     expect(parsedLoad.ok).toBe(true);
+
+    const exitImmersiveCmd = makeMessage('EXIT_IMMERSIVE', deviceUuid, {});
+    expect(parseDeviceCommandMessage(JSON.stringify(exitImmersiveCmd)).ok).toBe(true);
+
+    const exitFullscreenCmd = makeMessage('EXIT_FULLSCREEN', deviceUuid, {});
+    expect(parseDeviceCommandMessage(JSON.stringify(exitFullscreenCmd)).ok).toBe(true);
   });
 });

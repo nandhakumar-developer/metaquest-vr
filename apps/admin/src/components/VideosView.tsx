@@ -13,7 +13,6 @@ import {
   Clock,
   Layers,
   Users,
-  Info,
   X,
   Sparkles,
 } from 'lucide-react';
@@ -48,41 +47,31 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
   };
 
   return (
-    <div className="page-stack">
-      <div className="section-head">
+    <div className="flex flex-col gap-[22px]">
+      <div className="flex flex-wrap items-end justify-between gap-[18px] rounded-[26px] border border-transparent bg-white/50 px-6 py-[18px] shadow-[0_12px_36px_rgba(0,0,0,0.07)] backdrop-blur-[32px]">
         <div>
-          <span className="eyebrow">Content library</span>
-          <h1 className="page-title">
-          Video media <span className="serif-accent text-[#ED7109]">library</span>
+          <span className="inline-flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#003BB5] before:mr-0 before:inline-block before:h-[1.5px] before:w-4 before:rounded-full before:bg-[#004CE4] before:content-['']">Content library</span>
+          <h1 className="mt-2 font-display text-[clamp(24px,2.6vw,30px)] font-extrabold leading-[1.15] tracking-[-0.04em] text-[#0F172A]">
+          Video media <span className="font-display font-semibold not-italic tracking-[-0.01em] text-[#004CE4]">library</span>
           </h1>
-          <p className="page-desc">
+          <p className="mt-1.5 max-w-[680px] text-[12.5px] leading-[1.65] text-[#334155]">
             {videos.length > 0
               ? `${videos.length} asset${videos.length === 1 ? '' : 's'} stored on this gateway and ready to stream or deploy to connected headsets.`
               : 'Stored on this gateway and available to every connected Quest headset.'}
           </p>
         </div>
 
-        <button onClick={() => setUploadOpen(true)} className="btn btn-primary">
+        <button onClick={() => setUploadOpen(true)} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)]">
           <Plus className="h-4 w-4" />
           Upload video
         </button>
       </div>
 
-      <div className="alert alert-info">
-        <Info className="h-4 w-4" />
-        <span>
-          Use <strong className="font-semibold">Send to headsets</strong> for a verified offline copy on
-          each device — browser player downloads appear under Downloads on the headset. Use{' '}
-          <strong className="font-semibold">Group play</strong> for synchronized playback across several
-          headsets.
-        </span>
-      </div>
-
       {videos.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {videos.map((video) => (
-            <article key={video.id} className="panel panel-hover flex flex-col overflow-hidden">
-              <div className="relative aspect-video overflow-hidden border-b border-[#E1E1E1] bg-[linear-gradient(140deg,#F5F5F5,#F5F5F5_45%,#FFF4EC)]">
+            <article key={video.id} className="relative rounded-[26px] border border-transparent bg-white/50 shadow-[0_14px_40px_rgba(0,0,0,0.07)] backdrop-blur-[32px] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden">
+              <div className="relative aspect-video overflow-hidden border-b border-[#E1E1E1] bg-[linear-gradient(140deg,#F5F5F5,#F5F5F5_45%,#EAF0FF)]">
                 {video.thumbnailPath ? (
                   <img
                     src={`/api/videos/${video.id}/thumbnail`}
@@ -96,11 +85,11 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                 )}
 
                 <div className="absolute left-3 top-3 flex items-center gap-1.5">
-                  <span className="badge badge-dark badge-mono">
+                  <span className="inline-flex h-[22px] items-center gap-[5px] whitespace-nowrap rounded-full border border-transparent px-[9px] text-[10.5px] font-semibold tracking-[0.005em] border-white/10 bg-[#2A2A2A] text-white font-mono text-[9.5px] uppercase tracking-[0.02em]">
                     {video.projectionType.toUpperCase()} VR
                   </span>
                   {video.stereoLayout !== 'mono' && (
-                    <span className="badge badge-coral badge-mono">
+                    <span className="inline-flex h-[22px] items-center gap-[5px] whitespace-nowrap rounded-full border border-transparent px-[9px] text-[10.5px] font-semibold tracking-[0.005em] border-[#004CE4]/20 bg-[#004CE4]/20 text-[#004CE4] font-mono text-[9.5px] uppercase tracking-[0.02em]">
                       3D {video.stereoLayout.toUpperCase()}
                     </span>
                   )}
@@ -157,7 +146,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   <button
                     onClick={() => onOpenGroup(video.id)}
                     title="Open synchronized group playback with this video preselected"
-                    className="btn btn-secondary btn-xs"
+                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/65 text-[#0F172A] shadow-[0_4px_14px_rgba(0,0,0,0.06)] backdrop-blur-[18px] hover:bg-white/90 h-[27px] gap-[5px] px-[10px] text-[10.5px]"
                   >
                     <Users className="h-3.5 w-3.5" />
                     Group play
@@ -165,7 +154,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   <button
                     onClick={() => setDeployTarget(video)}
                     title="Download an offline copy to selected Quest headsets"
-                    className="btn btn-primary btn-xs"
+                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] h-[27px] gap-[5px] px-[10px] text-[10.5px]"
                   >
                     <DownloadCloud className="h-3.5 w-3.5" />
                     Send to headsets
@@ -176,14 +165,14 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                   <button
                     onClick={() => setPreviewVideo(video)}
                     title="Play preview"
-                    className="btn btn-ghost btn-icon-sm text-[#8A8A8A]"
+                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0 text-[#8A8A8A]"
                   >
                     <Play className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => void handleDelete(video.id, video.name)}
                     title="Delete video"
-                    className="btn btn-ghost btn-icon-sm text-[#8A8A8A] hover:text-[#B91C1C]"
+                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0 text-[#8A8A8A] hover:text-[#B91C1C]"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -193,16 +182,16 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
           ))}
         </div>
       ) : (
-        <div className="empty-state">
-          <div className="empty-icon">
+        <div className="rounded-[26px] border-[1.5px] border-dashed border-transparent bg-white/50 px-[26px] py-[54px] text-center shadow-[0_14px_40px_rgba(0,0,0,0.07)] backdrop-blur-[32px]">
+          <div className="mx-auto mb-4 grid h-[54px] w-[54px] place-items-center rounded-[17px] border border-[#004CE4]/20 bg-[#004CE4]/20 text-[#004CE4]">
             <Film className="h-6 w-6" />
           </div>
-          <h3 className="empty-title">No videos uploaded yet</h3>
-          <p className="empty-desc">
+          <h3 className="font-display text-[15px] font-bold tracking-[-0.02em]">No videos uploaded yet</h3>
+          <p className="mx-auto mt-1.5 max-w-[380px] text-[12px] leading-[1.6] text-[#64748B]">
             Upload your 360°, 180° or flat VR video files to the gateway, then deploy them to your
             Meta Quest 2 headsets.
           </p>
-          <button onClick={() => setUploadOpen(true)} className="btn btn-primary btn-sm mt-5">
+          <button onClick={() => setUploadOpen(true)} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] h-8 gap-1.5 px-[13px] text-[11.5px] mt-5">
             <Sparkles className="h-4 w-4" />
             Upload first video
           </button>
@@ -214,16 +203,16 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
       <DeployModal video={deployTarget} isOpen={Boolean(deployTarget)} onClose={() => setDeployTarget(null)} />
 
       {previewVideo && (
-        <div className="modal-backdrop">
-          <div className="modal max-w-4xl">
-            <div className="modal-head">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/25 p-5 backdrop-blur-2xl">
+          <div className="flex max-h-[calc(100svh-40px)] w-full flex-col overflow-hidden rounded-[28px] border border-transparent bg-white/75 shadow-[0_32px_84px_rgba(0,0,0,0.16)] backdrop-blur-[40px] max-w-4xl">
+            <div className="flex items-start justify-between gap-4 border-b border-white/60 px-[22px] py-5">
               <div className="min-w-0">
-                <h3 className="modal-title truncate">{previewVideo.name}</h3>
-                <p className="modal-sub">
+                <h3 className="font-display text-[15.5px] font-bold tracking-[-0.025em] truncate">{previewVideo.name}</h3>
+                <p className="mt-[3px] text-[11.5px] text-[#64748B]">
                   {previewVideo.projectionType.toUpperCase()} VR · {formatBytes(previewVideo.sizeBytes)}
                 </p>
               </div>
-              <button onClick={() => setPreviewVideo(null)} className="btn btn-ghost btn-icon-sm">
+              <button onClick={() => setPreviewVideo(null)} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0">
                 <X className="h-4 w-4" />
               </button>
             </div>

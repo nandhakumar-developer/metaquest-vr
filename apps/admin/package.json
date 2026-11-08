@@ -13,6 +13,7 @@
     "@vrcc/protocol": "1.0.0",
     "@vrcc/shared-types": "1.0.0",
     "clsx": "^2.1.1",
+    "framer-motion": "^14.10.1",
     "lucide-react": "^0.460.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
