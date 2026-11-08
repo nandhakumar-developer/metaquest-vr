@@ -2,6 +2,7 @@ import { newId } from '../utils/ids.js';
 import { nowIso } from '../utils/time.js';
 import type { AppSettings } from '@vrcc/shared-types';
 import { DEFAULT_SETTINGS } from '@vrcc/shared-types';
+import { MAX_PREVIEW_FPS } from '@vrcc/protocol';
 import type { Database } from './db.js';
 import {
   asNumber,
@@ -337,7 +338,9 @@ export class OpsRepository {
     const confirm = stored.get('confirmDestructiveActions');
     const savedPreviewFps = Number(stored.get('previewMaxFps'));
     const previewMaxFps =
-      savedPreviewFps === 1 ? DEFAULT_SETTINGS.previewMaxFps : num('previewMaxFps', 5, 15);
+      savedPreviewFps === 1
+        ? DEFAULT_SETTINGS.previewMaxFps
+        : num('previewMaxFps', 5, MAX_PREVIEW_FPS);
     return {
       staleAfterSeconds: num('staleAfterSeconds', 5, 120),
       seekStepSeconds: num('seekStepSeconds', 1, 30),

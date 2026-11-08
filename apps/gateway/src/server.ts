@@ -254,11 +254,18 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Bui
       decorateReply: false,
       index: ['index.html'],
       setHeaders: (reply: any, filePath: string) => {
+<<<<<<< HEAD
         // Player code is plain ES modules with no build step, so it changes in
         // place. Always revalidate (ETag/304) to avoid serving stale modules
         // after an update; `max-age` previously kept broken code alive in the
         // Quest Browser cache for minutes after a fix.
         const val = filePath.endsWith('.html') ? 'no-cache' : 'no-cache, must-revalidate';
+=======
+        const val =
+          filePath.endsWith('.html') || filePath.endsWith('.js')
+            ? 'no-cache'
+            : 'public, max-age=300';
+>>>>>>> origin/main
         if (typeof reply.header === 'function') reply.header('Cache-Control', val);
       },
     });

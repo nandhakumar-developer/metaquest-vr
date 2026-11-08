@@ -30,6 +30,7 @@
     "test:e2e": "playwright test",
     "tls:setup": "node scripts/development/setup-tls.mjs",
     "admin:create": "npm run admin:create -w @vrcc/gateway --",
+    "https:setup": "node scripts/development/generate-https-cert.mjs",
     "quest:simulate": "npm run simulate -w @vrcc/gateway --",
     "clean": "node scripts/development/clean.mjs"
   },

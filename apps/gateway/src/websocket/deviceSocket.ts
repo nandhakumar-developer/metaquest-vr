@@ -21,7 +21,7 @@ import type { DeploymentService } from '../transfers/deploymentService.js';
 import { newId } from '../utils/ids.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
-const MAX_MESSAGES_PER_WINDOW = 300;
+const MAX_MESSAGES_PER_WINDOW = 600;
 const MESSAGE_WINDOW_MS = 10_000;
 const MAX_UNAUTHENTICATED_PER_IP = 5;
 

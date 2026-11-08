@@ -288,7 +288,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   staleAfterSeconds: 15,
   seekStepSeconds: 1,
-  previewMaxFps: 12,
+  previewMaxFps: 30,
   defaultVolume: 0.8,
   confirmDestructiveActions: true,
 };
@@ -330,6 +330,11 @@ export interface GatewayConfigResponse {
   auth: {
     local: boolean;
     needsBootstrap: boolean;
+<<<<<<< HEAD
+=======
+    /** Browser-safe values for Supabase Auth and RLS-protected profile lookup. */
+    supabase: { url: string; anonKey: string; roleVerification: boolean } | null;
+>>>>>>> origin/main
   };
   gateway: GatewayInfo;
   playerUrl: string;

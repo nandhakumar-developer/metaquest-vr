@@ -139,5 +139,7 @@ export function createSha256() {
 
 export function sha256Hex(text) {
   const bytes = new TextEncoder().encode(String(text));
-  return createSha256().update(bytes).digestHex();
+  const hasher = createSha256();
+  hasher.update(bytes);
+  return hasher.digestHex();
 }

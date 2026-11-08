@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { DEFAULT_SETTINGS, type AppSettings } from '@vrcc/shared-types';
-import { uuidSchema } from '@vrcc/protocol';
+import { MAX_PREVIEW_FPS, uuidSchema } from '@vrcc/protocol';
 import type { GatewayContext } from '../context.js';
 import { badRequest } from '../utils/errors.js';
 import { parseBody, requireSession } from './helpers.js';
@@ -10,7 +10,7 @@ const settingsPatchSchema = z
   .object({
     staleAfterSeconds: z.number().int().min(5).max(120).optional(),
     seekStepSeconds: z.number().int().min(1).max(30).optional(),
-    previewMaxFps: z.number().int().min(5).max(15).optional(),
+    previewMaxFps: z.number().int().min(5).max(MAX_PREVIEW_FPS).optional(),
     defaultVolume: z.number().min(0).max(1).optional(),
     confirmDestructiveActions: z.boolean().optional(),
   })

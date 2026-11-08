@@ -68,21 +68,33 @@ Meta Quest Browser only grants WebXR in a **secure context**. Localhost is treat
 secure; a plain LAN IP is not. Over HTTP the player shows `HTTP · flat only` and explains
 when **Enter VR** fails.
 
-## Enable HTTPS with certificate files
+## Quick local HTTPS (recommended for VR)
 
-The gateway supports a direct TLS listener when both files are configured:
+The repository includes a certificate generator that covers localhost, the PC hostname,
+and every current LAN IPv4 address:
 
-```dotenv
-PUBLIC_GATEWAY_URL=https://192.168.1.125:4000
-TLS_CERT_PATH=./certs/gateway.crt
-TLS_KEY_PATH=./certs/gateway.key
+```powershell
+npm run https:setup
 ```
 
-Paths are resolved from the repository root. Restart the gateway after changing them. The
-startup banner should show `https://…` and the player will use `wss://` automatically.
+The gateway detects these files automatically and enables HTTPS on the next start, so you do
+not need to add `TLS_*` entries to `.env`. Restart the gateway and the startup banner should
+show `https://…`; the player uses `wss://` automatically. `PUBLIC_GATEWAY_URL` can stay
+blank because the gateway picks the physical Wi-Fi/Ethernet address and prefixes it with
+`https://`.
 
-A self-signed certificate is **not enough for WebXR** unless the headset trusts the issuing
-CA. The browser must accept the certificate without an interstitial.
+On the headset:
+
+1. Open the **HTTPS** player URL shown in the dashboard (for example
+   `https://192.168.1.122:4000/player/`).
+2. Accept the certificate warning once. This is the normal local-development warning.
+3. Pair the headset again and tap **Enter VR**. Pairing and offline downloads are stored
+   per browser origin, so they do not carry over from the old `http://` URL.
+
+The generated certificate is self-signed. Meta Quest Browser normally lets you proceed
+past the warning and then exposes WebXR. Some firmware versions still block immersive mode
+on an untrusted certificate; if yours does, use one of the trusted-certificate options
+below. Re-run `npm run https:setup` whenever the PC's LAN address changes.
 
 ### Option A: local CA trusted by the headset
 

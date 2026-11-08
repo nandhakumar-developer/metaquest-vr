@@ -14,10 +14,16 @@ import {
 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
+<<<<<<< HEAD
   const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+=======
+  const { login, loginWithSupabase } = useApp();
+  const [email, setEmail] = useState((import.meta.env.VITE_ADMIN_EMAIL as string) || 'vradmin@2026');
+  const [password, setPassword] = useState((import.meta.env.VITE_ADMIN_PASSWORD as string) || 'vradmin7726');
+>>>>>>> origin/main
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,9 +32,25 @@ export const LoginView: React.FC = () => {
     setError(null);
     try {
       setLoading(true);
-      await login(email.trim(), password);
+      // Attempt Supabase login first
+      try {
+        await loginWithSupabase(email.trim(), password);
+        return;
+      } catch (supabaseErr: any) {
+        // Fall back seamlessly to gateway local admin
+        try {
+          await login(email.trim(), password);
+          return;
+        } catch {
+          throw supabaseErr;
+        }
+      }
     } catch (err: any) {
+<<<<<<< HEAD
       setError(err?.message || 'Invalid username or password.');
+=======
+      setError(err?.message || 'Invalid credentials.');
+>>>>>>> origin/main
     } finally {
       setLoading(false);
     }
@@ -77,12 +99,21 @@ export const LoginView: React.FC = () => {
 
         </aside>
 
+<<<<<<< HEAD
         <section className="flex items-center justify-center bg-white/65 p-[clamp(28px,5vw,62px)] backdrop-blur-2xl max-[820px]:px-[26px] max-[820px]:pb-[34px] max-[820px]:pt-[30px]">
           <div className="w-full max-w-[382px]">
             <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.13em] text-[#004CE4]"><Sparkles size={14} /> Administrator access</div>
             <h2 className="my-[13px] mb-[7px] font-display text-[29px] font-bold tracking-[-0.045em]">Welcome back</h2>
             <p className="mb-7 text-[12.5px] leading-[1.65] text-[#64748B] max-[820px]:mb-[22px]">
               Sign in to your control center dashboard.
+=======
+        <section className="auth-form-panel">
+          <div className="auth-form-content">
+            <div className="auth-form-kicker"><Sparkles size={14} /> Administrator access</div>
+            <h2 className="auth-form-title">Welcome back</h2>
+            <p className="auth-form-subtitle">
+              Sign in with your Supabase administrator account.
+>>>>>>> origin/main
             </p>
 
             {error && (
@@ -94,6 +125,7 @@ export const LoginView: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="grid gap-[18px]">
               <div>
+<<<<<<< HEAD
                 <label className="mb-[7px] block text-[11.5px] font-semibold text-[#334155]" htmlFor="admin-email">Administrator email or username</label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[#64748B]" size={17} />
@@ -101,6 +133,15 @@ export const LoginView: React.FC = () => {
                     id="admin-email"
                     type="text"
                     placeholder="Enter email or username"
+=======
+                <label className="auth-field-label" htmlFor="admin-email">Administrator email or username</label>
+                <div className="auth-input-wrap">
+                  <Mail className="auth-input-icon" size={17} />
+                  <input
+                    id="admin-email"
+                    type="text"
+                    placeholder="vradmin@2026"
+>>>>>>> origin/main
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="off"
@@ -144,7 +185,11 @@ export const LoginView: React.FC = () => {
 
             <div className="mt-6 flex items-center justify-center gap-[7px] text-center text-[10.5px] text-[#64748B] [&_svg]:shrink-0 [&_svg]:text-[#004CE4]">
               <ShieldCheck size={14} />
+<<<<<<< HEAD
               Secure administrator authentication.
+=======
+              Your credentials are securely verified via Supabase Auth.
+>>>>>>> origin/main
             </div>
           </div>
         </section>

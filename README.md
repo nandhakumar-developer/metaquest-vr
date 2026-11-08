@@ -144,9 +144,10 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 | Media inspection      | FFmpeg and FFprobe when installed; optional for upload and playback                     |
 | Developer tooling     | TypeScript, ESLint, Prettier, Vitest, Playwright dependency                             |
 
-## Repository layout
+## Repository and runtime folder layout
 
 ```text
+<<<<<<< HEAD
 apps/
   admin/                 React dashboard, API client, views, and Vite configuration
   gateway/               Fastify API, WebSocket hub, auth, device, media, and playback services
@@ -159,9 +160,121 @@ scripts/
   development/           Production launcher and generated-file cleanup
 storage/                 Runtime database and media directories (created/used locally)
 docs/                    Installation, usage, Quest, network, and troubleshooting guides
+=======
+.
+├── apps/
+│   ├── admin/                         React dashboard (Vite)
+│   │   ├── public/image.png
+│   │   ├── src/
+│   │   │   ├── api/                   REST client and admin WebSocket client
+│   │   │   ├── components/            Login, device, video, playback, settings, and audit views
+│   │   │   ├── context/               Dashboard state and preview-frame store
+│   │   │   ├── styles/                Global Tailwind and application styles
+│   │   │   ├── App.tsx                Authenticated dashboard shell and view routing
+│   │   │   └── main.tsx               React browser entry point
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts              Dev server and gateway proxies
+│   ├── gateway/                       Fastify REST, WebSocket, and static-file server
+│   │   ├── src/
+│   │   │   ├── auth/                  Local auth, sessions, bootstrap, and Supabase auth
+│   │   │   ├── cli/                   Local administrator command
+│   │   │   ├── commands/              Device command dispatch and acknowledgements
+│   │   │   ├── database/              SQLite setup, repositories, mappers, and row types
+│   │   │   ├── devices/               Device registry, state, and offline detection
+│   │   │   ├── pairing/               Headset pairing and claim lifecycle
+│   │   │   ├── preview/               Live snapshot preview handling
+│   │   │   ├── routes/                HTTP routes for auth, system, devices, media, and playback
+│   │   │   ├── security/              Origin checks and response security headers
+│   │   │   ├── services/              Cloud sync, media, playback, snapshots, and maintenance
+│   │   │   ├── transfers/             Offline download deployment service
+│   │   │   ├── utils/                 Errors, ranges, IDs, and time helpers
+│   │   │   ├── videos/                Video library service
+│   │   │   ├── websocket/             Admin hub, device sockets, and WebSocket server
+│   │   │   ├── config.ts              Environment parsing, paths, LAN URLs, and TLS config
+│   │   │   ├── context.ts             Database and service construction/lifecycle
+│   │   │   ├── index.ts               Runtime entry point and listener startup
+│   │   │   └── server.ts              Fastify plugins, routes, static files, and WS attachment
+│   │   ├── tests/                     Gateway, player, upload, and protocol-flow tests
+│   │   ├── tsconfig.json
+│   │   ├── vitest.config.ts
+│   │   └── package.json
+│   └── player/                        Static Quest Browser app served at /player/
+│       ├── components/                UI helpers and SHA-256 verification
+│       ├── webxr/                     Immersive Three.js/WebXR playback
+│       ├── index.html
+│       ├── player.css
+│       └── player.js                  Pairing, library, downloads, socket, and playback logic
+├── packages/
+│   ├── shared-types/                  Shared domain types and DTOs
+│   │   ├── src/index.ts
+│   │   └── tsconfig.json
+│   └── protocol/                      Shared Zod schemas and socket event contracts
+│       ├── src/                       Schemas, constants, event definitions, and schema tests
+│       ├── tsconfig.json
+│       └── vitest.config.ts
+├── scripts/
+│   ├── development/                   Production launcher, HTTPS certificate, and cleanup scripts
+│   └── windows/                       Install, start, and administrator setup scripts
+├── docs/                              Install, user, Quest, network, Supabase, and troubleshooting guides
+├── storage/                           Local runtime data; generated directories are git-ignored
+│   ├── data/                          SQLite database and bootstrap token
+│   ├── logs/                          Gateway logs
+│   ├── temp/                          Temporary upload files
+│   ├── thumbnails/                    Generated video thumbnails
+│   └── videos/                        Uploaded source videos, grouped by video ID
+├── certs/                             Optional generated/local gateway TLS certificate and key
+├── .agents/skills/                    Repository-local agent reference material; not runtime code
+├── .env.example                       Gateway and optional integration configuration template
+├── .gitignore                         Generated files, local data, secrets, and build output exclusions
+├── .gitattributes                     Git text and line-ending settings
+├── package.json                       npm workspace commands and package orchestration
+├── package-lock.json                  Locked workspace dependencies
+├── tsconfig.base.json                 Shared TypeScript compiler options
+├── vitest.config.ts                   Root test configuration
+├── eslint.config.js                   Repository lint configuration
+├── skills-lock.json                   Project skill dependency lock
+└── README.md
+>>>>>>> origin/main
 ```
 
-The workspace build order is intentional: shared types and protocol are compiled first, then the admin app and gateway. The player is plain browser code and does not have its own npm build workspace.
+`storage/` and `certs/` contain local runtime/generated files and may be empty in a clean checkout. `.env` is created from `.env.example` for a local installation and is ignored by Git. Build output (`dist/`), dependencies (`node_modules/`), SQLite files, uploaded media, and private TLS keys are also ignored. The `apps/player` browser files are served directly by the gateway; they are not a separate npm workspace or compiled build.
+
+### Build and runtime execution flow
+
+The root npm scripts orchestrate the workspaces. The order below reflects the scripts in the root `package.json`:
+
+```mermaid
+flowchart TD
+  Install[Windows install helper or npm install] --> Env[Create and configure .env]
+  Env --> Build[npm run build]
+  Build --> Types[Build shared-types]
+  Types --> Protocol[Build protocol]
+  Protocol --> Admin[TypeScript check and Vite admin build]
+  Admin --> Gateway[Compile gateway TypeScript]
+  Gateway --> Start[npm start]
+  Start --> Check{apps/gateway/dist/index.js exists?}
+  Check -->|No| BuildAgain[Run npm run build]
+  BuildAgain --> Node[Start gateway with NODE_ENV=production]
+  Check -->|Yes| Node
+  Node --> Config[Load environment and resolve URL/TLS settings]
+  Config --> Context[Create runtime folders, SQLite store, and services]
+  Context --> Server[Register REST routes, static admin/player files, and WebSockets]
+  Server --> Listen[Listen on configured host and port]
+  Listen --> Clients[Admin dashboard and Quest player connect]
+```
+
+At gateway startup, `apps/gateway/src/index.ts` loads configuration, builds the Fastify server, and starts listening. Server construction creates the configured data/media directories, opens SQLite, detects optional media tools, creates the auth/device/playback/media services, registers HTTP routes, serves the production admin build when present, and always serves the static player from `apps/player`. The WebSocket server and background cloud-sync, offline-device, and maintenance services are attached before the listener starts. If no administrator exists, the gateway creates a one-time bootstrap token under `DATA_DIR` and prints setup instructions.
+
+Production and development start differently:
+
+| Mode | Command | What runs | Browser URLs |
+| ---- | ------- | --------- | ------------ |
+| Production | `npm start` or `scripts/windows/start.ps1` | Production launcher builds if the gateway entry point is missing, then starts the compiled gateway. The gateway serves `apps/admin/dist` when built and serves `apps/player` directly. | Dashboard `http://localhost:4000`; Quest player `http://<PC-LAN-IP>:4000/player/` |
+| Development | `npm run dev` or `scripts/windows/start.ps1 -Dev` | Builds shared packages, then runs the gateway with `tsx watch` and the Vite dashboard concurrently. Vite proxies `/api`, `/ws`, and `/player` to the gateway. | Dashboard `http://localhost:3000`; gateway/player `http://localhost:4000/player/` |
+
+The live request flow is shown in [End-to-end application flow](#end-to-end-application-flow): the dashboard uses authenticated HTTP requests and an admin WebSocket for live state; each Quest player pairs independently, connects over its device WebSocket, and fetches media bytes over HTTP. The player code is static browser JavaScript, so changes to it take effect without a player-specific compilation step.
 
 ## Requirements
 
@@ -224,8 +337,8 @@ The full configuration template is in [.env.example](.env.example). Common setti
 | `ADMIN_ORIGIN`                                                  | Admin Vite origin, normally `http://localhost:3000` for development                |
 | `EXTRA_ALLOWED_ORIGINS`                                         | Comma-separated additional browser origins allowed by the gateway                  |
 | `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories                                          |
-| `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Set both to enable HTTPS/WSS directly on the gateway                               |
-| `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–15 FPS; default: 12)                    |
+| `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Optional explicit certificate/key paths; generated `certs/gateway.*` files are auto-detected |
+| `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–30 FPS; default: 30)                    |
 | `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                      |
 
 Keep `.env` and administrator credentials local; do not commit secrets. The example file lists operational timeouts, upload limits, preview settings, and optional integration variables as well.
@@ -262,7 +375,15 @@ The Windows helper also supports `.\scripts\windows\start.ps1 -Dev`.
 
 This builds the shared workspace packages, then starts the gateway watcher on port `4000` and Vite on port `3000`. Open `http://localhost:3000` for the dashboard. Stop both processes with `Ctrl+C`.
 
-Allow Node.js through Windows Firewall on private networks (TCP port `4000`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls. See [docs/network-https.md](docs/network-https.md) for TLS and proxy setup.
+Allow Node.js through Windows Firewall on private networks (TCP port `4000`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls.
+
+To use immersive 180/360 playback on a headset, enable the bundled local HTTPS setup:
+
+```powershell
+npm run https:setup
+```
+
+The gateway auto-detects the generated files on its next start, so no `.env` change is needed. To use a different certificate, set `TLS_CERT_PATH` and `TLS_KEY_PATH` in `.env`. Open the new `https://<PC-LAN-IP>:4000/player/` URL on the headset, accept the certificate warning once, and pair the headset again (browser storage is per origin). See [docs/network-https.md](docs/network-https.md) for trusted-certificate and proxy options.
 
 ### 5. Check gateway health
 
@@ -341,7 +462,11 @@ For headset behavior, use [docs/quest-setup.md](docs/quest-setup.md) as the phys
 - Admin sessions use an HttpOnly cookie and CSRF token. Local passwords are stored as password hashes, not plaintext.
 - The headset's device secret is used to authenticate player requests. Media URLs are signed and expire; range streaming does not expose the device secret.
 - HTTPS is optional for LAN control and flat video playback, but required by the browser for WebXR on a remote headset. Configure a certificate trusted by the headset.
+<<<<<<< HEAD
 - Everything runs locally. Administrators sign in with accounts stored in SQLite, and no credentials, media, or operational records leave this PC.
+=======
+- Supabase is optional. The dashboard supports local administrator sign-in and Supabase Auth with an RLS-protected `profiles` role; local SQLite-backed operation does not require Supabase. See [docs/supabase.md](docs/supabase.md).
+>>>>>>> origin/main
 
 ## Known limitations
 

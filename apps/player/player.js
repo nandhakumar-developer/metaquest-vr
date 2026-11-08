@@ -127,7 +127,7 @@ const state = {
   downloadJobs: new Map(),
   offlineDb: null,
   localMediaUrls: new Map(),
-  previewMaxFps: 12,
+  previewMaxFps: 30,
   libraryFromCache: false,
   storageEstimate: null,
   storageEstimateAt: 0,
@@ -1489,7 +1489,7 @@ function applyRuntimeConfig(config) {
   }
   const nextFps = Number(config.previewMaxFps);
   if (Number.isFinite(nextFps) && nextFps > 0) {
-    const clamped = clamp(nextFps, 5, 15);
+    const clamped = clamp(nextFps, 5, 30);
     if (clamped !== state.previewMaxFps) {
       state.previewMaxFps = clamped;
       if (state.previewActive) {
@@ -1877,6 +1877,11 @@ async function loadVideo(videoId) {
       el.video.pause();
       state.intent = 'idle';
       showVideoSurface();
+<<<<<<< HEAD
+=======
+      updateNowPlaying();
+      updateProjectionSurface();
+>>>>>>> origin/main
       hideLoading();
       // Emit a confirmed ready event even when the file is already buffered so a
       // scheduled group LOAD_VIDEO command can complete without waiting for the
@@ -1931,8 +1936,13 @@ async function loadVideo(videoId) {
     setPlaybackState('ready', { force: true, clearError: true });
     if (state.immersive) state.immersive.setMedia(video);
     updateTransportUi();
+<<<<<<< HEAD
     prewarmImmersive();
     void applyProjectionMode(video);
+=======
+    updateNowPlaying();
+    updateProjectionSurface();
+>>>>>>> origin/main
     showToast(
       `Loaded ${video.name}${localUrl ? ' (offline copy)' : ''}`,
       'success',
@@ -2173,6 +2183,7 @@ async function ensureImmersive() {
       state.isImmersive = active;
       updateImmersiveButton();
       showControls();
+      updateProjectionSurface();
       if (active) {
         showToast(
           hasDomOverlay
@@ -2219,8 +2230,8 @@ async function startPreview() {
   stopPreview();
   state.previewActive = true;
   void captureAndSendPreview();
-  const fps = clamp(Number(state.previewMaxFps) || 12, 5, 15);
-  const intervalMs = Math.max(66, Math.round(1000 / fps));
+  const fps = clamp(Number(state.previewMaxFps) || 30, 5, 30);
+  const intervalMs = Math.max(1, Math.round(1000 / fps));
   state.previewTimer = setInterval(() => void captureAndSendPreview(), intervalMs);
 }
 
@@ -2244,16 +2255,29 @@ function stopPreview() {
 }
 
 async function captureFrame() {
+<<<<<<< HEAD
   const useCanvas = state.isImmersive || Boolean(state.immersive?.isPreviewActive?.());
   const source = useCanvas ? el.xrCanvas : el.video;
   const width = useCanvas ? el.xrCanvas.width : el.video.videoWidth;
   const height = useCanvas ? el.xrCanvas.height : el.video.videoHeight;
   if (!width || !height || (!useCanvas && el.video.readyState < 2)) return null;
+=======
+  const source = el.video;
+  const width = el.video.videoWidth;
+  const height = el.video.videoHeight;
+  if (!width || !height || el.video.readyState < 2) return null;
+>>>>>>> origin/main
   const canvas = state.previewCanvas || document.createElement('canvas');
   state.previewCanvas = canvas;
-  const scale = Math.min(1, 540 / width);
-  const targetWidth = Math.max(2, Math.round(width * scale));
-  const targetHeight = Math.max(2, Math.round(height * scale));
+
+  const isSbs = state.current?.stereoLayout === 'sbs';
+  const isOu = state.current?.stereoLayout === 'ou';
+  const srcW = isSbs ? Math.floor(width / 2) : width;
+  const srcH = isOu ? Math.floor(height / 2) : height;
+
+  const scale = Math.min(1, 540 / srcW);
+  const targetWidth = Math.max(2, Math.round(srcW * scale));
+  const targetHeight = Math.max(2, Math.round(srcH * scale));
   if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -2261,7 +2285,7 @@ async function captureFrame() {
   const context = canvas.getContext('2d');
   if (!context) return null;
   try {
-    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    context.drawImage(source, 0, 0, srcW, srcH, 0, 0, canvas.width, canvas.height);
     const dataUrl = await canvasToDataUrl(canvas, 0.5);
     if (!dataUrl) return null;
     return { dataUrl, width: canvas.width, height: canvas.height };
@@ -2427,6 +2451,29 @@ function showVideoSurface() {
   el.stageEmpty.hidden = true;
 }
 
+function updateProjectionSurface() {
+  if (!state.current) {
+    if (state.immersive) state.immersive.stopInline();
+    el.xrCanvas.hidden = true;
+    return;
+  }
+  const isSphere = state.current.projectionType === '360' || state.current.projectionType === '180';
+  if (isSphere && !state.isImmersive) {
+    void ensureImmersive()
+      .then((immersive) => {
+        if (!state.isImmersive && state.current && (state.current.projectionType === '360' || state.current.projectionType === '180')) {
+          void immersive.startInline(state.current);
+        }
+      })
+      .catch(() => {
+        el.xrCanvas.hidden = true;
+      });
+  } else if (!isSphere && !state.isImmersive) {
+    if (state.immersive) state.immersive.stopInline();
+    el.xrCanvas.hidden = true;
+  }
+}
+
 function resetPlaybackUi() {
   clearSchedule();
   stopPreview();
@@ -2436,6 +2483,7 @@ function resetPlaybackUi() {
   state.playbackError = null;
   state.intent = 'idle';
   state.isImmersive = false;
+  if (state.immersive) state.immersive.stopInline();
   el.video.pause();
   el.video.removeAttribute('src');
   el.video.load();
@@ -2660,6 +2708,7 @@ function bindUi() {
   });
   el.video.addEventListener('play', () => {
     if (state.current && state.immersive) state.immersive.setMedia(state.current);
+    updateProjectionSurface();
     if (state.current) setPlaybackState('playing');
   });
   el.video.addEventListener('playing', () => {

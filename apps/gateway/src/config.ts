@@ -1,9 +1,10 @@
+import { createPrivateKey, X509Certificate } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
-import { DEFAULT_PREVIEW_MAX_FPS } from '@vrcc/protocol';
+import { DEFAULT_PREVIEW_MAX_FPS, MAX_PREVIEW_FPS } from '@vrcc/protocol';
 
 export interface GatewayConfig {
   env: 'development' | 'test' | 'production';
@@ -58,7 +59,11 @@ const previewFpsFromEnv = () =>
         // PREVIEW_MAX_FPS=1 was the old sample default, not a useful target.
         return parsed === 1 ? DEFAULT_PREVIEW_MAX_FPS : parsed;
       },
+<<<<<<< HEAD
       z.number().int().min(1).max(30),
+=======
+      z.number().int().min(5).max(MAX_PREVIEW_FPS),
+>>>>>>> origin/main
     )
     .default(DEFAULT_PREVIEW_MAX_FPS);
 
@@ -148,6 +153,39 @@ export function normalizeOrigin(value: string): string {
   }
 }
 
+/**
+ * HTTPS is required for immersive WebXR from a headset. `npm run https:setup`
+ * writes a local certificate here; when it is valid we enable TLS
+ * automatically so a plain `npm start` picks it up without editing `.env`.
+ */
+function resolveGeneratedTls(repoRoot: string): { cert: string; key: string } | null {
+  const certPath = path.join(repoRoot, 'certs', 'gateway.crt');
+  const keyPath = path.join(repoRoot, 'certs', 'gateway.key');
+  if (!existsSync(certPath) || !existsSync(keyPath)) return null;
+  try {
+    const cert = new X509Certificate(readFileSync(certPath, 'utf8'));
+    const key = createPrivateKey(readFileSync(keyPath, 'utf8'));
+    if (!cert.checkPrivateKey(key)) {
+      process.stderr.write(
+        '[VRCC] Ignoring certs/gateway.*: the certificate and private key do not match.\n',
+      );
+      return null;
+    }
+    if (new Date(cert.validTo).getTime() <= Date.now()) {
+      process.stderr.write(
+        '[VRCC] Ignoring expired certs/gateway.crt. Run `npm run https:setup` to refresh it.\n',
+      );
+      return null;
+    }
+    return { cert: certPath, key: keyPath };
+  } catch (error) {
+    process.stderr.write(
+      `[VRCC] Ignoring certs/gateway.*: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    return null;
+  }
+}
+
 export interface ConfigOverrides {
   host?: string;
   port?: number;
@@ -174,6 +212,50 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
   loadEnvironmentFiles(repoRoot);
   const parsed = envSchema.parse(process.env);
 
+<<<<<<< HEAD
+=======
+  const supabaseUrl = parsed.SUPABASE_URL || parsed.VITE_SUPABASE_URL || null;
+  const supabaseAnonKey =
+    parsed.SUPABASE_ANON_KEY ||
+    parsed.VITE_SUPABASE_ANON_KEY ||
+    parsed.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    null;
+  const supabaseServiceRoleKey = parsed.SUPABASE_SERVICE_ROLE_KEY || null;
+
+  const supabase: SupabaseConfig = {
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    serviceRoleKey: supabaseServiceRoleKey,
+    bucket: parsed.SUPABASE_VIDEO_BUCKET,
+    configured: Boolean(supabaseUrl && supabaseAnonKey),
+    syncEnabled: parsed.CLOUD_SYNC_ENABLED,
+    syncIntervalMs: parsed.CLOUD_SYNC_INTERVAL_MS,
+    ...overrides.supabase,
+  };
+  supabase.configured = Boolean(supabase.url && supabase.anonKey);
+
+  const tlsConfiguredExplicitly =
+    overrides.tlsCertPath !== undefined ||
+    overrides.tlsKeyPath !== undefined ||
+    Boolean(parsed.TLS_CERT_PATH) ||
+    Boolean(parsed.TLS_KEY_PATH);
+  const generatedTls = tlsConfiguredExplicitly ? null : resolveGeneratedTls(repoRoot);
+  const tlsCertPath = tlsConfiguredExplicitly
+    ? overrides.tlsCertPath !== undefined
+      ? overrides.tlsCertPath
+      : parsed.TLS_CERT_PATH
+        ? resolvePath(repoRoot, parsed.TLS_CERT_PATH)
+        : null
+    : (generatedTls?.cert ?? null);
+  const tlsKeyPath = tlsConfiguredExplicitly
+    ? overrides.tlsKeyPath !== undefined
+      ? overrides.tlsKeyPath
+      : parsed.TLS_KEY_PATH
+        ? resolvePath(repoRoot, parsed.TLS_KEY_PATH)
+        : null
+    : (generatedTls?.key ?? null);
+
+>>>>>>> origin/main
   const config: GatewayConfig = {
     env: overrides.env ?? parsed.NODE_ENV,
     host: overrides.host ?? parsed.GATEWAY_HOST,
@@ -184,18 +266,8 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
       .filter(Boolean),
     publicGatewayUrl: (overrides.publicGatewayUrl ?? parsed.PUBLIC_GATEWAY_URL) || null,
     playerUrl: '',
-    tlsCertPath:
-      overrides.tlsCertPath !== undefined
-        ? overrides.tlsCertPath
-        : parsed.TLS_CERT_PATH
-          ? resolvePath(repoRoot, parsed.TLS_CERT_PATH)
-          : null,
-    tlsKeyPath:
-      overrides.tlsKeyPath !== undefined
-        ? overrides.tlsKeyPath
-        : parsed.TLS_KEY_PATH
-          ? resolvePath(repoRoot, parsed.TLS_KEY_PATH)
-          : null,
+    tlsCertPath,
+    tlsKeyPath,
     trustProxy: parsed.TRUST_PROXY,
     repoRoot,
     dataDir: resolvePath(repoRoot, overrides.dataDir ?? parsed.DATA_DIR),
@@ -300,6 +372,7 @@ export function listRankedLanAddresses(): LanAddress[] {
   return [...listLanAddresses()].sort((a, b) => lanAddressScore(b) - lanAddressScore(a));
 }
 
+<<<<<<< HEAD
 function isIpv4Literal(host: string): boolean {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 }
@@ -326,6 +399,9 @@ function isStaleConfiguredUrl(configured: string, lanAddresses: string[]): boole
 }
 
 export interface ResolvedGatewayUrls {
+=======
+export function resolveGatewayUrls(config: GatewayConfig): {
+>>>>>>> origin/main
   publicUrl: string;
   wsUrl: string;
   lanAddresses: string[];
@@ -339,6 +415,7 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
   const protocol = secure ? 'https' : 'http';
   const wsProtocol = secure ? 'wss' : 'ws';
   const lanAddresses = listRankedLanAddresses().map((entry) => entry.address);
+<<<<<<< HEAD
   const detectedUrl = `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
   const warnings: string[] = [];
 
@@ -358,4 +435,38 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
 
   const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
   return { publicUrl, wsUrl, lanAddresses, secure, warnings };
+=======
+  const publicUrl =
+    config.publicGatewayUrl?.replace(/\/+$/, '') ??
+    `${protocol}://${lanAddresses[0] ?? 'localhost'}:${config.port}`;
+  const wsUrl = `${wsProtocol}://${new URL(publicUrl).host}/ws`;
+  return { publicUrl, wsUrl, lanAddresses, secure };
+}
+
+/**
+ * Checks whether a TLS certificate lists `host` in its subject alternative
+ * names. A LAN address that changed after the certificate was generated causes
+ * a name-mismatch warning on the headset, so startup reports it explicitly.
+ */
+export function tlsCertificateCoversHost(certPath: string, host: string): boolean {
+  try {
+    const certificate = new X509Certificate(readFileSync(certPath));
+    const normalizedHost = host.toLowerCase().replace(/^\[|\]$/g, '');
+    for (const entry of (certificate.subjectAltName ?? '').split(',')) {
+      const value = entry.trim();
+      if (value.toLowerCase().startsWith('dns:')) {
+        if (value.slice(4).trim().toLowerCase() === normalizedHost) return true;
+      } else if (value.toLowerCase().startsWith('ip address:')) {
+        if (value.slice(11).trim().toLowerCase() === normalizedHost) return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+export function defaultAdminEmail(): string {
+  return process.env.BOOTSTRAP_ADMIN_EMAIL || `admin@${homedir().split(path.sep).pop() ?? 'local'}.local`;
+>>>>>>> origin/main
 }

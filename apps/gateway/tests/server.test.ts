@@ -119,6 +119,32 @@ describe('Gateway HTTP & API Integration', () => {
     sessionCookie = Array.isArray(cookieHeader) ? cookieHeader[0] : (cookieHeader as string);
   });
 
+  it('allows the administrator to configure a 30 FPS headset preview', async () => {
+    const res = await server.app.inject({
+      method: 'PATCH',
+      url: '/api/settings',
+      headers: {
+        cookie: sessionCookie,
+        'x-vrcc-csrf': csrfToken,
+      },
+      payload: { previewMaxFps: 30 },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).previewMaxFps).toBe(30);
+
+    const overLimit = await server.app.inject({
+      method: 'PATCH',
+      url: '/api/settings',
+      headers: {
+        cookie: sessionCookie,
+        'x-vrcc-csrf': csrfToken,
+      },
+      payload: { previewMaxFps: 31 },
+    });
+    expect(overLimit.statusCode).toBe(400);
+  });
+
   it('POST /api/auth/login authenticates created administrator', async () => {
     const res = await server.app.inject({
       method: 'POST',
@@ -209,4 +235,3 @@ describe('Gateway HTTP & API Integration', () => {
     expect(devList[0].name).toBe('Headset Alpha');
   });
 });
-
