@@ -4,6 +4,26 @@ A local-first dashboard and browser player for managing Meta Quest headsets and 
 
 The setup guide walks through a two-headset Quest 2 installation. The gateway supports independently paired headsets, each with its own identity, connection, and playback state.
 
+## Current workflow and tech stack
+
+This project is organized as a TypeScript monorepo with clear runtime boundaries:
+
+- `apps/admin` is the React 19 admin dashboard built with Vite and Tailwind. It handles sign-in, headset pairing, media uploads, playback controls, preview state, and live event updates.
+- `apps/gateway` is the Fastify 5 backend that owns local auth, SQLite persistence, device pairing, WebSocket sessions, file uploads, signed media URLs, and the served static dashboard/player assets.
+- `apps/player` is the Quest browser client delivered at `/player/`. It is a lightweight static HTML/CSS/JS app that handles pairing, library sync, downloads, playback state, and optional Three.js/WebXR immersive rendering.
+- `packages/shared-types` holds transport-independent domain types and DTOs used across the app.
+- `packages/protocol` contains the Zod validation layer and shared event/message contracts for HTTP and WebSocket APIs.
+
+The active runtime workflow is:
+
+1. Install dependencies and build the workspace (`npm install` / `npm run build`).
+2. Start the gateway, which loads `.env`, initializes local folders, opens the SQLite database, and creates the HTTP + WebSocket services.
+3. Sign in to the dashboard using a locally created admin account stored in SQLite.
+4. Pair a Quest browser session with a one-time six-digit code and persistent browser-local device credentials.
+5. Upload media, sync the video library, and issue commands from the dashboard to one headset or a group.
+6. The gateway validates commands, broadcasts state over WebSockets, and serves signed media URLs for direct range-based playback.
+7. For offline material, the headset stores a checksum-verified local copy in IndexedDB and reports transfer progress back to the dashboard.
+
 ## Features
 
 - Local administrator accounts with role-based access, hashed passwords, cookie sessions, and CSRF protection.
