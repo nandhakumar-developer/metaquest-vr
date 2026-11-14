@@ -1,60 +1,55 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext.js';
 import { useActivePreview } from '../context/previewStore.js';
-import { X, Eye, Compass, Activity } from 'lucide-react';
+import { X, Eye, Activity } from 'lucide-react';
 
 export const PreviewModal: React.FC = () => {
   const activePreview = useActivePreview();
-  const { devices, settings, closeActivePreview } = useApp();
-  const [previewFps, setPreviewFps] = useState(0);
-  const frameTimes = useRef<{ deviceId: string; timestamps: number[] }>({
-    deviceId: '',
-    timestamps: [],
-  });
+  const { devices, closeActivePreview } = useApp();
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const pendingSrcRef = useRef<string | null>(null);
+  const decodingRef = useRef(false);
+  const generationRef = useRef(0);
 
   useEffect(() => {
-    if (!activePreview?.dataBase64) {
-      frameTimes.current = { deviceId: '', timestamps: [] };
-      setPreviewFps(0);
+    const frame = activePreview?.dataBase64;
+    if (!frame) {
+      // Modal closed or waiting for the first frame: stop the decode loop.
+      generationRef.current += 1;
+      pendingSrcRef.current = null;
+      decodingRef.current = false;
       return;
     }
-
-    const timestamp = Date.parse(activePreview.capturedAt);
-    if (!Number.isFinite(timestamp)) return;
-    if (frameTimes.current.deviceId !== activePreview.deviceId) {
-      frameTimes.current = { deviceId: activePreview.deviceId, timestamps: [] };
+    const src = `data:image/jpeg;base64,${frame}`;
+    const img = imgRef.current;
+    if (!img || decodingRef.current) {
+      // Keep only the newest frame while the previous one is still decoding;
+      // this prevents a decode backlog from making the preview lag behind.
+      pendingSrcRef.current = src;
+      return;
     }
-    const timestamps = frameTimes.current.timestamps;
-    if (timestamps[timestamps.length - 1] === timestamp) return;
-    timestamps.push(timestamp);
-    while (timestamps.length > 1 && timestamp - timestamps[0] > 2000) timestamps.shift();
-    const elapsed = timestamp - timestamps[0];
-    setPreviewFps(elapsed > 0 ? Math.round(((timestamps.length - 1) * 1000) / elapsed) : 0);
-  }, [activePreview?.deviceId, activePreview?.capturedAt]);
+    decodingRef.current = true;
+    const generation = generationRef.current;
+    void (async () => {
+      let next: string | null = src;
+      while (next && generation === generationRef.current) {
+        img.src = next;
+        try {
+          await img.decode();
+        } catch {
+          // A newer frame can invalidate the decode; the loop simply continues.
+        }
+        if (generation !== generationRef.current) return;
+        next = pendingSrcRef.current;
+        pendingSrcRef.current = null;
+      }
+      if (generation === generationRef.current) decodingRef.current = false;
+    })();
+  }, [activePreview?.dataBase64]);
 
   if (!activePreview) return null;
 
   const device = devices.find((d) => d.id === activePreview.deviceId);
-  const rotation = activePreview.rotation;
-
-  let pitch = 0;
-  let yaw = 0;
-  let roll = 0;
-  if (rotation) {
-    const { x, y, z, w } = rotation;
-    const sinr_cosp = 2 * (w * x + y * z);
-    const cosr_cosp = 1 - 2 * (x * x + y * y);
-    roll = Math.round(Math.atan2(sinr_cosp, cosr_cosp) * (180 / Math.PI));
-
-    const sinp = 2 * (w * y - z * x);
-    pitch = Math.round(
-      Math.abs(sinp) >= 1 ? (Math.sign(sinp) * Math.PI) / 2 : Math.asin(sinp) * (180 / Math.PI),
-    );
-
-    const siny_cosp = 2 * (w * z + x * y);
-    const cosy_cosp = 1 - 2 * (y * y + z * z);
-    yaw = Math.round(Math.atan2(siny_cosp, cosy_cosp) * (180 / Math.PI));
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/25 p-5 backdrop-blur-2xl">
@@ -74,9 +69,6 @@ export const PreviewModal: React.FC = () => {
                   Live preview
                 </span>
               </div>
-              <p className="mt-[3px] text-[11.5px] text-[#64748B]">
-                Target {settings?.previewMaxFps ?? 30} FPS · Received {previewFps || 'waiting'} FPS
-              </p>
             </div>
           </div>
           <button onClick={closeActivePreview} className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0" aria-label="Close">
@@ -88,7 +80,7 @@ export const PreviewModal: React.FC = () => {
           <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-black/20 bg-[#2A2A2A] shadow-inner">
             {activePreview.dataBase64 ? (
               <img
-                src={`data:image/jpeg;base64,${activePreview.dataBase64}`}
+                ref={imgRef}
                 alt="Headset view"
                 className="h-full w-full object-contain"
               />
@@ -101,27 +93,6 @@ export const PreviewModal: React.FC = () => {
 
             <div className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-[#2A2A2A]/70 px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur">
               Captured {new Date(activePreview.capturedAt).toLocaleTimeString()}
-            </div>
-          </div>
-
-          <div className="rounded-[18px] border border-transparent bg-white/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-[18px] flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-[#004CE4]" />
-              <span className="text-[11.5px] font-semibold text-[#111111]">Headset orientation</span>
-            </div>
-            <div className="flex items-center gap-5 font-mono text-[11px]">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#8A8A8A]">Pitch</span>
-                <span className="font-semibold text-[#555555]">{pitch}°</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#8A8A8A]">Yaw</span>
-                <span className="font-semibold text-[#08785D]">{yaw}°</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#8A8A8A]">Roll</span>
-                <span className="font-semibold text-[#003BB5]">{roll}°</span>
-              </div>
             </div>
           </div>
         </div>

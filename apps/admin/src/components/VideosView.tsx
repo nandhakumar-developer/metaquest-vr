@@ -141,40 +141,41 @@ export const VideosView: React.FC<VideosViewProps> = ({ onOpenGroup }) => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E1E1E1] bg-[#F5F5F5] px-4 py-3">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => onOpenGroup(video.id)}
-                    title="Open synchronized group playback with this video preselected"
-                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/65 text-[#0F172A] shadow-[0_4px_14px_rgba(0,0,0,0.06)] backdrop-blur-[18px] hover:bg-white/90 h-[27px] gap-[5px] px-[10px] text-[10.5px]"
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    Group play
-                  </button>
-                  <button
-                    onClick={() => setDeployTarget(video)}
-                    title="Download an offline copy to selected Quest headsets"
-                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] h-[27px] gap-[5px] px-[10px] text-[10.5px]"
-                  >
-                    <DownloadCloud className="h-3.5 w-3.5" />
-                    Send to headsets
-                  </button>
-                </div>
+              <div className="flex flex-nowrap items-center justify-between gap-1.5 border-t border-[#E1E1E1] bg-[#F5F5F5] px-3 py-3">
+                <button
+                  onClick={() => onOpenGroup(video.id)}
+                  title="Open synchronized group playback with this video preselected"
+                  className="inline-flex h-[27px] items-center justify-center gap-[4px] whitespace-nowrap rounded-full border border-transparent bg-white/65 px-2 text-[9.5px] font-semibold leading-none tracking-[-0.008em] text-[#0F172A] shadow-[0_4px_14px_rgba(0,0,0,0.06)] backdrop-blur-[18px] transition-all duration-200 hover:-translate-y-px hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none"
+                >
+                  <Users className="h-3 w-3" />
+                  Group play
+                </button>
 
-                <div className="flex items-center gap-0.5">
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => setPreviewVideo(video)}
                     title="Play preview"
-                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0 text-[#8A8A8A]"
+                    aria-label={`Play preview of ${video.name}`}
+                    className="inline-flex h-[27px] w-[27px] items-center justify-center rounded-[9px] border border-transparent bg-white/35 p-0 text-[#8A8A8A] backdrop-blur-[14px] transition-all duration-200 hover:-translate-y-px hover:bg-white/65 hover:text-[#0F172A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none"
                   >
                     <Play className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => void handleDelete(video.id, video.name)}
-                    title="Delete video"
-                    className="inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-4 text-[12px] font-semibold leading-none tracking-[-0.008em] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none hover:-translate-y-px bg-white/35 text-[#334155] backdrop-blur-[14px] hover:bg-white/65 hover:text-[#0F172A] h-[30px] w-[30px] rounded-[9px] p-0 text-[#8A8A8A] hover:text-[#B91C1C]"
+                    onClick={() => setDeployTarget(video)}
+                    title="Download an offline copy to selected Quest headsets"
+                    className="inline-flex h-[27px] items-center justify-center gap-[4px] whitespace-nowrap rounded-full border border-transparent bg-gradient-to-br from-[#4E7EFF] to-[#004CE4] px-2 text-[9.5px] font-semibold leading-none tracking-[-0.008em] text-white shadow-[0_8px_22px_rgba(0,76,228,0.32)] transition-all duration-200 hover:-translate-y-px hover:from-[#1F64F0] hover:to-[#004CE4] hover:shadow-[0_10px_28px_rgba(0,76,228,0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <DownloadCloud className="h-3 w-3" />
+                    Send to headsets
+                  </button>
+                  <button
+                    onClick={() => void handleDelete(video.id, video.name)}
+                    title="Delete video from the gateway library"
+                    aria-label={`Delete ${video.name}`}
+                    className="inline-flex h-[27px] items-center justify-center gap-[4px] whitespace-nowrap rounded-full border border-[#FF2525]/20 bg-[#FF2525]/10 px-2 text-[9.5px] font-semibold leading-none tracking-[-0.008em] text-[#B91C1C] backdrop-blur-[14px] transition-all duration-200 hover:-translate-y-px hover:bg-[#FF2525]/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004CE4] disabled:cursor-not-allowed disabled:opacity-40 disabled:transform-none"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
                   </button>
                 </div>
               </div>

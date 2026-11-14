@@ -124,8 +124,12 @@ export class PreviewService {
     const settings = this.ops.getSettings();
     const maxFps = Math.min(this.config.previewMaxFps, settings.previewMaxFps);
     const minInterval = 1000 / Math.max(1, maxFps);
+    // Absorb network/timer jitter. Without a small tolerance, a headset
+    // sending exactly at the target cadence gets every other frame dropped
+    // (e.g. 30 FPS arrives at ~33.3 ms vs a strict 33.33 ms gate).
+    const throttleInterval = minInterval * 0.8;
     const now = Date.now();
-    if (connection.lastPreviewFrameAt > 0 && now - connection.lastPreviewFrameAt < minInterval) {
+    if (connection.lastPreviewFrameAt > 0 && now - connection.lastPreviewFrameAt < throttleInterval) {
       return;
     }
     const byteLength = Math.floor((payload.dataBase64.length * 3) / 4);

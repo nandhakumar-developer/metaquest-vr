@@ -115,14 +115,16 @@ const state = {
   scheduleBaseSeconds: 0,
   previewTimer: null,
   previewActive: false,
+  previewSession: 0,
   previewCanvas: null,
+  previewContext: null,
   previewCapturePending: false,
   lastPoseSentAt: 0,
   immersive: null,
   isImmersive: false,
   intent: 'idle',
   controlsTimer: null,
-  battery: null,
+  batteryManager: null,
   downloads: {},
   downloadJobs: new Map(),
   offlineDb: null,
@@ -1362,7 +1364,7 @@ function envelope(type, payload, messageId = uuid()) {
 
 function send(type, payload) {
   if (!state.ws || state.ws.readyState !== WebSocket.OPEN || !state.credentials) return false;
-  if (type === 'PREVIEW_SIGNAL' && state.ws.bufferedAmount > 300_000) return false;
+  if (type === 'PREVIEW_SIGNAL' && state.ws.bufferedAmount > 120_000) return false;
   try {
     state.ws.send(JSON.stringify(envelope(type, payload)));
     return true;
@@ -1765,26 +1767,26 @@ async function sendDeviceStatus() {
 }
 
 async function readBattery() {
-  if (state.battery) return state.battery;
   if (typeof navigator.getBattery !== 'function') {
-    state.battery = { level: null, charging: null };
-    return state.battery;
+    return { level: null, charging: null };
   }
   try {
-    const battery = await navigator.getBattery();
-    const update = () => {
-      state.battery = {
-        level: Math.round(clamp(battery.level, 0, 1) * 100),
-        charging: Boolean(battery.charging),
-      };
+    // Keep the BatteryManager alive but read the level on every heartbeat: the
+    // level can change without a levelchange event (sleep/resume, dock/undock),
+    // which previously left the dashboard showing a stale percentage.
+    state.batteryManager ??= navigator.getBattery();
+    const battery = await state.batteryManager;
+    const rawLevel = Number(battery.level);
+    const level = Number.isFinite(rawLevel)
+      ? Math.round(clamp(rawLevel <= 1 ? rawLevel * 100 : rawLevel, 0, 100))
+      : null;
+    return {
+      level,
+      charging: typeof battery.charging === 'boolean' ? battery.charging : null,
     };
-    update();
-    battery.addEventListener?.('levelchange', update);
-    battery.addEventListener?.('chargingchange', update);
-    return state.battery;
   } catch {
-    state.battery = { level: null, charging: null };
-    return state.battery;
+    state.batteryManager = null;
+    return { level: null, charging: null };
   }
 }
 
@@ -2189,10 +2191,28 @@ async function startPreview() {
   if (!state.current) throw new Error('Load a video before requesting a preview.');
   stopPreview();
   state.previewActive = true;
-  void captureAndSendPreview();
+  state.previewSession += 1;
+  const session = state.previewSession;
   const fps = clamp(Number(state.previewMaxFps) || 30, 5, 30);
+  // Schedule at the requested cadence. The gateway applies a small jitter
+  // tolerance so frames sent at (for example) 33 ms for a 30 FPS target are
+  // not dropped as "too soon" and halve the observed frame rate.
   const intervalMs = Math.max(1, Math.round(1000 / fps));
-  state.previewTimer = setInterval(() => void captureAndSendPreview(), intervalMs);
+  schedulePreviewFrame(intervalMs, 0, session);
+}
+
+// Self-scheduling loop: if encoding a frame takes longer than the target
+// interval we immediately start the next one instead of skipping an entire
+// interval tick, which is what previously pinned slower headsets to ~6 FPS.
+function schedulePreviewFrame(intervalMs, delayMs, session) {
+  if (!state.previewActive || session !== state.previewSession) return;
+  state.previewTimer = setTimeout(() => {
+    const startedAt = performance.now();
+    void captureAndSendPreview().finally(() => {
+      const elapsed = performance.now() - startedAt;
+      schedulePreviewFrame(intervalMs, Math.max(0, intervalMs - elapsed), session);
+    });
+  }, delayMs);
 }
 
 async function captureAndSendPreview() {
@@ -2208,8 +2228,9 @@ async function captureAndSendPreview() {
 
 function stopPreview() {
   state.previewActive = false;
+  state.previewSession += 1;
   if (state.previewTimer) {
-    clearInterval(state.previewTimer);
+    clearTimeout(state.previewTimer);
     state.previewTimer = null;
   }
 }
@@ -2227,18 +2248,23 @@ async function captureFrame() {
   const srcW = isSbs ? Math.floor(width / 2) : width;
   const srcH = isOu ? Math.floor(height / 2) : height;
 
-  const scale = Math.min(1, 540 / srcW);
+  // A smaller preview keeps JPEG encoding fast enough to sustain 30 FPS on the
+  // headset browser; the admin modal only needs a compact status view.
+  const scale = Math.min(1, 320 / srcW);
   const targetWidth = Math.max(2, Math.round(srcW * scale));
   const targetHeight = Math.max(2, Math.round(srcH * scale));
   if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
     canvas.width = targetWidth;
     canvas.height = targetHeight;
+    state.previewContext = null;
   }
-  const context = canvas.getContext('2d');
+  const context =
+    state.previewContext ?? canvas.getContext('2d', { alpha: false, desynchronized: true });
   if (!context) return null;
+  state.previewContext = context;
   try {
     context.drawImage(source, 0, 0, srcW, srcH, 0, 0, canvas.width, canvas.height);
-    const dataUrl = await canvasToDataUrl(canvas, 0.5);
+    const dataUrl = await canvasToDataUrl(canvas, 0.45);
     if (!dataUrl) return null;
     return { dataUrl, width: canvas.width, height: canvas.height };
   } catch {
@@ -2254,8 +2280,8 @@ async function canvasToDataUrl(canvas, initialQuality) {
   let blob = await new Promise((resolve) => {
     canvas.toBlob(resolve, 'image/jpeg', quality);
   });
-  while (blob && blob.size > 220_000 && quality > 0.26) {
-    quality -= 0.06;
+  if (blob && blob.size > 120_000 && quality > 0.3) {
+    quality = 0.3;
     blob = await new Promise((resolve) => {
       canvas.toBlob(resolve, 'image/jpeg', quality);
     });
