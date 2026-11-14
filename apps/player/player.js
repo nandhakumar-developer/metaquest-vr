@@ -119,6 +119,8 @@ const state = {
   previewCanvas: null,
   previewContext: null,
   previewCapturePending: false,
+  previewTargetWidth: 640,
+  previewCaptureEwma: 0,
   lastPoseSentAt: 0,
   immersive: null,
   isImmersive: false,
@@ -1364,7 +1366,7 @@ function envelope(type, payload, messageId = uuid()) {
 
 function send(type, payload) {
   if (!state.ws || state.ws.readyState !== WebSocket.OPEN || !state.credentials) return false;
-  if (type === 'PREVIEW_SIGNAL' && state.ws.bufferedAmount > 120_000) return false;
+  if (type === 'PREVIEW_SIGNAL' && state.ws.bufferedAmount > 160_000) return false;
   try {
     state.ws.send(JSON.stringify(envelope(type, payload)));
     return true;
@@ -1841,6 +1843,10 @@ function setPlaybackState(next, options = {}) {
   if (next !== 'error') state.playbackError = options.clearError === false ? state.playbackError : null;
   updateTransportUi();
   if (changed || options.force) sendPlaybackEvent(playbackEventName(next));
+  // The top navigation stays out of the way while a video is running and
+  // comes back as soon as playback pauses or ends.
+  const navHidden = next === 'playing' || next === 'buffering';
+  el.playerScreen.classList.toggle('nav-hidden', navHidden);
   if (next === 'playing' && !state.isImmersive) armControlsHide();
   else showControls();
 }
@@ -2192,6 +2198,8 @@ async function startPreview() {
   stopPreview();
   state.previewActive = true;
   state.previewSession += 1;
+  state.previewTargetWidth = 640;
+  state.previewCaptureEwma = 0;
   const session = state.previewSession;
   const fps = clamp(Number(state.previewMaxFps) || 30, 5, 30);
   // Schedule at the requested cadence. The gateway applies a small jitter
@@ -2210,7 +2218,10 @@ function schedulePreviewFrame(intervalMs, delayMs, session) {
     const startedAt = performance.now();
     void captureAndSendPreview().finally(() => {
       const elapsed = performance.now() - startedAt;
-      schedulePreviewFrame(intervalMs, Math.max(0, intervalMs - elapsed), session);
+      // Always yield a few milliseconds so a headset that cannot keep up does
+      // not starve its own video renderer with back-to-back canvas captures.
+      const nextDelay = Math.min(intervalMs, Math.max(4, Math.round(intervalMs - elapsed)));
+      schedulePreviewFrame(intervalMs, nextDelay, session);
     });
   }, delayMs);
 }
@@ -2218,11 +2229,15 @@ function schedulePreviewFrame(intervalMs, delayMs, session) {
 async function captureAndSendPreview() {
   if (!state.previewActive || state.previewCapturePending) return;
   state.previewCapturePending = true;
+  const startedAt = performance.now();
   try {
     const frame = await captureFrame();
     if (frame && state.previewActive) sendPreviewFrame(frame);
   } finally {
     state.previewCapturePending = false;
+    // Include send/JSON cost in the budget so adaptive resolution reflects the
+    // real cadence the headset can sustain.
+    adaptPreviewTargetWidth(performance.now() - startedAt);
   }
 }
 
@@ -2235,22 +2250,38 @@ function stopPreview() {
   }
 }
 
+function renderedPreviewSource() {
+  // For 360/180 playback the immersive renderer already draws a downscaled
+  // view to its canvas. Reading that canvas is much cheaper than reading a
+  // full-resolution (up to 8K) video frame, and it also matches what the
+  // headset actually shows. Only used outside an XR session.
+  if (state.isImmersive || !state.immersive || !state.current) return null;
+  const projection = state.current.projectionType;
+  if (projection !== '360' && projection !== '180') return null;
+  const canvas = el.xrCanvas;
+  if (!canvas || canvas.hidden || canvas.width < 2 || canvas.height < 2) return null;
+  return { element: canvas, width: canvas.width, height: canvas.height };
+}
+
 async function captureFrame() {
-  const source = el.video;
-  const width = el.video.videoWidth;
-  const height = el.video.videoHeight;
-  if (!width || !height || el.video.readyState < 2) return null;
+  const rendered = renderedPreviewSource();
+  const source = rendered?.element ?? el.video;
+  const width = rendered?.width ?? source.videoWidth;
+  const height = rendered?.height ?? source.videoHeight;
+  if (!width || !height) return null;
+  if (!rendered && source.readyState < 2) return null;
   const canvas = state.previewCanvas || document.createElement('canvas');
   state.previewCanvas = canvas;
 
-  const isSbs = state.current?.stereoLayout === 'sbs';
-  const isOu = state.current?.stereoLayout === 'ou';
+  const isSbs = !rendered && state.current?.stereoLayout === 'sbs';
+  const isOu = !rendered && state.current?.stereoLayout === 'ou';
   const srcW = isSbs ? Math.floor(width / 2) : width;
   const srcH = isOu ? Math.floor(height / 2) : height;
 
-  // A smaller preview keeps JPEG encoding fast enough to sustain 30 FPS on the
-  // headset browser; the admin modal only needs a compact status view.
-  const scale = Math.min(1, 320 / srcW);
+  // The modal paints at roughly 720 px wide, so 640 px keeps the preview sharp
+  // instead of upscaling a blurry thumbnail; resolution only drops if the
+  // headset genuinely cannot keep the frame rate up.
+  const scale = Math.min(1, state.previewTargetWidth / srcW);
   const targetWidth = Math.max(2, Math.round(srcW * scale));
   const targetHeight = Math.max(2, Math.round(srcH * scale));
   if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -2262,9 +2293,10 @@ async function captureFrame() {
     state.previewContext ?? canvas.getContext('2d', { alpha: false, desynchronized: true });
   if (!context) return null;
   state.previewContext = context;
+
   try {
     context.drawImage(source, 0, 0, srcW, srcH, 0, 0, canvas.width, canvas.height);
-    const dataUrl = await canvasToDataUrl(canvas, 0.45);
+    const dataUrl = canvasToDataUrl(canvas, 0.6);
     if (!dataUrl) return null;
     return { dataUrl, width: canvas.width, height: canvas.height };
   } catch {
@@ -2272,27 +2304,35 @@ async function captureFrame() {
   }
 }
 
-async function canvasToDataUrl(canvas, initialQuality) {
-  if (typeof canvas.toBlob !== 'function') {
-    return canvas.toDataURL('image/jpeg', initialQuality);
+// Keep the preview near 30 FPS on slower headsets by trading resolution for
+// throughput instead of letting every frame arrive late.
+function adaptPreviewTargetWidth(captureMs) {
+  const budget = 1000 / 30;
+  state.previewCaptureEwma =
+    state.previewCaptureEwma > 0
+      ? state.previewCaptureEwma * 0.8 + captureMs * 0.2
+      : captureMs;
+  let next = state.previewTargetWidth;
+  if (state.previewCaptureEwma > budget * 1.15) {
+    next = Math.max(480, next - 32);
+  } else if (state.previewCaptureEwma < budget * 0.55) {
+    next = Math.min(640, next + 16);
   }
-  let quality = initialQuality;
-  let blob = await new Promise((resolve) => {
-    canvas.toBlob(resolve, 'image/jpeg', quality);
-  });
-  if (blob && blob.size > 120_000 && quality > 0.3) {
-    quality = 0.3;
-    blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', quality);
-    });
+  state.previewTargetWidth = next;
+}
+
+// toDataURL is dramatically faster than toBlob for small thumbnail canvases
+// (toBlob defers to the compositor and often costs a full frame); the blocking
+// cost here is only a few milliseconds, which is well within the 30 FPS budget.
+function canvasToDataUrl(canvas, initialQuality) {
+  let dataUrl = canvas.toDataURL('image/jpeg', initialQuality);
+  if (dataUrl.length > 160_000) {
+    dataUrl = canvas.toDataURL('image/jpeg', 0.45);
   }
-  if (!blob) return null;
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-    reader.onerror = () => resolve(null);
-    reader.readAsDataURL(blob);
-  });
+  if (dataUrl.length > 240_000) {
+    dataUrl = canvas.toDataURL('image/jpeg', 0.35);
+  }
+  return dataUrl || null;
 }
 
 function sendPreviewFrame(frame) {
@@ -2458,6 +2498,7 @@ function resetPlaybackUi() {
   state.immersive?.stopPreview();
   state.current = null;
   state.playbackState = 'idle';
+  el.playerScreen.classList.remove('nav-hidden');
   state.playbackError = null;
   state.intent = 'idle';
   state.isImmersive = false;

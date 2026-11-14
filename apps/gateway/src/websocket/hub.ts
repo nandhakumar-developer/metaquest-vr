@@ -9,7 +9,7 @@ export interface AdminSocketMetadata {
   isAlive: boolean;
 }
 
-const MAX_QUEUED_PREVIEW_BYTES = 150_000;
+const MAX_QUEUED_PREVIEW_BYTES = 160_000;
 
 /** Fan-out to authenticated dashboard sockets. Device commands never use this hub. */
 export class AdminHub {
