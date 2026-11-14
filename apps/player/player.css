@@ -472,6 +472,11 @@ summary:focus-visible {
   backdrop-filter: blur(18px);
 }
 
+/* Hide the top navigation while a video is playing; it returns on pause. */
+.player-screen.nav-hidden .player-header {
+  display: none;
+}
+
 .player-identity {
   display: flex;
   min-width: 0;

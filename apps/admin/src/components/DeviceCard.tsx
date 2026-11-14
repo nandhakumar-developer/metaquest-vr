@@ -16,7 +16,6 @@ import {
   MoreVertical,
   Wifi,
   WifiOff,
-  Glasses,
   Minimize,
 } from 'lucide-react';
 
@@ -199,11 +198,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
   const finishVolumeAdjustment = () => {
     isAdjustingVolumeRef.current = false;
     flushVolumeCommand();
-  };
-
-  const requestImmersive = () => {
-    if (!isOnline) return;
-    runCommand('ENTER_IMMERSIVE');
   };
 
   const handleLoadVideo = (videoId: string) => {
@@ -518,15 +512,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onOpenPreview })
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={requestImmersive}
-            disabled={!isOnline || !device.playback.videoId}
-            title="Request immersive VR; browser may require a tap on the headset"
-            className="inline-flex h-[30px] items-center gap-1.5 rounded-full bg-[#004CE4]/10 px-2.5 text-[10px] font-semibold text-[#003BB5] transition hover:bg-[#004CE4]/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <Glasses className="h-3.5 w-3.5" />
-            Request VR
-          </button>
           <button
             onClick={() => runCommand('EXIT_IMMERSIVE')}
             disabled={!isOnline}

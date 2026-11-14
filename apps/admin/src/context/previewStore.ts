@@ -42,3 +42,29 @@ function subscribe(listener: PreviewListener): () => void {
 export function useActivePreview(): ActivePreviewState | null {
   return useSyncExternalStore(subscribe, getActivePreview, getActivePreview);
 }
+
+// Primitive snapshots so only the small image/timestamp nodes re-render at
+// preview cadence; the modal chrome (header, footer, buttons) stays stable.
+export function usePreviewDeviceId(): string | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => activePreview?.deviceId ?? null,
+    () => null,
+  );
+}
+
+export function usePreviewFrameData(): string {
+  return useSyncExternalStore(
+    subscribe,
+    () => activePreview?.dataBase64 ?? '',
+    () => '',
+  );
+}
+
+export function usePreviewCapturedAt(): string {
+  return useSyncExternalStore(
+    subscribe,
+    () => activePreview?.capturedAt ?? '',
+    () => '',
+  );
+}

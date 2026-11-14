@@ -235,17 +235,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       case 'preview.frame':
         updateActivePreview((prev) => {
-          if (prev && prev.deviceId === event.deviceId) {
-            return {
-              deviceId: event.deviceId,
-              dataBase64: event.dataBase64,
-              capturedAt: event.capturedAt,
-              includesUserInterface: event.includesUserInterface,
-              rotation: prev.rotation,
-            };
-          }
+          if (!prev || prev.deviceId !== event.deviceId) return prev;
           return {
-            deviceId: event.deviceId,
+            ...prev,
             dataBase64: event.dataBase64,
             capturedAt: event.capturedAt,
             includesUserInterface: event.includesUserInterface,
