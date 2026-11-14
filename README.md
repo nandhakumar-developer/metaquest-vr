@@ -4,6 +4,30 @@ A local-first dashboard and browser player for managing Meta Quest headsets and 
 
 The setup guide walks through a two-headset Quest 2 installation. The gateway supports independently paired headsets, each with its own identity, connection, and playback state.
 
+## Verified project snapshot (14 November 2026)
+
+This table records the state of this checkout at the last review. Use it to decide whether a rebuild or a configuration change is needed.
+
+| Item | Current value |
+| ---- | ------------- |
+| Project version | `1.0.0` (`PROTOCOL_VERSION` 1) |
+| Git state | branch `main`, clean working tree, commit `7d4002b` |
+| Node.js | `v24.14.0` (requirement: >= 24) |
+| npm | `11.19.0` (requirement: >= 10) |
+| Git | `2.52.0.windows.1` |
+| Gateway process | not running when inspected; started and stopped for verification only |
+| Build output | `apps/admin/dist`, `apps/gateway/dist`, `packages/shared-types/dist`, `packages/protocol/dist` all present |
+| Runtime URL on this PC | `https://192.168.1.62:5000` (dashboard), `https://192.168.1.62:5000/player/` (headsets) |
+| TLS | enabled from `storage/certs/gateway.crt` and `storage/certs/gateway.key` |
+| FFmpeg / FFprobe | not installed, so metadata probing and thumbnails are unavailable |
+| Database | `storage/data/vrcc.sqlite` ≈ 1 MB plus a ≈ 4 MB WAL file |
+| Stored data | 1 local admin, 1 paired device, 4 videos (≈ 1.19 GB), 6 playback sessions, 14 commands, 1,893 audit rows |
+| Health check | `{"status":"ok","database":"ok", ...}` after a controlled test start |
+
+This checkout differs from the documented defaults: `.env` sets `GATEWAY_PORT=5000` and explicit TLS paths under `storage/certs`, so the dashboard and player are served over **HTTPS on port 5000**, not HTTP on 4000. `PUBLIC_GATEWAY_URL` is blank, so the gateway auto-detected `192.168.1.62`. The current certificate does not include that address; re-run `npm run https:setup` after a LAN IP change to avoid a headset certificate warning.
+
+Nothing is left running after verification. Start the app with `npm start` (production) or `npm run dev` (development) as described below.
+
 ## Current workflow and tech stack
 
 This project is organized as a TypeScript monorepo with clear runtime boundaries:
@@ -156,13 +180,61 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 | --------------------- | --------------------------------------------------------------------------------------- |
 | Runtime and workspace | Node.js 24+, npm 10+, npm workspaces                                                    |
 | Language              | TypeScript 5.9 for the gateway, dashboard, shared types, and protocol packages          |
-| Admin dashboard       | React 19, Vite 6, Tailwind CSS 4, Lucide icons                                          |
+| Admin dashboard       | React 19, Vite 6, Tailwind CSS 4, Lucide icons, Framer Motion                           |
 | Gateway               | Fastify 5, REST routes, `ws` WebSocket server, multipart upload, rate limiting          |
 | Quest player          | Browser-native HTML, CSS, and JavaScript; Three.js for immersive projection; WebXR APIs |
 | Data validation       | Zod schemas in the shared protocol package                                              |
 | Persistence           | Node `node:sqlite` database plus local media, thumbnail, temporary, and log directories |
 | Media inspection      | FFmpeg and FFprobe when installed; optional for upload and playback                     |
 | Developer tooling     | TypeScript, ESLint, Prettier, Vitest, Playwright dependency                             |
+
+### Installed dependency versions
+
+These are the versions resolved in this checkout's `package-lock.json` (`lockfileVersion` 3) and installed under `node_modules`.
+
+| Package | Declared | Installed | Used by |
+| ------- | -------- | --------- | ------- |
+| `node` | engines `>=24.0.0` | **24.14.0** | all workspaces (built-in `node:sqlite`) |
+| `npm` | engines `>=10.0.0` | **11.19.0** | workspace install and scripts |
+| `typescript` | `5.9.3` | **5.9.3** | all workspaces |
+| `react` | `^19.0.0` | **19.3.1** | admin |
+| `react-dom` | `^19.0.0` | **19.3.1** | admin |
+| `vite` | `^6.0.1` | **6.4.5** | admin |
+| `@vitejs/plugin-react` | `^4.3.4` | **4.7.0** | admin |
+| `tailwindcss` | `^4.3.3` | **4.3.3** | admin |
+| `@tailwindcss/vite` | `^4.3.3` | **4.3.3** | admin |
+| `lucide-react` | `^0.460.0` | **0.460.0** | admin |
+| `framer-motion` | `^14.10.1` | **14.10.1** | admin |
+| `clsx` | `^2.1.1` | **2.1.1** | admin |
+| `@types/react`, `@types/react-dom` | `^19.0.0` | **19.3.0** | admin |
+| `fastify` | `5.12.7` | **5.12.7** | gateway |
+| `@fastify/cookie` | `11.1.5` | **11.1.5** | gateway |
+| `@fastify/cors` | `11.3.1` | **11.3.1** | gateway |
+| `@fastify/multipart` | `10.1.6` | **10.1.6** | gateway |
+| `@fastify/rate-limit` | `11.2.1` | **11.2.1** | gateway |
+| `@fastify/static` | `10.1.8` | **10.1.8** | gateway |
+| `ws` | `8.22.0` | **8.22.0** | gateway |
+| `zod` | `4.6.7` | **4.6.7** | protocol, gateway |
+| `dotenv` | `18.0.9` | **18.0.9** | gateway |
+| `qrcode` | `1.5.4` | **1.5.4** | gateway |
+| `three` | `^0.172.0` | **0.172.0** | gateway (served to player), player (WebXR) |
+| `tsx` | `4.23.15` | **4.23.15** | gateway dev/watch and CLI |
+| `pino-pretty` | `13.2.0` | **13.2.0** | gateway development logs |
+| `@types/node` | `26.6.5` | **26.6.5** | gateway, admin |
+| `@types/ws` | `8.18.2` | **8.18.2** | gateway |
+| `@types/qrcode` | `1.5.6` | **1.5.6** | gateway |
+| `vitest` | `5.0.5` | **5.0.5** | root, protocol, gateway |
+| `@vitest/coverage-v8` | `5.0.5` | **5.0.5** | root |
+| `@playwright/test` | `1.64.1` | **1.64.1** | root (E2E entry point) |
+| `eslint` | `10.13.0` | **10.13.0** | root |
+| `typescript-eslint` | `8.72.1` | **8.72.1** | root |
+| `prettier` | `3.9.10` | **3.9.10** | root |
+| `concurrently` | `10.0.6` | **10.0.6** | root dev script |
+| `selfsigned` | `^5.5.0` | **5.5.0** | root HTTPS certificate setup |
+| `@vrcc/shared-types` | `1.0.0` | **1.0.0** | admin, gateway, protocol |
+| `@vrcc/protocol` | `1.0.0` | **1.0.0** | admin, gateway |
+
+`npm install` is the source of truth; run `npm ls --all` or inspect `package-lock.json` if you need the complete transitive tree. Node 24 prints an `ExperimentalWarning` for `node:sqlite`; this is expected and does not indicate a failure.
 
 ## Repository and runtime folder layout
 
@@ -191,7 +263,7 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 │   │   │   ├── devices/               Device registry, state, and offline detection
 │   │   │   ├── pairing/               Headset pairing and claim lifecycle
 │   │   │   ├── preview/               Live snapshot preview handling
-│   │   │   ├── routes/                HTTP routes for auth, system, devices, media, and playback
+│   │   │   ├── routes/                HTTP routes: auth, devices, downloads, player, playback, sessions, system, videos
 │   │   │   ├── security/              Origin checks and response security headers
 │   │   │   ├── services/              Cloud sync, media, playback, snapshots, and maintenance
 │   │   │   ├── transfers/             Offline download deployment service
