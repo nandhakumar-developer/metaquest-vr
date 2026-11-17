@@ -7,7 +7,7 @@
   Check with `node --version` and `npm --version`.
 - A PC and the two Quest 2 headsets on the same Wi-Fi/LAN.
 - Optional: FFmpeg and FFprobe on `PATH` for duration, codec, and thumbnail probing.
-- Optional: a TLS certificate if you want immersive WebXR over HTTPS.
+- A local TLS certificate is generated automatically on first run for immersive WebXR over HTTPS.
 
 No paid account, cloud video host, or Android tooling is required.
 
@@ -23,23 +23,31 @@ Or manually:
 
 ```powershell
 npm install
-npm run build
+npm run dev
 ```
 
-The script checks the Node version, installs workspaces, and builds the shared packages,
-admin SPA, and gateway.
+The script checks the Node version, installs workspaces, and the first `npm run dev` / `npm start`
+creates `.env`, generates local TLS files, builds the shared packages, and builds the admin SPA
+once so `https://localhost:5000/admin` works.
 
 ## 2. Configure `.env`
 
-The repository ships `.env.example`. Copy it to `.env` and adjust these values:
+On a fresh clone, `.env` is created automatically at the repository root (it is ignored by Git)
+with these defaults:
 
 ```dotenv
 GATEWAY_HOST=0.0.0.0
-GATEWAY_PORT=4000
-PUBLIC_GATEWAY_URL=http://192.168.1.125:4000
-ADMIN_ORIGIN=http://localhost:3000
-EXTRA_ALLOWED_ORIGINS=http://192.168.1.125:3000
+GATEWAY_PORT=5000
+PUBLIC_GATEWAY_URL=
+ADMIN_ORIGIN=https://localhost:3000
+EXTRA_ALLOWED_ORIGINS=
+BOOTSTRAP_ADMIN_EMAIL=admin2026
+BOOTSTRAP_ADMIN_PASSWORD=Ndurance@2026
+BOOTSTRAP_ADMIN_NAME=VR Admin
 ```
+
+Existing `.env` files are never overwritten. Edit the file to change the administrator, port,
+or public URL. A blank `PUBLIC_GATEWAY_URL` auto-detects the current LAN address.
 
 Find the PC's LAN IPv4 address:
 
@@ -61,19 +69,17 @@ blank to always follow the current address.
 `ADMIN_ORIGIN` is the Vite dev-server origin. It does not affect the production build served
 by the gateway. Add any extra LAN origins to `EXTRA_ALLOWED_ORIGINS`, comma separated.
 
-### This workspace
+### Default administrator
 
-`.env` is already populated for this PC:
-
-```dotenv
-# Blank means auto-detect the current Wi-Fi/Ethernet LAN address.
-PUBLIC_GATEWAY_URL=
-```
-
-The workspace runs fully locally. There are no cloud credentials to configure, and the
+The generated `.env` creates `admin2026` with password `Ndurance@2026` the first time the
+gateway opens an empty database. Change those values before sharing the gateway with other
+users. The workspace runs fully locally: there are no cloud credentials to configure, and the
 dashboard only accepts accounts stored in the local SQLite database.
 
-## 3. Create the administrator
+## 3. Change the administrator
+
+A fresh clone already has the default administrator. To create a different account or reset
+the password, use one of these commands.
 
 Interactive:
 
@@ -105,35 +111,36 @@ or:
 npm start
 ```
 
-`npm start` builds first if `apps/gateway/dist/index.js` is missing, then runs the gateway in
-production mode. Open:
+`npm start` performs the first-run bootstrap, builds first if `apps/gateway/dist/index.js` is
+missing, then runs the gateway in production mode. Open:
 
 ```text
-http://localhost:4000
+https://localhost:5000/admin
 ```
 
-Sign in with the administrator email and password.
+Sign in with the administrator email and password (`admin2026` / `Ndurance@2026` for a fresh
+clone). Accept the self-signed certificate warning once.
 
 ## 5. Allow the LAN through Windows Firewall
 
-When Windows prompts, allow Node.js on **Private networks**. If no prompt appeared, add a
-rule as an administrator:
+When Windows prompts, allow Node.js on the active network profile (Private or Public). If no
+prompt appeared, add a rule as an administrator:
 
 ```powershell
-New-NetFirewallRule -DisplayName "VR Control Center (TCP 4000)" `
-  -Direction Inbound -Protocol TCP -LocalPort 4000 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "VR Control Center (TCP 5000)" `
+  -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow -Profile Private,Public
 ```
 
 Test from another device on the LAN:
 
 ```text
-http://192.168.1.125:4000/api/health
+https://192.168.1.125:5000/api/health
 ```
 
 ## 6. Verify
 
 ```powershell
-curl http://localhost:4000/api/health
+curl.exe -k https://localhost:5000/api/health
 npm run typecheck
 npm test
 ```

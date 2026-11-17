@@ -1,4 +1,5 @@
 import { createPrivateKey, X509Certificate } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import path from 'node:path';
@@ -40,6 +41,9 @@ export interface GatewayConfig {
   ffprobeTimeoutMs: number;
   adminDistDir: string | null;
   quietLogs: boolean;
+  bootstrapAdminEmail: string;
+  bootstrapAdminPassword: string;
+  bootstrapAdminName: string;
 }
 
 const numberFromEnv = (fallback: number, min: number, max: number) =>
@@ -102,6 +106,9 @@ const envSchema = z.object({
   FFPROBE_PATH: z.string().default('ffprobe'),
   FFMPEG_PATH: z.string().default('ffmpeg'),
   FFPROBE_TIMEOUT_MS: numberFromEnv(20_000, 1_000, 120_000),
+  BOOTSTRAP_ADMIN_EMAIL: z.string().default(''),
+  BOOTSTRAP_ADMIN_PASSWORD: z.string().default(''),
+  BOOTSTRAP_ADMIN_NAME: z.string().default(''),
 });
 
 export function findRepoRoot(start: string = process.cwd()): string {
@@ -215,20 +222,45 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
     Boolean(parsed.TLS_CERT_PATH) ||
     Boolean(parsed.TLS_KEY_PATH);
   const generatedTls = tlsConfiguredExplicitly ? null : resolveGeneratedTls(repoRoot);
-  const tlsCertPath = tlsConfiguredExplicitly
+  let tlsCertPath = tlsConfiguredExplicitly
     ? overrides.tlsCertPath !== undefined
       ? overrides.tlsCertPath
       : parsed.TLS_CERT_PATH
         ? resolvePath(repoRoot, parsed.TLS_CERT_PATH)
         : null
     : (generatedTls?.cert ?? null);
-  const tlsKeyPath = tlsConfiguredExplicitly
+  let tlsKeyPath = tlsConfiguredExplicitly
     ? overrides.tlsKeyPath !== undefined
       ? overrides.tlsKeyPath
       : parsed.TLS_KEY_PATH
         ? resolvePath(repoRoot, parsed.TLS_KEY_PATH)
         : null
     : (generatedTls?.key ?? null);
+
+  // A `.env` copied from another machine can point at certificate files that
+  // do not exist in a fresh clone. Fall back to the generated certs/gateway.*
+  // pair (created by `npm run https:setup`) or start in HTTP mode instead of
+  // crashing on the first read.
+  if (
+    (tlsCertPath && !existsSync(tlsCertPath)) ||
+    (tlsKeyPath && !existsSync(tlsKeyPath))
+  ) {
+    const fallbackTls = resolveGeneratedTls(repoRoot);
+    if (fallbackTls) {
+      process.stderr.write(
+        '[VRCC] Configured TLS files were not found; using certs/gateway.* instead.\n',
+      );
+      tlsCertPath = fallbackTls.cert;
+      tlsKeyPath = fallbackTls.key;
+    } else {
+      process.stderr.write(
+        '[VRCC] Configured TLS certificate or key was not found. Starting without HTTPS.\n' +
+          '  Run `npm run https:setup` (or clear TLS_CERT_PATH/TLS_KEY_PATH) to enable HTTPS.\n',
+      );
+      tlsCertPath = null;
+      tlsKeyPath = null;
+    }
+  }
 
   const config: GatewayConfig = {
     env: overrides.env ?? parsed.NODE_ENV,
@@ -266,6 +298,9 @@ export function loadConfig(overrides: ConfigOverrides = {}): GatewayConfig {
     ffprobeTimeoutMs: parsed.FFPROBE_TIMEOUT_MS,
     adminDistDir: overrides.adminDistDir ?? null,
     quietLogs: overrides.quietLogs ?? false,
+    bootstrapAdminEmail: parsed.BOOTSTRAP_ADMIN_EMAIL,
+    bootstrapAdminPassword: parsed.BOOTSTRAP_ADMIN_PASSWORD,
+    bootstrapAdminName: parsed.BOOTSTRAP_ADMIN_NAME,
   };
 
   config.adminDistDir =
@@ -371,6 +406,54 @@ function isStaleConfiguredUrl(configured: string, lanAddresses: string[]): boole
   return !lanAddresses.includes(host);
 }
 
+async function lookupWithTimeout(host: string, timeoutMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      lookup(host).then(() => undefined),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('DNS lookup timed out')), timeoutMs);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * A hostname in PUBLIC_GATEWAY_URL only works when the headset can resolve it.
+ * Special-use names such as `vrcc.home.arpa` are not resolved unless the router
+ * (or a local DNS server) defines them, which makes the player URL fail on a
+ * Quest even though the gateway is healthy. Fall back to the detected LAN
+ * address when the configured hostname does not resolve from this PC.
+ */
+export async function applyConfiguredHostFallback(config: GatewayConfig): Promise<void> {
+  const configured = config.publicGatewayUrl?.replace(/\/+$/, '');
+  if (!configured) return;
+  let host: string;
+  try {
+    host = new URL(configured).hostname.replace(/^\[|\]$/g, '');
+  } catch {
+    return;
+  }
+  if (isIpv4Literal(host) || isLoopbackHost(host) || host.includes(':')) return;
+
+  try {
+    await lookupWithTimeout(host, 2_000);
+  } catch (error) {
+    config.publicGatewayUrl = null;
+    config.playerUrl = `${resolveGatewayUrls(config).publicUrl.replace(/\/+$/, '')}/player/`;
+    process.stderr.write(
+      `[VRCC] PUBLIC_GATEWAY_URL host "${host}" does not resolve from this PC ` +
+        `(${error instanceof Error ? error.message : String(error)}).\n` +
+        `  Falling back to the detected LAN address: ${config.playerUrl}\n` +
+        `  To keep ${host}, add a router/local DNS entry that maps it to this PC, ` +
+        'then restart the gateway.\n',
+    );
+  }
+}
+
 export interface ResolvedGatewayUrls {
   publicUrl: string;
   wsUrl: string;
@@ -391,7 +474,16 @@ export function resolveGatewayUrls(config: GatewayConfig): ResolvedGatewayUrls {
   let publicUrl = detectedUrl;
   const configured = config.publicGatewayUrl?.replace(/\/+$/, '');
   if (configured) {
-    if (isStaleConfiguredUrl(configured, lanAddresses)) {
+    const configuredIsHttps = configured.toLowerCase().startsWith('https://');
+    if (configuredIsHttps !== secure) {
+      warnings.push(
+        `PUBLIC_GATEWAY_URL is set to ${configured}, but the gateway is running ` +
+          `${secure ? 'with' : 'without'} HTTPS. Falling back to ${detectedUrl}. ` +
+          (secure
+            ? 'Use an https:// PUBLIC_GATEWAY_URL or leave it blank.'
+            : 'Run `npm run https:setup` or use an http:// PUBLIC_GATEWAY_URL.'),
+      );
+    } else if (isStaleConfiguredUrl(configured, lanAddresses)) {
       warnings.push(
         `PUBLIC_GATEWAY_URL is set to ${configured}, but this PC does not currently own that ` +
           `address. Falling back to ${detectedUrl}. Update .env, or leave PUBLIC_GATEWAY_URL ` +

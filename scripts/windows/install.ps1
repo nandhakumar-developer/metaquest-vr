@@ -20,9 +20,7 @@ if ($major -lt 24) {
 Write-Host "Node.js $(node --version) / npm $(npm --version)" -ForegroundColor Green
 
 if (-not (Test-Path (Join-Path $root '.env'))) {
-  Copy-Item (Join-Path $root '.env.example') (Join-Path $root '.env')
-  Write-Host 'Created .env from .env.example.' -ForegroundColor Yellow
-  Write-Host 'Edit PUBLIC_GATEWAY_URL to your PC LAN address before connecting headsets.' -ForegroundColor Yellow
+  Write-Host 'No .env yet; the first dev/start run will create it automatically.' -ForegroundColor Yellow
 } else {
   Write-Host '.env already exists; leaving it unchanged.' -ForegroundColor DarkGray
 }
@@ -40,7 +38,7 @@ if (-not $SkipBuild) {
 Write-Host ''
 Write-Host 'Install complete.' -ForegroundColor Green
 Write-Host 'Next steps:' -ForegroundColor Cyan
-Write-Host '  1. Edit .env and set PUBLIC_GATEWAY_URL to this PC''s LAN URL.'
-Write-Host '  2. Create an admin: .\scripts\windows\create-admin.ps1'
-Write-Host '  3. Start the gateway: .\scripts\windows\start.ps1'
-Write-Host '  4. Allow Node.js through Windows Firewall on Private networks (TCP 4000).'
+Write-Host '  1. Start the gateway: .\scripts\windows\start.ps1  (or -Dev)'
+Write-Host '  2. Open https://localhost:5000/admin and sign in as admin2026 / Ndurance@2026.'
+Write-Host '  3. Allow Node.js through Windows Firewall (TCP 5000).'
+Write-Host '  4. To change credentials or the port, edit .env after the first run.'

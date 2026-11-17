@@ -2,7 +2,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import type { GatewayConfig } from './config.js';
 import { ensureDirectories, resolveGatewayUrls } from './config.js';
 import { Store } from './database/index.js';
-import { BootstrapService } from './auth/bootstrap.js';
+import { BootstrapService, ensureConfiguredAdmin } from './auth/bootstrap.js';
 import { AdminAuthService } from './auth/adminAuth.js';
 import { DeviceRegistry } from './devices/registry.js';
 import { AdminHub } from './websocket/hub.js';
@@ -62,10 +62,20 @@ export async function createContext(
   const store = new Store(config.dataDir);
   const urls = resolveGatewayUrls(config);
   const secureTransport = Boolean(config.tlsCertPath && config.tlsKeyPath);
-  // The Vite dev server proxies the admin app over http://localhost:3000. A
-  // Secure cookie would be dropped by that http origin even though the proxy
-  // talks to the HTTPS gateway, so only mark cookies Secure outside dev.
+  // The Vite dev server may serve the admin app over http://localhost:3000 even
+  // when its proxy talks HTTPS to the gateway. A Secure cookie would be dropped
+  // by that http origin, so only mark cookies Secure outside development.
   const secureCookies = secureTransport && config.env !== 'development';
+
+  // A fresh clone has an empty database. Provision the administrator declared
+  // in `.env` before BootstrapService decides that first-run setup is needed.
+  // Tests keep managing their own fixtures and opt out.
+  await ensureConfiguredAdmin(store.admins, {
+    email: config.bootstrapAdminEmail,
+    password: config.bootstrapAdminPassword,
+    displayName: config.bootstrapAdminName,
+    enabled: config.env !== 'test',
+  });
 
   const bootstrap = new BootstrapService(store.admins, config.dataDir);
   const auth = new AdminAuthService(store.admins, store.ops, bootstrap, config, secureCookies);

@@ -9,7 +9,7 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
-import { loadConfig, type ConfigOverrides } from './config.js';
+import { applyConfiguredHostFallback, loadConfig, type ConfigOverrides } from './config.js';
 import { createContext, type GatewayContext } from './context.js';
 import { AppError } from './utils/errors.js';
 import { allowedOrigins, assertAllowedOrigin, isOriginAllowed } from './security/origin.js';
@@ -35,6 +35,9 @@ export interface BuiltServer {
 
 export async function buildServer(options: BuildServerOptions = {}): Promise<BuiltServer> {
   const config = loadConfig(options.config);
+  if (config.env !== 'test') {
+    await applyConfiguredHostFallback(config);
+  }
   let httpsOptions: HttpsServerOptions | undefined;
   if (config.tlsCertPath && config.tlsKeyPath) {
     httpsOptions = {

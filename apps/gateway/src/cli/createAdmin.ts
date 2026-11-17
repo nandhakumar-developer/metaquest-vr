@@ -45,7 +45,7 @@ async function main(): Promise<void> {
 
   let email = cliArgs.email || process.env.BOOTSTRAP_ADMIN_EMAIL || '';
   let password = cliArgs.password || process.env.BOOTSTRAP_ADMIN_PASSWORD || '';
-  let displayName = cliArgs.name || '';
+  let displayName = cliArgs.name || process.env.BOOTSTRAP_ADMIN_NAME || '';
   const role = cliArgs.role || 'admin';
 
   if (!email || !password) {
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     try {
       if (!email) {
-        email = (await rl.question('Admin Email: ')).trim();
+        email = (await rl.question('Admin email or username: ')).trim();
       }
       if (!displayName) {
         displayName = (await rl.question('Display Name (optional, defaults to email): ')).trim();
@@ -73,8 +73,13 @@ async function main(): Promise<void> {
   }
 
   email = email.trim();
-  if (!email || !email.includes('@')) {
-    process.stderr.write('Error: A valid email address is required.\n');
+  // The dashboard accepts either an email address or a short username, so the
+  // CLI must accept the same forms. Anything with whitespace or control
+  // characters is rejected because it cannot be typed into the login form.
+  const usernamePattern = /^[A-Za-z0-9._-]{3,64}$/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || (!emailPattern.test(email) && !usernamePattern.test(email))) {
+    process.stderr.write('Error: Enter a valid email address or username.\n');
     process.exit(1);
   }
 

@@ -3,7 +3,7 @@
 ## First checks
 
 ```powershell
-curl http://localhost:4000/api/health
+curl.exe -k https://localhost:5000/api/health
 npm run typecheck
 npm test
 ```
@@ -16,10 +16,10 @@ there.
 
 **`EADDRINUSE` / port already in use**
 
-Another process (or an older gateway) owns port 4000:
+Another process (or an older gateway) owns the gateway port (5000 in the generated `.env`):
 
 ```powershell
-Get-NetTCPConnection -LocalPort 4000 -State Listen |
+Get-NetTCPConnection -LocalPort 5000 -State Listen |
   Select-Object LocalAddress, LocalPort, OwningProcess
 Get-Process -Id <OwningProcess>
 ```
@@ -35,7 +35,7 @@ npm run build
 ```
 
 The gateway serves `apps/admin/dist` only if it exists. In development, open
-`http://localhost:3000`, not `:4000`, unless you built the SPA.
+`https://localhost:3000`, not the gateway port, unless you built the SPA.
 
 ## I forgot the administrator password
 
@@ -62,17 +62,23 @@ active sessions. It also clears the one-time bootstrap token file.
 ## Headset cannot open the player
 
 1. Confirm the PC and headset are on the same network (not guest Wi-Fi / client isolation).
-2. From the headset browser, try `http://<gateway-ip>:4000/api/health`.
+2. From the headset browser, try `https://<gateway-ip>:5000/api/health`.
 3. Check that the player URL uses the PC's current Wi-Fi/Ethernet address. The gateway
    prints the `Player URL` and any `WARNING` at startup; the **Pair Headset** dialog and its
    QR code use the same address.
-4. Allow TCP 4000 through Windows Firewall on Private networks.
+4. Allow TCP 5000 through Windows Firewall on the active network profile.
 5. If using HTTPS, make sure the headset trusts the certificate; otherwise the browser may
    block the page before it loads.
 
 If `PUBLIC_GATEWAY_URL` in `.env` holds an old DHCP address, the gateway now logs a warning
 and automatically uses the detected LAN address. Clear the value to always follow the
 current address. The player header also shows the gateway host it is connected to.
+
+The same fallback applies when `PUBLIC_GATEWAY_URL` uses a hostname that does not resolve
+from the PC. Special-use names such as `vrcc.home.arpa` only work when the router (or a
+local DNS server) maps them to this PC. Until that entry exists, use the detected
+`https://<lan-ip>:<port>/player/` URL shown in the startup banner, the dashboard, and the
+pairing QR code.
 
 ## Pairing code does not appear or expires
 
@@ -102,14 +108,14 @@ current address. The player header also shows the gateway host it is connected t
 
 ## Video will not load or play
 
-| Symptom | Likely cause |
-| --- | --- |
-| "The browser does not support this video codec" | Unsupported codec/container. Use H.264 + AAC MP4. |
-| "Network error while streaming" | Gateway stopped, firewall, or wrong public URL. |
-| Stuck on "Preparing video…" | Range request blocked by a proxy, or the file is missing from `storage/videos`. |
-| Video loads but no image in VR | Wrong projection metadata. Set 180° or 360° when uploading. |
-| Audio is muted until tap | Browser autoplay policy; tap the screen to restore sound. |
-| Stereo looks flat / doubled | Check the SBS/OU setting matches the file. |
+| Symptom                                         | Likely cause                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------- |
+| "The browser does not support this video codec" | Unsupported codec/container. Use H.264 + AAC MP4.                               |
+| "Network error while streaming"                 | Gateway stopped, firewall, or wrong public URL.                                 |
+| Stuck on "Preparing video…"                     | Range request blocked by a proxy, or the file is missing from `storage/videos`. |
+| Video loads but no image in VR                  | Wrong projection metadata. Set 180° or 360° when uploading.                     |
+| Audio is muted until tap                        | Browser autoplay policy; tap the screen to restore sound.                       |
+| Stereo looks flat / doubled                     | Check the SBS/OU setting matches the file.                                      |
 
 Verify the file exists and has a matching size in the dashboard. Re-upload if the record and
 file are out of sync.
@@ -137,10 +143,10 @@ localhost, which is not applicable to a headset). Plain `http://<lan-ip>` always
 
 Fix it on the gateway PC:
 
-1. Run `npm run https:setup` to create `certs/gateway.crt` and `certs/gateway.key`.
-2. Set `TLS_CERT_PATH=./certs/gateway.crt` and `TLS_KEY_PATH=./certs/gateway.key` in `.env`.
-3. Restart the gateway and open the new `https://<lan-ip>:4000/player/` URL on the headset.
-4. Accept the certificate warning once, then tap **Enter VR**.
+1. Run `npm run tls:setup` to create `storage/certs/gateway.crt` and `storage/certs/gateway.key`.
+   The script also writes `TLS_CERT_PATH` and `TLS_KEY_PATH` into `.env`, so no manual edit is needed.
+2. Restart the gateway and open the new `https://<lan-ip>:5000/player/` URL on the headset.
+3. Accept the certificate warning once, then tap **Enter VR**.
 
 Pairing and offline downloads are stored per browser origin. After switching from HTTP to
 HTTPS, pair the headset again and re-download any offline copies. See

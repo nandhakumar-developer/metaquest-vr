@@ -1,10 +1,10 @@
 import { buildServer, listen } from './server.js';
-import { loadConfig, tlsCertificateCoversHost } from './config.js';
+import { tlsCertificateCoversHost } from './config.js';
 import { APP_VERSION } from './version.js';
 
 async function main(): Promise<void> {
-  const config = loadConfig();
-  const { app, ctx } = await buildServer({ config });
+  const { app, ctx } = await buildServer();
+  const config = ctx.config;
 
   const host = config.host;
   const port = config.port;
@@ -19,6 +19,10 @@ async function main(): Promise<void> {
   process.stdout.write(`  Meta Quest 2 Management & Playback Controller\n`);
   process.stdout.write(`${thinSeparator}\n`);
   process.stdout.write(`  Local Gateway:    ${ctx.urls.publicUrl}\n`);
+  const dashboardProtocol = ctx.urls.secure ? 'https' : 'http';
+  process.stdout.write(
+    `  Admin Dashboard:  ${dashboardProtocol}://localhost:${config.port}/admin\n`,
+  );
   process.stdout.write(`  Player URL:       ${config.playerUrl}\n`);
   process.stdout.write(`  WebSocket:        ${ctx.urls.wsUrl}\n`);
   if (ctx.urls.lanAddresses.length > 0) {

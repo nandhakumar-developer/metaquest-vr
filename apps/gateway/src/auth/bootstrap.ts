@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { randomToken } from '../utils/ids.js';
-import { safeEqualString } from './password.js';
+import { hashPassword, safeEqualString, validatePasswordStrength } from './password.js';
 import type { AdminRepository } from '../database/adminRepo.js';
 
 export interface BootstrapStatus {
@@ -48,7 +48,7 @@ export class BootstrapService {
     // Intentionally not logged via structured logger: printed by index.ts banner.
     process.stdout.write(
       `\n[VRCC] First-run setup token: ${this.token}\n` +
-        `[VRCC] Open http://localhost:3000/setup and enter this token to create the administrator.\n` +
+        `[VRCC] Open the dashboard setup page (/setup) and enter this token to create the administrator.\n` +
         `[VRCC] Token file: ${this.tokenFile}\n\n`,
     );
   }
@@ -95,4 +95,59 @@ export class BootstrapService {
       return null;
     }
   }
+}
+
+export interface ConfiguredAdminInput {
+  email: string;
+  password: string;
+  displayName?: string;
+  enabled: boolean;
+}
+
+/**
+ * Provisions the administrator declared in `.env` when the local database does
+ * not contain that account yet. This makes a fresh clone usable after only
+ * `npm install` and a `.env` file: no manual setup token step is required.
+ *
+ * Existing accounts are never modified here, so password changes made through
+ * the dashboard survive a restart. `npm run admin:create` remains the explicit
+ * way to reset a password.
+ */
+export async function ensureConfiguredAdmin(
+  admins: AdminRepository,
+  input: ConfiguredAdminInput,
+): Promise<'created' | 'existing' | 'skipped'> {
+  if (!input.enabled) return 'skipped';
+
+  const email = input.email.trim();
+  const password = input.password;
+  if (!email || !password) return 'skipped';
+
+  const existing = admins.getAdminByEmail(email);
+  if (existing) {
+    // A failed-login lock from an earlier run must not block the hardcoded
+    // credentials after a restart.
+    admins.resetFailedLogins(existing.id);
+    return 'existing';
+  }
+
+  const issues = validatePasswordStrength(password);
+  if (issues.length > 0) {
+    process.stderr.write(
+      `[VRCC] Ignoring BOOTSTRAP_ADMIN_* credentials: ${issues.join('. ')}\n`,
+    );
+    return 'skipped';
+  }
+
+  const passwordHash = await hashPassword(password);
+  const admin = admins.createAdmin({
+    email,
+    displayName: input.displayName?.trim() || email,
+    passwordHash,
+    role: 'admin',
+  });
+  process.stdout.write(
+    `[VRCC] Provisioned administrator "${admin.email}" from environment configuration.\n`,
+  );
+  return 'created';
 }

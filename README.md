@@ -8,23 +8,23 @@ The setup guide walks through a two-headset Quest 2 installation. The gateway su
 
 This table records the state of this checkout at the last review. Use it to decide whether a rebuild or a configuration change is needed.
 
-| Item | Current value |
-| ---- | ------------- |
-| Project version | `1.0.0` (`PROTOCOL_VERSION` 1) |
-| Git state | branch `main`, clean working tree, commit `7d4002b` |
-| Node.js | `v24.14.0` (requirement: >= 24) |
-| npm | `11.19.0` (requirement: >= 10) |
-| Git | `2.52.0.windows.1` |
-| Gateway process | not running when inspected; started and stopped for verification only |
-| Build output | `apps/admin/dist`, `apps/gateway/dist`, `packages/shared-types/dist`, `packages/protocol/dist` all present |
-| Runtime URL on this PC | `https://192.168.1.62:5000` (dashboard), `https://192.168.1.62:5000/player/` (headsets) |
-| TLS | enabled from `storage/certs/gateway.crt` and `storage/certs/gateway.key` |
-| FFmpeg / FFprobe | not installed, so metadata probing and thumbnails are unavailable |
-| Database | `storage/data/vrcc.sqlite` ≈ 1 MB plus a ≈ 4 MB WAL file |
-| Stored data | 1 local admin, 1 paired device, 4 videos (≈ 1.19 GB), 6 playback sessions, 14 commands, 1,893 audit rows |
-| Health check | `{"status":"ok","database":"ok", ...}` after a controlled test start |
+| Item                   | Current value                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Project version        | `1.0.0` (`PROTOCOL_VERSION` 1)                                                                             |
+| Git state              | branch `main`, commit `c6c3eb6`, local changes pending commit                                              |
+| Node.js                | `v24.14.0` (requirement: >= 24)                                                                            |
+| npm                    | `11.19.0` (requirement: >= 10)                                                                             |
+| Git                    | `2.52.0.windows.1`                                                                                         |
+| Gateway process        | not running when inspected; started and stopped for verification only                                      |
+| Build output           | `apps/admin/dist`, `apps/gateway/dist`, `packages/shared-types/dist`, `packages/protocol/dist` all present |
+| Runtime URL on this PC | `https://192.168.1.40:5000` (dashboard), `https://192.168.1.40:5000/player/` (headsets)                    |
+| TLS                    | enabled from `storage/certs/gateway.crt` and `storage/certs/gateway.key`                                   |
+| FFmpeg / FFprobe       | not installed, so metadata probing and thumbnails are unavailable                                          |
+| Database               | `storage/data/vrcc.sqlite` ≈ 1 MB plus a ≈ 4 MB WAL file                                                   |
+| Stored data            | 1 local admin, 1 paired device, 4 videos (≈ 1.19 GB), 6 playback sessions, 14 commands, 1,893 audit rows   |
+| Health check           | `{"status":"ok","database":"ok", ...}` after a controlled test start                                       |
 
-This checkout differs from the documented defaults: `.env` sets `GATEWAY_PORT=5000` and explicit TLS paths under `storage/certs`, so the dashboard and player are served over **HTTPS on port 5000**, not HTTP on 4000. `PUBLIC_GATEWAY_URL` is blank, so the gateway auto-detected `192.168.1.62`. The current certificate does not include that address; re-run `npm run https:setup` after a LAN IP change to avoid a headset certificate warning.
+The local `.env` sets `GATEWAY_PORT=5000` and explicit TLS paths under `storage/certs`, so the dashboard and player are served over **HTTPS on port 5000**, not HTTP on 4000. If `PUBLIC_GATEWAY_URL` uses a hostname that does not resolve from this PC, the gateway logs a warning and falls back to the detected LAN address. Re-run `npm run tls:setup` after a LAN IP change to avoid a headset certificate warning.
 
 Nothing is left running after verification. Start the app with `npm start` (production) or `npm run dev` (development) as described below.
 
@@ -40,8 +40,8 @@ This project is organized as a TypeScript monorepo with clear runtime boundaries
 
 The active runtime workflow is:
 
-1. Install dependencies and build the workspace (`npm install` / `npm run build`).
-2. Start the gateway, which loads `.env`, initializes local folders, opens the SQLite database, and creates the HTTP + WebSocket services.
+1. Install dependencies (`npm install`). The first `npm run dev` / `npm start` creates `.env`, generates local TLS files, and builds any missing output.
+2. Start the gateway, which loads `.env`, initializes local folders, opens the SQLite database, and creates the HTTPS + WebSocket services.
 3. Sign in to the dashboard using a locally created admin account stored in SQLite.
 4. Pair a Quest browser session with a one-time six-digit code and persistent browser-local device credentials.
 5. Upload media, sync the video library, and issue commands from the dashboard to one headset or a group.
@@ -77,7 +77,7 @@ flowchart LR
 
 The Quest player is served by the gateway at `/player/`. When Meta Quest Browser opens the gateway root (`/` or `/index.html`), the gateway redirects it to `/player/`; other browsers continue to reach the admin dashboard. The player connects to the same gateway over HTTP(S) and WebSocket. After pairing, its device UUID and secret are kept in browser `localStorage`. Online playback streams from the PC through a time-limited signed URL. **Send to Headsets** saves a separate, checksum-verified copy in IndexedDB under the Quest browser's local site storage for offline playback.
 
-In development, Vite serves the admin dashboard on port `3000` and proxies API, WebSocket, and player requests to the gateway on the configured `GATEWAY_PORT` (default `4000`). In production, the gateway serves the built admin dashboard and Quest player from that same port.
+In development, Vite serves the admin dashboard on port `3000` and proxies API, WebSocket, and player requests to the gateway on the configured `GATEWAY_PORT` (the generated `.env` uses `5000`; the built-in default is `4000`). In production, the gateway serves the built admin dashboard and Quest player from that same port.
 
 ### End-to-end application flow
 
@@ -140,9 +140,9 @@ sequenceDiagram
 
 #### 1. Build and start the gateway
 
-The root npm workspace builds `shared-types` and `protocol` first, then the React dashboard and TypeScript gateway. The browser player is static HTML, CSS, and JavaScript under `apps/player`. At startup, the gateway loads `.env`, creates configured data and media directories, opens the SQLite store, detects optional FFmpeg tools, creates the auth/device/playback/media services, and starts HTTP and WebSocket listeners. Production serves the built dashboard and `/player/` from the gateway; development uses Vite on port `3000` and proxies requests to the gateway on port `4000`.
+The root npm workspace builds `shared-types` and `protocol` first, then the React dashboard and TypeScript gateway. The browser player is static HTML, CSS, and JavaScript under `apps/player`. At startup, the gateway loads `.env`, creates configured data and media directories, opens the SQLite store, detects optional FFmpeg tools, creates the auth/device/playback/media services, and starts HTTP and WebSocket listeners. Production serves the built dashboard and `/player/` from the gateway; development uses Vite on port `3000` and proxies requests to the gateway on the configured `GATEWAY_PORT`.
 
-If the database has no administrator, the gateway generates a one-time setup token and writes it under `DATA_DIR` while also printing it to the console. The first administrator can be created through the setup screen or `npm run admin:create`; the project has no shared default password. Later administrators sign in with a local password stored in SQLite.
+If `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` are set in `.env`, the gateway creates that administrator automatically on first start, so a fresh clone only needs `npm install` plus the `.env` file. Without those variables, an empty database falls back to the one-time setup token written under `DATA_DIR` and printed to the console. `npm run admin:create` can create or reset the account later. Passwords are stored as hashes in SQLite.
 
 #### 2. Authenticate the dashboard and load live state
 
@@ -192,47 +192,47 @@ Headset heartbeats and status reports drive the online/offline view. The optiona
 
 These are the versions resolved in this checkout's `package-lock.json` (`lockfileVersion` 3) and installed under `node_modules`.
 
-| Package | Declared | Installed | Used by |
-| ------- | -------- | --------- | ------- |
-| `node` | engines `>=24.0.0` | **24.14.0** | all workspaces (built-in `node:sqlite`) |
-| `npm` | engines `>=10.0.0` | **11.19.0** | workspace install and scripts |
-| `typescript` | `5.9.3` | **5.9.3** | all workspaces |
-| `react` | `^19.0.0` | **19.3.1** | admin |
-| `react-dom` | `^19.0.0` | **19.3.1** | admin |
-| `vite` | `^6.0.1` | **6.4.5** | admin |
-| `@vitejs/plugin-react` | `^4.3.4` | **4.7.0** | admin |
-| `tailwindcss` | `^4.3.3` | **4.3.3** | admin |
-| `@tailwindcss/vite` | `^4.3.3` | **4.3.3** | admin |
-| `lucide-react` | `^0.460.0` | **0.460.0** | admin |
-| `framer-motion` | `^14.10.1` | **14.10.1** | admin |
-| `clsx` | `^2.1.1` | **2.1.1** | admin |
-| `@types/react`, `@types/react-dom` | `^19.0.0` | **19.3.0** | admin |
-| `fastify` | `5.12.7` | **5.12.7** | gateway |
-| `@fastify/cookie` | `11.1.5` | **11.1.5** | gateway |
-| `@fastify/cors` | `11.3.1` | **11.3.1** | gateway |
-| `@fastify/multipart` | `10.1.6` | **10.1.6** | gateway |
-| `@fastify/rate-limit` | `11.2.1` | **11.2.1** | gateway |
-| `@fastify/static` | `10.1.8` | **10.1.8** | gateway |
-| `ws` | `8.22.0` | **8.22.0** | gateway |
-| `zod` | `4.6.7` | **4.6.7** | protocol, gateway |
-| `dotenv` | `18.0.9` | **18.0.9** | gateway |
-| `qrcode` | `1.5.4` | **1.5.4** | gateway |
-| `three` | `^0.172.0` | **0.172.0** | gateway (served to player), player (WebXR) |
-| `tsx` | `4.23.15` | **4.23.15** | gateway dev/watch and CLI |
-| `pino-pretty` | `13.2.0` | **13.2.0** | gateway development logs |
-| `@types/node` | `26.6.5` | **26.6.5** | gateway, admin |
-| `@types/ws` | `8.18.2` | **8.18.2** | gateway |
-| `@types/qrcode` | `1.5.6` | **1.5.6** | gateway |
-| `vitest` | `5.0.5` | **5.0.5** | root, protocol, gateway |
-| `@vitest/coverage-v8` | `5.0.5` | **5.0.5** | root |
-| `@playwright/test` | `1.64.1` | **1.64.1** | root (E2E entry point) |
-| `eslint` | `10.13.0` | **10.13.0** | root |
-| `typescript-eslint` | `8.72.1` | **8.72.1** | root |
-| `prettier` | `3.9.10` | **3.9.10** | root |
-| `concurrently` | `10.0.6` | **10.0.6** | root dev script |
-| `selfsigned` | `^5.5.0` | **5.5.0** | root HTTPS certificate setup |
-| `@vrcc/shared-types` | `1.0.0` | **1.0.0** | admin, gateway, protocol |
-| `@vrcc/protocol` | `1.0.0` | **1.0.0** | admin, gateway |
+| Package                            | Declared           | Installed   | Used by                                    |
+| ---------------------------------- | ------------------ | ----------- | ------------------------------------------ |
+| `node`                             | engines `>=24.0.0` | **24.14.0** | all workspaces (built-in `node:sqlite`)    |
+| `npm`                              | engines `>=10.0.0` | **11.19.0** | workspace install and scripts              |
+| `typescript`                       | `5.9.3`            | **5.9.3**   | all workspaces                             |
+| `react`                            | `^19.0.0`          | **19.3.1**  | admin                                      |
+| `react-dom`                        | `^19.0.0`          | **19.3.1**  | admin                                      |
+| `vite`                             | `^6.0.1`           | **6.4.5**   | admin                                      |
+| `@vitejs/plugin-react`             | `^4.3.4`           | **4.7.0**   | admin                                      |
+| `tailwindcss`                      | `^4.3.3`           | **4.3.3**   | admin                                      |
+| `@tailwindcss/vite`                | `^4.3.3`           | **4.3.3**   | admin                                      |
+| `lucide-react`                     | `^0.460.0`         | **0.460.0** | admin                                      |
+| `framer-motion`                    | `^14.10.1`         | **14.10.1** | admin                                      |
+| `clsx`                             | `^2.1.1`           | **2.1.1**   | admin                                      |
+| `@types/react`, `@types/react-dom` | `^19.0.0`          | **19.3.0**  | admin                                      |
+| `fastify`                          | `5.12.7`           | **5.12.7**  | gateway                                    |
+| `@fastify/cookie`                  | `11.1.5`           | **11.1.5**  | gateway                                    |
+| `@fastify/cors`                    | `11.3.1`           | **11.3.1**  | gateway                                    |
+| `@fastify/multipart`               | `10.1.6`           | **10.1.6**  | gateway                                    |
+| `@fastify/rate-limit`              | `11.2.1`           | **11.2.1**  | gateway                                    |
+| `@fastify/static`                  | `10.1.8`           | **10.1.8**  | gateway                                    |
+| `ws`                               | `8.22.0`           | **8.22.0**  | gateway                                    |
+| `zod`                              | `4.6.7`            | **4.6.7**   | protocol, gateway                          |
+| `dotenv`                           | `18.0.9`           | **18.0.9**  | gateway                                    |
+| `qrcode`                           | `1.5.4`            | **1.5.4**   | gateway                                    |
+| `three`                            | `^0.172.0`         | **0.172.0** | gateway (served to player), player (WebXR) |
+| `tsx`                              | `4.23.15`          | **4.23.15** | gateway dev/watch and CLI                  |
+| `pino-pretty`                      | `13.2.0`           | **13.2.0**  | gateway development logs                   |
+| `@types/node`                      | `26.6.5`           | **26.6.5**  | gateway, admin                             |
+| `@types/ws`                        | `8.18.2`           | **8.18.2**  | gateway                                    |
+| `@types/qrcode`                    | `1.5.6`            | **1.5.6**   | gateway                                    |
+| `vitest`                           | `5.0.5`            | **5.0.5**   | root, protocol, gateway                    |
+| `@vitest/coverage-v8`              | `5.0.5`            | **5.0.5**   | root                                       |
+| `@playwright/test`                 | `1.64.1`           | **1.64.1**  | root (E2E entry point)                     |
+| `eslint`                           | `10.13.0`          | **10.13.0** | root                                       |
+| `typescript-eslint`                | `8.72.1`           | **8.72.1**  | root                                       |
+| `prettier`                         | `3.9.10`           | **3.9.10**  | root                                       |
+| `concurrently`                     | `10.0.6`           | **10.0.6**  | root dev script                            |
+| `selfsigned`                       | `^5.5.0`           | **5.5.0**   | root HTTPS certificate setup               |
+| `@vrcc/shared-types`               | `1.0.0`            | **1.0.0**   | admin, gateway, protocol                   |
+| `@vrcc/protocol`                   | `1.0.0`            | **1.0.0**   | admin, gateway                             |
 
 `npm install` is the source of truth; run `npm ls --all` or inspect `package-lock.json` if you need the complete transitive tree. Node 24 prints an `ExperimentalWarning` for `node:sqlite`; this is expected and does not indicate a failure.
 
@@ -303,7 +303,7 @@ These are the versions resolved in this checkout's `package-lock.json` (`lockfil
 │   ├── thumbnails/                    Generated video thumbnails
 │   └── videos/                        Uploaded source videos, grouped by video ID
 ├── certs/                             Optional generated/local gateway TLS certificate and key
-├── .env.example                       Gateway and local administrator configuration template
+├── .env                               Local gateway and administrator configuration (ignored by Git)
 ├── .gitignore                         Generated files, local data, secrets, and build output exclusions
 ├── .gitattributes                     Git text and line-ending settings
 ├── package.json                       npm workspace commands and package orchestration
@@ -315,7 +315,7 @@ These are the versions resolved in this checkout's `package-lock.json` (`lockfil
 └── README.md
 ```
 
-`storage/` and `certs/` contain local runtime/generated files and may be empty in a clean checkout. `.env` is created from `.env.example` for a local installation and is ignored by Git. Build output (`dist/`), dependencies (`node_modules/`), SQLite files, uploaded media, and private TLS keys are also ignored. The `apps/player` browser files are served directly by the gateway; they are not a separate npm workspace or compiled build.
+`storage/` and `certs/` contain local runtime/generated files and may be empty in a clean checkout. The single `.env` file at the repository root is created locally and is ignored by Git. Build output (`dist/`), dependencies (`node_modules/`), SQLite files, uploaded media, and private TLS keys are also ignored. The `apps/player` browser files are served directly by the gateway; they are not a separate npm workspace or compiled build.
 
 ### Build and runtime execution flow
 
@@ -345,10 +345,10 @@ At gateway startup, `apps/gateway/src/index.ts` loads configuration, builds the 
 
 Production and development start differently:
 
-| Mode | Command | What runs | Browser URLs |
-| ---- | ------- | --------- | ------------ |
-| Production | `npm start` or `scripts/windows/start.ps1` | Production launcher builds if the gateway entry point is missing, then starts the compiled gateway. The gateway serves `apps/admin/dist` when built and serves `apps/player` directly. | Dashboard `http://localhost:4000`; Quest player `http://<PC-LAN-IP>:4000/player/` |
-| Development | `npm run dev` or `scripts/windows/start.ps1 -Dev` | Builds shared packages, then runs the gateway with `tsx watch` and the Vite dashboard concurrently. Vite proxies `/api`, `/ws`, and `/player` to the gateway. | Dashboard `http://localhost:3000`; gateway/player `http://localhost:4000/player/` |
+| Mode        | Command                                           | What runs                                                                                                                                                                                                           | Browser URLs                                                                              |
+| ----------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Production  | `npm start` or `scripts/windows/start.ps1`        | Production launcher builds if the gateway entry point is missing, then starts the compiled gateway. The gateway serves `apps/admin/dist` when built and serves `apps/player` directly.                              | Dashboard `https://localhost:5000/admin`; Quest player `https://<PC-LAN-IP>:5000/player/` |
+| Development | `npm run dev` or `scripts/windows/start.ps1 -Dev` | Builds shared packages, then runs the gateway with `tsx watch` and the Vite dashboard concurrently. Vite uses HTTPS when the configured certificate exists and proxies `/api`, `/ws`, and `/player` to the gateway. | Dashboard `https://localhost:3000`; gateway/player URL from `.env`                        |
 
 The live request flow is shown in [End-to-end application flow](#end-to-end-application-flow): the dashboard uses authenticated HTTP requests and an admin WebSocket for live state; each Quest player pairs independently, connects over its device WebSocket, and fetches media bytes over HTTP. The player code is static browser JavaScript, so changes to it take effect without a player-specific compilation step.
 
@@ -377,22 +377,31 @@ Run these commands from the repository root.
 .\scripts\windows\install.ps1
 ```
 
-The helper checks the Node version, creates `.env` from `.env.example` if needed, installs npm workspaces, and builds the shared packages, dashboard, and gateway. To install without building, use `-SkipBuild`.
+The helper checks the Node version, warns if `.env` is missing, installs npm workspaces, and builds the shared packages, dashboard, and gateway. To install without building, use `-SkipBuild`.
 
 The equivalent manual setup is:
 
 ```powershell
-Copy-Item .env.example .env  # only if .env does not already exist
 npm install
-npm run build
+npm run dev
 ```
+
+On the first run, a `predev` bootstrap creates `.env` at the repository root with the default local administrator (`admin2026` / `Ndurance@2026`), generates a self-signed HTTPS certificate for the current LAN addresses, and builds the dashboard once so `https://localhost:5000/admin` works immediately. The generated `.env` is local and gitignored; later runs never overwrite it, so you can edit the credentials, port, or `PUBLIC_GATEWAY_URL` freely.
+
+To run the production build instead:
+
+```powershell
+npm start
+```
+
+`npm start` performs the same first-run bootstrap, then builds and starts the compiled gateway.
 
 ### 2. Configure the gateway URL
 
-The gateway listens on `0.0.0.0:4000` by default so devices on the LAN can connect. Set `PUBLIC_GATEWAY_URL` in `.env` to the PC address reachable from the headsets:
+The generated `.env` sets `GATEWAY_PORT=5000`, so the URLs below use port 5000. If `.env` is missing, the built-in default is `0.0.0.0:4000`. The gateway listens on `0.0.0.0` so devices on the LAN can connect. Set `PUBLIC_GATEWAY_URL` in `.env` to the PC address reachable from the headsets:
 
 ```dotenv
-PUBLIC_GATEWAY_URL=http://<PC-LAN-IP>:4000
+PUBLIC_GATEWAY_URL=https://<PC-LAN-IP>:5000
 ```
 
 To find a PC IPv4 address in PowerShell:
@@ -404,32 +413,34 @@ Get-NetIPAddress -AddressFamily IPv4 |
 
 Leaving `PUBLIC_GATEWAY_URL` blank allows startup auto-detection, which prefers the physical Wi-Fi/Ethernet adapter over WSL, Hyper-V, VirtualBox, Docker, and VPN interfaces. Setting it explicitly is useful when a PC has several physical adapters. If the configured address belongs to no current interface (for example after a DHCP change), the gateway logs a warning and falls back to the detected LAN address. The player URL is derived from the resolved address and ends in `/player/`.
 
-The full configuration template is in [.env.example](.env.example). Common settings include:
+Configuration is read from `.env` at the repository root. Common settings include:
 
-| Variable                                                        | Purpose                                                                            |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `GATEWAY_HOST`, `GATEWAY_PORT`                                  | Gateway bind address and port (defaults: `0.0.0.0`, `4000`)                        |
-| `PUBLIC_GATEWAY_URL`                                            | Base URL the headset uses to reach the gateway                                     |
-| `ADMIN_ORIGIN`                                                  | Admin Vite origin, normally `http://localhost:3000` for development                |
-| `EXTRA_ALLOWED_ORIGINS`                                         | Comma-separated additional browser origins allowed by the gateway                  |
-| `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories                                          |
-| `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Optional explicit certificate/key paths; generated `certs/gateway.*` files are auto-detected |
-| `PREVIEW_MAX_FPS`                                                | Maximum headset snapshot preview cadence (5–30 FPS; default: 30)                    |
-| `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                      |
+| Variable                                                        | Purpose                                                                                       |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `GATEWAY_HOST`, `GATEWAY_PORT`                                  | Gateway bind address and port (generated `.env`: `0.0.0.0`, `5000`; built-in default: `4000`) |
+| `PUBLIC_GATEWAY_URL`                                            | Base URL the headset uses to reach the gateway                                                |
+| `ADMIN_ORIGIN`                                                  | Admin Vite origin, normally `https://localhost:3000` for development                          |
+| `EXTRA_ALLOWED_ORIGINS`                                         | Comma-separated additional browser origins allowed by the gateway                             |
+| `DATA_DIR`, `VIDEO_DIR`, `THUMBNAIL_DIR`, `TEMP_DIR`, `LOG_DIR` | Local persistence and working directories                                                     |
+| `TLS_CERT_PATH`, `TLS_KEY_PATH`                                 | Certificate/key paths; `npm run tls:setup` writes them into `.env`                            |
+| `PREVIEW_MAX_FPS`                                               | Maximum headset snapshot preview cadence (5–30 FPS; default: 30)                              |
+| `FFPROBE_PATH`, `FFMPEG_PATH`                                   | Optional media inspection and thumbnail tools                                                 |
+| `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`             | Administrator created automatically when the database is empty                                |
+| `BOOTSTRAP_ADMIN_NAME`                                          | Display name for the automatically created administrator                                      |
 
-Keep `.env` and administrator credentials local; do not commit secrets. The example file lists operational timeouts, upload limits, preview settings, and optional integration variables as well.
+Keep `.env` and administrator credentials local; do not commit secrets. The generated `.env` can be extended with the operational timeouts, upload limits, preview settings, and optional integration variables listed below.
 
-### 3. Create a local administrator
+### 3. Change the local administrator
 
-Use the Windows helper to enter the password through a secure prompt:
+A fresh clone already creates `admin2026` / `Ndurance@2026` from the generated `.env`. To use a different account, open the Windows helper and enter the password through a secure prompt:
 
 ```powershell
 .\scripts\windows\create-admin.ps1 -Email admin@example.local -Name "VRCC Administrator"
 ```
 
-The helper creates or resets the local account. Passwords must be at least 12 characters and include a letter and a number. The project does not ship a shared default password.
+The helper creates or resets the local account. Passwords must be at least 12 characters and include a letter and a number. The default credentials for a fresh local install are configured in `.env` with `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`; change them before sharing the gateway with other users.
 
-You can also run `npm run admin:create` and follow its prompts.
+You can also run `npm run admin:create` and follow its prompts. The command accepts an email address or a short username.
 
 ### 4. Start the application
 
@@ -439,7 +450,7 @@ For production-style local operation:
 .\scripts\windows\start.ps1
 ```
 
-Or run `npm start`. The launcher builds first if the gateway production entry point is missing, then starts the gateway. Open the dashboard at `http://localhost:4000` on the PC. The Quest player is at `http://<PC-LAN-IP>:4000/player/`.
+Or run `npm start`. The launcher performs the first-run bootstrap, builds first if the gateway production entry point is missing, then starts the gateway. Open the dashboard at `https://localhost:5000/admin` on the PC. The Quest player is at `https://<PC-LAN-IP>:5000/player/`.
 
 For development with hot reload:
 
@@ -449,23 +460,25 @@ npm run dev
 
 The Windows helper also supports `.\scripts\windows\start.ps1 -Dev`.
 
-This builds the shared workspace packages, then starts the gateway watcher on port `4000` and Vite on port `3000`. Open `http://localhost:3000` for the dashboard. Stop both processes with `Ctrl+C`.
+This builds the shared workspace packages, then starts the gateway watcher and Vite on port `3000`. The gateway serves the built dashboard at `https://localhost:5000/admin`; Vite serves the live hot-reload dashboard at `https://localhost:3000/admin` (Vite falls back to HTTP if no certificate is configured). Stop both processes with `Ctrl+C`.
 
-Allow Node.js through Windows Firewall on private networks (TCP port `4000`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls.
+Allow Node.js through Windows Firewall (TCP port `5000` for the generated `.env`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls.
 
-To use immersive 180/360 playback on a headset, enable the bundled local HTTPS setup:
+The first-run bootstrap already creates the local HTTPS certificate used for immersive 180/360 playback. After a LAN address change, regenerate it with:
 
 ```powershell
-npm run https:setup
+npm run tls:setup
 ```
 
-The gateway auto-detects the generated files on its next start, so no `.env` change is needed. To use a different certificate, set `TLS_CERT_PATH` and `TLS_KEY_PATH` in `.env`. Open the new `https://<PC-LAN-IP>:4000/player/` URL on the headset, accept the certificate warning once, and pair the headset again (browser storage is per origin). See [docs/network-https.md](docs/network-https.md) for trusted-certificate and proxy options.
+The script writes the certificate under `storage/certs` and updates `TLS_CERT_PATH` / `TLS_KEY_PATH` in `.env`. To use a different certificate, set those variables yourself. Open the new `https://<PC-LAN-IP>:5000/player/` URL on the headset, accept the certificate warning once, and pair the headset again (browser storage is per origin). See [docs/network-https.md](docs/network-https.md) for trusted-certificate and proxy options.
 
 ### 5. Check gateway health
 
 ```powershell
-Invoke-RestMethod http://localhost:4000/api/health
+Invoke-RestMethod https://localhost:5000/api/health -SkipCertificateCheck
 ```
+
+(`-SkipCertificateCheck` requires PowerShell 7. On Windows PowerShell 5.1, use `curl.exe -k https://localhost:5000/api/health`.)
 
 The response reports gateway and database status and indicates whether optional services such as FFmpeg and cloud integration are available.
 

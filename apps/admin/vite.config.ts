@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -13,22 +13,35 @@ export default defineConfig(({ mode }) => {
   const certPath = env.TLS_CERT_PATH?.trim();
   const keyPath = env.TLS_KEY_PATH?.trim();
   const tlsConfiguredExplicitly = Boolean(certPath || keyPath);
-  const certFile = tlsConfiguredExplicitly
+  const generatedCertFile = path.join(repoRoot, 'certs', 'gateway.crt');
+  const generatedKeyFile = path.join(repoRoot, 'certs', 'gateway.key');
+  let certFile = tlsConfiguredExplicitly
     ? certPath
       ? path.resolve(repoRoot, certPath)
       : ''
-    : path.join(repoRoot, 'certs', 'gateway.crt');
-  const keyFile = tlsConfiguredExplicitly
+    : generatedCertFile;
+  let keyFile = tlsConfiguredExplicitly
     ? keyPath
       ? path.resolve(repoRoot, keyPath)
       : ''
-    : path.join(repoRoot, 'certs', 'gateway.key');
+    : generatedKeyFile;
+  if (
+    (certFile && !existsSync(certFile)) ||
+    (keyFile && !existsSync(keyFile))
+  ) {
+    certFile = generatedCertFile;
+    keyFile = generatedKeyFile;
+  }
   const hasTls = Boolean(certFile && keyFile && existsSync(certFile) && existsSync(keyFile));
   const protocol = hasTls ? 'https' : 'http';
   const wsProtocol = hasTls ? 'wss' : 'ws';
   const gatewayPort = Number(env.GATEWAY_PORT) || 4000;
   const target = `${protocol}://127.0.0.1:${gatewayPort}`;
   const wsTarget = `${wsProtocol}://127.0.0.1:${gatewayPort}`;
+  const adminOrigin = `${protocol}://localhost:3000`;
+  const httpsOptions = hasTls
+    ? { cert: readFileSync(certFile), key: readFileSync(keyFile) }
+    : undefined;
 
   return {
     envDir: repoRoot,
@@ -37,6 +50,7 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       port: 3000,
       strictPort: true,
+      ...(httpsOptions ? { https: httpsOptions } : {}),
       proxy: {
         '/api': {
           target,
@@ -44,7 +58,7 @@ export default defineConfig(({ mode }) => {
           secure: false,
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyRequest) => {
-              proxyRequest.setHeader('origin', 'http://localhost:3000');
+              proxyRequest.setHeader('origin', adminOrigin);
             });
           },
         },
@@ -55,7 +69,7 @@ export default defineConfig(({ mode }) => {
           secure: false,
           configure: (proxy) => {
             proxy.on('proxyReqWs', (proxyRequest) => {
-              proxyRequest.setHeader('origin', 'http://localhost:3000');
+              proxyRequest.setHeader('origin', adminOrigin);
             });
           },
         },

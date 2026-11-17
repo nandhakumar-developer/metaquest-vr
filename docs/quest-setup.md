@@ -12,7 +12,7 @@ APK, Developer Mode, or sideloading is needed.
 - Know the player URL. The dashboard shows it in **Headsets → Pair Headset**, for example:
 
 ```text
-http://192.168.1.125:4000/player/
+https://192.168.1.125:5000/player/
 ```
 
 ## Headset 1
@@ -47,7 +47,7 @@ card shows offline:
 1. Check the player tab is still open and the headset is awake.
 2. Check the gateway address in the player header.
 3. Reload the player page; it reconnects with its stored credentials.
-4. Check Windows Firewall for TCP 4000.
+4. Check Windows Firewall for TCP 5000.
 
 ## Independent playback test
 

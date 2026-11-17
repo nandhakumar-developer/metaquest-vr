@@ -2,7 +2,7 @@
 
 ## Sign in
 
-Open the dashboard at `http://<gateway-ip>:4000` on the PC.
+Open the dashboard at `https://localhost:5000/admin` on the PC.
 
 - Use the local administrator account created with `npm run admin:create` or the first-run
   setup screen. Authentication always stays on this PC.

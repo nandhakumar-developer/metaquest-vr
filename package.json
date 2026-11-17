@@ -14,11 +14,13 @@
     "packages/*"
   ],
   "scripts": {
+    "predev": "node scripts/development/ensure-local-config.mjs",
     "dev": "npm run build:packages && concurrently -k -n gateway,admin -c cyan,magenta \"npm:dev:gateway\" \"npm:dev:admin\"",
     "dev:gateway": "npm run dev -w @vrcc/gateway",
     "dev:admin": "npm run dev -w @vrcc/admin",
     "build": "npm run build:packages && npm run build -w @vrcc/admin && npm run build -w @vrcc/gateway",
     "build:packages": "npm run build -w @vrcc/shared-types && npm run build -w @vrcc/protocol",
+    "prestart": "node scripts/development/ensure-local-config.mjs",
     "start": "node scripts/development/start-production.mjs",
     "typecheck": "npm run build:packages && npm run typecheck -w @vrcc/gateway && npm run typecheck -w @vrcc/admin",
     "lint": "eslint .",

@@ -2,20 +2,22 @@
 
 ## LAN basics
 
-The gateway listens on `0.0.0.0:4000` so headsets can reach it. The browser player uses the
-same host for REST and WebSocket:
+The generated `.env` sets `GATEWAY_PORT=5000` and HTTPS, so headsets connect to the gateway on
+port 5000. The browser player uses the same host for REST and WebSocket:
 
 ```text
-http://<gateway-ip>:4000/player/
-ws://<gateway-ip>:4000/ws?role=device
+https://<gateway-ip>:5000/player/
+wss://<gateway-ip>:5000/ws?role=device
 ```
+
+(If you remove `.env`, the built-in defaults are HTTP on port 4000.)
 
 ### Set the public URL explicitly
 
 Set `PUBLIC_GATEWAY_URL` in `.env` to the PC's LAN address:
 
 ```dotenv
-PUBLIC_GATEWAY_URL=http://192.168.1.125:4000
+PUBLIC_GATEWAY_URL=https://192.168.1.125:5000
 ```
 
 If it is blank, the gateway picks the first non-loopback IPv4 address. On systems with
@@ -33,14 +35,14 @@ Prefer the Wi-Fi/Ethernet address used by the headsets.
 
 ### Windows Firewall
 
-Allow Node.js on **Private** networks, or add a rule:
+Allow Node.js on the active network profile (Private or Public), or add a rule:
 
 ```powershell
-New-NetFirewallRule -DisplayName "VR Control Center (TCP 4000)" `
-  -Direction Inbound -Protocol TCP -LocalPort 4000 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "VR Control Center (TCP 5000)" `
+  -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow -Profile Private,Public
 ```
 
-If you serve over HTTPS, keep the same port or update `GATEWAY_PORT` and the firewall rule.
+If you change `GATEWAY_PORT`, update the firewall rule too.
 
 ### Changing the IP
 
@@ -55,14 +57,14 @@ the device identity is stored in the browser, not tied to the old URL.
 
 ## HTTP vs HTTPS
 
-| Feature | HTTP | HTTPS |
-| --- | --- | --- |
-| Dashboard | Yes | Yes |
-| Pairing and WebSocket control | Yes | Yes |
-| Media streaming with Range | Yes | Yes |
-| Flat 2D playback | Yes | Yes |
-| Immersive WebXR (180/360/stereo) | No | Yes |
-| Head pose / preview | Yes | Yes |
+| Feature                          | HTTP | HTTPS |
+| -------------------------------- | ---- | ----- |
+| Dashboard                        | Yes  | Yes   |
+| Pairing and WebSocket control    | Yes  | Yes   |
+| Media streaming with Range       | Yes  | Yes   |
+| Flat 2D playback                 | Yes  | Yes   |
+| Immersive WebXR (180/360/stereo) | No   | Yes   |
+| Head pose / preview              | Yes  | Yes   |
 
 Meta Quest Browser only grants WebXR in a **secure context**. Localhost is treated as
 secure; a plain LAN IP is not. Over HTTP the player shows `HTTP · flat only` and explains
@@ -74,11 +76,11 @@ The repository includes a certificate generator that covers localhost, the PC ho
 and every current LAN IPv4 address:
 
 ```powershell
-npm run https:setup
+npm run tls:setup
 ```
 
-The gateway detects these files automatically and enables HTTPS on the next start, so you do
-not need to add `TLS_*` entries to `.env`. Restart the gateway and the startup banner should
+The script writes the certificate and key under `storage/certs` and adds
+`TLS_CERT_PATH` / `TLS_KEY_PATH` to `.env`. Restart the gateway and the startup banner should
 show `https://…`; the player uses `wss://` automatically. `PUBLIC_GATEWAY_URL` can stay
 blank because the gateway picks the physical Wi-Fi/Ethernet address and prefixes it with
 `https://`.
@@ -86,7 +88,7 @@ blank because the gateway picks the physical Wi-Fi/Ethernet address and prefixes
 On the headset:
 
 1. Open the **HTTPS** player URL shown in the dashboard (for example
-   `https://192.168.1.122:4000/player/`).
+   `https://192.168.1.122:5000/player/`).
 2. Accept the certificate warning once. This is the normal local-development warning.
 3. Pair the headset again and tap **Enter VR**. Pairing and offline downloads are stored
    per browser origin, so they do not carry over from the old `http://` URL.
@@ -94,7 +96,7 @@ On the headset:
 The generated certificate is self-signed. Meta Quest Browser normally lets you proceed
 past the warning and then exposes WebXR. Some firmware versions still block immersive mode
 on an untrusted certificate; if yours does, use one of the trusted-certificate options
-below. Re-run `npm run https:setup` whenever the PC's LAN address changes.
+below. Re-run `npm run tls:setup` whenever the PC's LAN address changes.
 
 ### Option A: local CA trusted by the headset
 
@@ -130,7 +132,7 @@ Example Caddyfile:
 
 ```text
 vrcc.example.lan {
-  reverse_proxy 192.168.1.125:4000
+  reverse_proxy 192.168.1.125:5000
 }
 ```
 
@@ -139,9 +141,9 @@ Caddy handles WebSocket upgrades and certificates automatically.
 ## CORS and origins
 
 - Production: the admin SPA is served by the gateway, so requests are same-origin.
-- Development: Vite runs on `:3000` and proxies `/api`, `/ws`, and `/player` to `:4000`.
+- Development: Vite runs on `:3000` and proxies `/api`, `/ws`, and `/player` to `:5000`.
 - If you open the Vite dev server from another device, add its origin to
-  `EXTRA_ALLOWED_ORIGINS`, for example `http://192.168.1.125:3000`.
+  `EXTRA_ALLOWED_ORIGINS`, for example `https://192.168.1.125:3000`.
 
 Only allowed origins can call the API. This protects the local gateway from cross-site
 requests by other pages on the LAN.
