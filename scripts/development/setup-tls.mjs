@@ -7,7 +7,7 @@
  * Usage: npm run tls:setup
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { networkInterfaces } from 'node:os';
+import { hostname, networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import selfsigned from 'selfsigned';
@@ -60,6 +60,25 @@ function readEnvFile() {
   return readFileSync(envPath, 'utf8');
 }
 
+/**
+ * Hostname from PUBLIC_GATEWAY_URL. The gateway hands this URL out as the
+ * permanent headset bookmark, so the certificate must cover it even when the
+ * PC's LAN address changes.
+ */
+function publicGatewayHostname(env) {
+  const match = /(?:^|\n)PUBLIC_GATEWAY_URL=([^\r\n]*)/.exec(env);
+  const raw = match?.[1]?.trim().replace(/^["']|["']$/g, '');
+  if (!raw) return null;
+  try {
+    const host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`)
+      .hostname.replace(/^\[|\]$/g, '');
+    if (!host || /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':')) return null;
+    return host;
+  } catch {
+    return null;
+  }
+}
+
 function updateEnv(content, key, value) {
   const pattern = new RegExp(`^${key}=.*$`, 'm');
   if (pattern.test(content)) return content.replace(pattern, `${key}=${value}`);
@@ -72,10 +91,15 @@ function writePrivate(filePath, value) {
 
 async function main() {
   mkdirSync(certDir, { recursive: true });
+  let env = readEnvFile();
   const lanAddresses = listLanAddresses();
   const primary = lanAddresses[0] ?? 'localhost';
+  const configuredHost = publicGatewayHostname(env);
+  const dnsNames = [
+    ...new Set(['localhost', hostname(), configuredHost].filter(Boolean)),
+  ];
   const altNames = [
-    { type: 2, value: 'localhost' },
+    ...dnsNames.map((name) => ({ type: 2, value: name })),
     { type: 7, ip: '127.0.0.1' },
     { type: 7, ip: '::1' },
     ...lanAddresses.map((address) => ({ type: 7, ip: address })),
@@ -118,7 +142,7 @@ async function main() {
   }
 
   const server = await selfsigned.generate(
-    [{ name: 'commonName', value: primary }],
+    [{ name: 'commonName', value: configuredHost ?? primary }],
     {
       keySize: 2048,
       algorithm: 'sha256',
@@ -141,10 +165,10 @@ async function main() {
   writePrivate(serverKeyPath, server.private);
   writeFileSync(serverCertPath, server.cert);
   console.log(`Created server certificate: ${serverCertPath}`);
-  console.log(`  Common name: ${primary}`);
-  console.log(`  SANs: localhost, 127.0.0.1, ::1${lanAddresses.map((a) => `, ${a}`).join('')}`);
+  console.log(`  Common name: ${configuredHost ?? primary}`);
+  console.log(`  DNS names: ${dnsNames.join(', ')}`);
+  console.log(`  IPs: 127.0.0.1, ::1${lanAddresses.map((a) => `, ${a}`).join('')}`);
 
-  let env = readEnvFile();
   env = updateEnv(env, 'TLS_CERT_PATH', './storage/certs/gateway.crt');
   env = updateEnv(env, 'TLS_KEY_PATH', './storage/certs/gateway.key');
   writeFileSync(envPath, env);

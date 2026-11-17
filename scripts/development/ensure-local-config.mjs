@@ -12,6 +12,8 @@
  */
 import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { X509Certificate } from "node:crypto";
+import { networkInterfaces } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -92,6 +94,76 @@ BOOTSTRAP_ADMIN_NAME=VR Admin
   return true;
 }
 
+/** Same preference order as the gateway: physical Wi-Fi/Ethernet over virtual adapters. */
+const VIRTUAL_INTERFACE_PATTERN =
+  /(vethernet|hyper-?v|virtualbox|vmware|virtual|docker|wsl|loopback|tailscale|zerotier|nordlynx|wireguard|bluetooth|npcap|^tap\b|^tun\b)/i;
+
+function primaryLanAddress() {
+  const entries = [];
+  for (const [interfaceName, addresses] of Object.entries(networkInterfaces())) {
+    for (const address of addresses ?? []) {
+      if (address.family !== "IPv4" || address.internal) continue;
+      if (address.address.startsWith("169.254.")) continue;
+      let score = 20;
+      if (VIRTUAL_INTERFACE_PATTERN.test(interfaceName)) score -= 1000;
+      if (/^192\.168\.56\./.test(address.address)) score -= 500;
+      if (/^172\.(1[7-9]|2\d|3[01])\./.test(address.address)) score -= 100;
+      if (/(^|\b)(wi-?fi|wlan|wireless)/i.test(interfaceName)) score += 100;
+      else if (/(^|\b)(ethernet|eth\d|en\d)/i.test(interfaceName)) score += 80;
+      entries.push({ address: address.address, score });
+    }
+  }
+  entries.sort((a, b) => b.score - a.score);
+  return entries[0]?.address ?? null;
+}
+
+function certificateCoversHost(filePath, host) {
+  const certificate = new X509Certificate(readFileSync(filePath));
+  for (const entry of (certificate.subjectAltName ?? "").split(",")) {
+    const value = entry.trim();
+    if (
+      value.toLowerCase().startsWith("dns:") &&
+      value.slice(4).trim().toLowerCase() === host
+    ) {
+      return true;
+    }
+    if (
+      value.toLowerCase().startsWith("ip address:") &&
+      value.slice(11).trim().toLowerCase() === host
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * A DHCP lease change moves the PC to a new LAN address. The old certificate
+ * no longer matches, which makes the headset reject the player URL until the
+ * user manually reruns `npm run tls:setup`. Refresh it automatically using the
+ * existing local CA so installed-and-trusted headset certificates stay valid.
+ */
+function ensureTlsMatchesLan() {
+  if (!existsSync(certPath) || !existsSync(keyPath)) return;
+  const lanAddress = primaryLanAddress();
+  if (!lanAddress) return;
+  try {
+    if (certificateCoversHost(certPath, lanAddress)) return;
+  } catch {
+    // Unreadable certificate: leave it untouched and let the gateway report it.
+    return;
+  }
+  console.log(
+    `[VRCC] HTTPS certificate does not cover the current LAN address (${lanAddress}). Regenerating it...`,
+  );
+  try {
+    runNode(path.join(rootDir, "scripts", "development", "setup-tls.mjs"), "TLS setup");
+  } catch (error) {
+    console.warn(`[VRCC] Could not refresh the HTTPS certificate: ${error.message}`);
+    console.warn("[VRCC] Run `npm run tls:setup` manually, then restart.");
+  }
+}
+
 function ensureTls() {
   if (existsSync(certPath) && existsSync(keyPath)) return true;
 
@@ -129,6 +201,8 @@ function main() {
       "ADMIN_ORIGIN",
       tlsReady ? "https://localhost:3000" : "http://localhost:3000",
     );
+  } else {
+    ensureTlsMatchesLan();
   }
   ensureAdminBuild();
 }

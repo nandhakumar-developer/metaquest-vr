@@ -17,14 +17,14 @@ This table records the state of this checkout at the last review. Use it to deci
 | Git                    | `2.52.0.windows.1`                                                                                         |
 | Gateway process        | not running when inspected; started and stopped for verification only                                      |
 | Build output           | `apps/admin/dist`, `apps/gateway/dist`, `packages/shared-types/dist`, `packages/protocol/dist` all present |
-| Runtime URL on this PC | `https://192.168.1.40:5000` (dashboard), `https://192.168.1.40:5000/player/` (headsets)                    |
+| Runtime URL on this PC | `https://192.168.1.70:5000` (dashboard), `https://192.168.1.70:5000/player/` (headsets)                    |
 | TLS                    | enabled from `storage/certs/gateway.crt` and `storage/certs/gateway.key`                                   |
 | FFmpeg / FFprobe       | not installed, so metadata probing and thumbnails are unavailable                                          |
 | Database               | `storage/data/vrcc.sqlite` ≈ 1 MB plus a ≈ 4 MB WAL file                                                   |
 | Stored data            | 1 local admin, 1 paired device, 4 videos (≈ 1.19 GB), 6 playback sessions, 14 commands, 1,893 audit rows   |
 | Health check           | `{"status":"ok","database":"ok", ...}` after a controlled test start                                       |
 
-The local `.env` sets `GATEWAY_PORT=5000` and explicit TLS paths under `storage/certs`, so the dashboard and player are served over **HTTPS on port 5000**, not HTTP on 4000. If `PUBLIC_GATEWAY_URL` uses a hostname that does not resolve from this PC, the gateway logs a warning and falls back to the detected LAN address. Re-run `npm run tls:setup` after a LAN IP change to avoid a headset certificate warning.
+The local `.env` sets `GATEWAY_PORT=5000` and explicit TLS paths under `storage/certs`, so the dashboard and player are served over **HTTPS on port 5000**, not HTTP on 4000. If `PUBLIC_GATEWAY_URL` uses a hostname that does not resolve from this PC, the gateway logs a warning and falls back to the detected LAN address. `npm run dev` / `npm start` detect a LAN IP change at startup and regenerate the server certificate automatically (the local CA is reused, so a headset that already trusts it stays trusted).
 
 Nothing is left running after verification. Start the app with `npm start` (production) or `npm run dev` (development) as described below.
 
@@ -464,7 +464,7 @@ This builds the shared workspace packages, then starts the gateway watcher and V
 
 Allow Node.js through Windows Firewall (TCP port `5000` for the generated `.env`) so headsets can reach the gateway. WebXR requires HTTPS or localhost; ordinary HTTP over the LAN still supports flat playback and remote controls.
 
-The first-run bootstrap already creates the local HTTPS certificate used for immersive 180/360 playback. After a LAN address change, regenerate it with:
+The first-run bootstrap already creates the local HTTPS certificate used for immersive 180/360 playback. After a LAN address change, the next `npm run dev` / `npm start` refreshes it automatically; you can also do it explicitly with:
 
 ```powershell
 npm run tls:setup
